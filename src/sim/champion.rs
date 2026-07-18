@@ -70,12 +70,16 @@ fn resolve_rivalry(
     let threat =
         region.pressure() + region.danger * r.threat_danger + region.chaos / r.threat_chaos_div;
 
-    let (template, prosperity, chaos, danger) = if strength >= threat {
+    let (template, prosperity, chaos, danger, magic) = if strength >= threat {
+        // A successful champion also stamps its focus on the region: Valor cuts
+        // danger, Wisdom kindles magic, Devotion lifts prosperity.
+        let focus = balance.focuses.get(champion.focus);
         (
             &text.champion_resolved,
-            r.resolved_prosperity,
+            r.resolved_prosperity + focus.resolve_prosperity,
             r.resolved_chaos,
-            r.resolved_danger,
+            r.resolved_danger + focus.resolve_danger,
+            focus.resolve_magic,
         )
     } else {
         (
@@ -83,9 +87,10 @@ fn resolve_rivalry(
             0.0,
             r.escalated_chaos,
             r.escalated_danger,
+            0.0,
         )
     };
-    region.apply_deltas(prosperity, chaos, danger, 0.0, region_balance);
+    region.apply_deltas(prosperity, chaos, danger, magic, region_balance);
     chronicle.push(
         year,
         EventKind::Hero,
@@ -134,5 +139,42 @@ mod tests {
 
         assert_eq!(champions[0].quests, 1);
         assert!(world.regions[region_idx].danger <= danger_before);
+    }
+
+    #[test]
+    fn focus_shapes_the_resolution_effect() {
+        // A Wisdom champion resolving a rivalry kindles its region's magic — an
+        // effect a Valor champion (which instead cuts danger) never produces.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let hero = world.heroes[0].clone();
+        let region_idx = world
+            .regions
+            .iter()
+            .position(|r| r.id == hero.region_id)
+            .unwrap();
+        let magic_before = world.regions[region_idx].magic_affinity;
+
+        let mut champion = Champion::designate(hero.id.clone(), ChampionFocus::Wisdom);
+        champion.bond = 300.0;
+        champion.rank = 10;
+        champion.quest_progress = data.balance.champion.quest.goal;
+        let mut champions = vec![champion];
+
+        tick_champions(
+            &mut champions,
+            &world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert!(
+            world.regions[region_idx].magic_affinity > magic_before,
+            "wisdom focus should kindle magic on a resolved rivalry"
+        );
     }
 }

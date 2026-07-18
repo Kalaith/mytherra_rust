@@ -198,6 +198,12 @@ impl ChampionFocuses {
 pub struct FocusParams {
     pub cost_modifier: i64,
     pub quest_bonus: f32,
+    /// Signature stat deltas a champion of this focus adds when it *resolves* a
+    /// rivalry, so the focus shapes what kind of impact the champion has (GDD
+    /// 5.4), not just how fast it quests.
+    pub resolve_prosperity: f32,
+    pub resolve_danger: f32,
+    pub resolve_magic: f32,
 }
 
 /// Divine Observatory betting tuning (GDD 5.5).

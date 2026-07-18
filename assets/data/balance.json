@@ -74,9 +74,9 @@
       "escalated_chaos": 3.0
     },
     "focuses": {
-      "valor": { "cost_modifier": 4, "quest_bonus": 2.0 },
-      "wisdom": { "cost_modifier": 2, "quest_bonus": 4.0 },
-      "devotion": { "cost_modifier": 0, "quest_bonus": 3.0 }
+      "valor": { "cost_modifier": 4, "quest_bonus": 2.0, "resolve_prosperity": 0.0, "resolve_danger": -4.0, "resolve_magic": 0.0 },
+      "wisdom": { "cost_modifier": 2, "quest_bonus": 4.0, "resolve_prosperity": 0.0, "resolve_danger": 0.0, "resolve_magic": 4.0 },
+      "devotion": { "cost_modifier": 0, "quest_bonus": 3.0, "resolve_prosperity": 4.0, "resolve_danger": 0.0, "resolve_magic": 0.0 }
     }
   },
   "betting": {
