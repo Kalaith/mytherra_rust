@@ -116,6 +116,12 @@
       "knowledge": 0.5
     }
   },
+  "weather": {
+    "base_cost": 14,
+    "decay_per_tick": 0.08,
+    "min_magnitude": 0.1,
+    "max_active": 6
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

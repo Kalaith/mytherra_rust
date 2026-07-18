@@ -9,6 +9,7 @@ mod hero;
 mod player;
 mod region;
 mod speculation;
+mod weather;
 
 pub use artifact::Artifact;
 pub use bet::{quote_event, Bet};
@@ -18,6 +19,7 @@ pub use hero::Hero;
 pub use player::PlayerState;
 pub use region::{Region, RegionStatus};
 pub use speculation::SpeculationEvent;
+pub use weather::{weather_cost, WeatherEvent};
 
 use crate::data::GameData;
 use macroquad_toolkit::rng::SeededRng;
@@ -44,6 +46,7 @@ pub struct WorldState {
     pub artifacts: Vec<Artifact>,
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
+    pub weather: Vec<WeatherEvent>,
     pub speculations: Vec<SpeculationEvent>,
     /// Monotonic counter for unique speculation event ids.
     pub speculation_seq: u64,
@@ -70,6 +73,7 @@ impl WorldState {
             heroes,
             artifacts,
             artifact_seq: 0,
+            weather: Vec::new(),
             speculations: Vec::new(),
             speculation_seq: 0,
             chronicle: Chronicle::default(),

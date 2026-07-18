@@ -1,0 +1,5 @@
+[
+  { "id": "gentle", "name": "Gentle", "magnitude": 1.0, "cost_mult": 1.0 },
+  { "id": "strong", "name": "Strong", "magnitude": 2.0, "cost_mult": 1.8 },
+  { "id": "cataclysmic", "name": "Cataclysmic", "magnitude": 3.5, "cost_mult": 3.0 }
+]

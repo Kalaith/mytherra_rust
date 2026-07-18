@@ -4,6 +4,7 @@
 
 mod artifacts;
 mod omens;
+mod weather;
 
 use crate::ui::widgets::nav_tabs;
 use crate::ui::{content_rect, UiAction, UiContext};
@@ -59,6 +60,7 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let body = Rect::new(area.x, area.y + 48.0, area.w, area.h - 48.0);
     match DivineTool::ALL[active] {
         DivineTool::Artifacts => artifacts::draw(ctx, body, actions),
+        DivineTool::Weather => weather::draw(ctx, body, actions),
         DivineTool::Omens => omens::draw(ctx, body),
         _ => draw_todo(ctx, body),
     }

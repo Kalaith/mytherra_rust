@@ -13,12 +13,13 @@ mod config;
 mod hero;
 mod region;
 pub mod strings;
+mod weather;
 
 pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
     ArtifactBalance, Balance, BettingBalance, ChampionBalance, HeroBalance, PlayerBalance,
-    RegionBalance,
+    RegionBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
@@ -26,6 +27,7 @@ pub use config::GameConfig;
 pub use hero::{HeroRole, HeroSeed};
 pub use region::{ClimateType, Culture, RegionSeed};
 pub use strings::{fill, Strings};
+pub use weather::{WeatherIntensity, WeatherPattern};
 
 use macroquad_toolkit::data_loader::{
     load_embedded_json, load_embedded_json_labeled, DataRegistry,
@@ -36,6 +38,8 @@ const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
 const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
 const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
 const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
+const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
+const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
 const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
 const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
 const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
@@ -50,6 +54,8 @@ pub struct GameData {
     pub region_actions: DataRegistry<RegionActionDef>,
     pub heroes: Vec<HeroSeed>,
     pub artifacts: Vec<ArtifactSeed>,
+    pub weather_patterns: Vec<WeatherPattern>,
+    pub weather_intensities: Vec<WeatherIntensity>,
     pub bet_types: Vec<BetType>,
     pub confidence_levels: Vec<ConfidenceLevel>,
     pub timeframes: Vec<TimeframeModifier>,
@@ -64,6 +70,9 @@ impl GameData {
         let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
         let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
         let artifacts: Vec<ArtifactSeed> = load_embedded_json(ARTIFACTS_JSON)?;
+        let weather_patterns: Vec<WeatherPattern> = load_embedded_json(WEATHER_PATTERNS_JSON)?;
+        let weather_intensities: Vec<WeatherIntensity> =
+            load_embedded_json(WEATHER_INTENSITIES_JSON)?;
         let bet_types: Vec<BetType> = load_embedded_json(BET_TYPES_JSON)?;
         let confidence_levels: Vec<ConfidenceLevel> = load_embedded_json(CONFIDENCE_JSON)?;
         let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
@@ -76,6 +85,9 @@ impl GameData {
         if bet_types.is_empty() || confidence_levels.is_empty() || timeframes.is_empty() {
             return Err("betting config tables must not be empty".to_owned());
         }
+        if weather_patterns.is_empty() || weather_intensities.is_empty() {
+            return Err("weather config tables must not be empty".to_owned());
+        }
 
         Ok(Self {
             config,
@@ -83,6 +95,8 @@ impl GameData {
             region_actions,
             heroes,
             artifacts,
+            weather_patterns,
+            weather_intensities,
             bet_types,
             confidence_levels,
             timeframes,

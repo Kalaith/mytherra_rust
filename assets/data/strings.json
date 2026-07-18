@@ -55,7 +55,14 @@
     "omen_turbulent": "Turbulent",
     "omen_dire": "Dire",
     "tool_todo": "This divine tool awaits its awakening.",
-    "new_artifact_name": "{focus} Relic {n}"
+    "new_artifact_name": "{focus} Relic {n}",
+    "weather_panel": "Weather",
+    "weather_pattern": "Pattern: {pattern}",
+    "weather_intensity": "Force: {intensity}",
+    "shape": "Shape over {region}  ({cost})",
+    "weather_empty": "The skies are still.",
+    "weather_meta": "{pattern}  ·  {intensity}  ·  {region}",
+    "weather_magnitude": "strength {magnitude}"
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
@@ -79,7 +86,9 @@
     "artifact_max": "You cannot sustain another artifact.",
     "artifact_empowered": "{name} swells with power.",
     "artifact_stabilized": "You steady {name}.",
-    "artifact_transferred": "{name} passes to {region}."
+    "artifact_transferred": "{name} passes to {region}.",
+    "weather_shaped": "You shape {pattern} over {region}.",
+    "weather_max": "Too many storms already rage."
   },
   "heroes": {
     "panel": "Heroes & Champions",

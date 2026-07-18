@@ -34,6 +34,8 @@ pub struct Game {
     /// Divine-tools UI state.
     divine_tab: usize,
     create_focus: ArtifactFocus,
+    weather_pattern: usize,
+    weather_intensity: usize,
 }
 
 impl Game {
@@ -65,6 +67,8 @@ impl Game {
             bet_stake_index: 0,
             divine_tab: 0,
             create_focus: ArtifactFocus::Protection,
+            weather_pattern: 0,
+            weather_intensity: 0,
         };
         game.refresh_save_state();
         game
@@ -75,12 +79,26 @@ impl Game {
         self.screen = match scene {
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,
-            "divine_tools" | "artifacts" | "omens" => Screen::DivineTools,
+            "divine_tools" | "artifacts" | "omens" | "weather" => Screen::DivineTools,
             "betting" => Screen::Betting,
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
         };
-        self.divine_tab = if scene == "omens" { 2 } else { 0 };
+        self.divine_tab = match scene {
+            "omens" => 2,
+            "weather" => 1,
+            _ => 0,
+        };
+        if scene == "weather" {
+            self.weather_intensity = 2;
+            self.shape_weather();
+            self.selected_region = 1;
+            self.weather_pattern = 2;
+            self.shape_weather();
+            self.selected_region = 0;
+            self.weather_pattern = 0;
+            self.weather_intensity = 0;
+        }
         match self.screen {
             // Demo a couple of champions so the heroes screen shows the roster.
             Screen::Heroes => {
@@ -154,6 +172,8 @@ impl Game {
             bet_stake_index: self.bet_stake_index,
             divine_tab: self.divine_tab,
             create_focus: self.create_focus,
+            weather_pattern: self.weather_pattern,
+            weather_intensity: self.weather_intensity,
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);
@@ -224,6 +244,15 @@ impl Game {
             UiAction::EmpowerArtifact(id) => self.empower_artifact(&id),
             UiAction::StabilizeArtifact(id) => self.stabilize_artifact(&id),
             UiAction::TransferArtifact(id) => self.transfer_artifact(&id),
+            UiAction::ShapeWeather => self.shape_weather(),
+            UiAction::CycleWeatherPattern => {
+                self.weather_pattern =
+                    (self.weather_pattern + 1) % self.data.weather_patterns.len();
+            }
+            UiAction::CycleWeatherIntensity => {
+                self.weather_intensity =
+                    (self.weather_intensity + 1) % self.data.weather_intensities.len();
+            }
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications

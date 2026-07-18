@@ -85,6 +85,12 @@ pub enum UiAction {
     StabilizeArtifact(String),
     /// Move the artifact with the given id to another region.
     TransferArtifact(String),
+    /// Shape weather over the selected region with the current selectors.
+    ShapeWeather,
+    /// Cycle the selected weather pattern.
+    CycleWeatherPattern,
+    /// Cycle the selected weather intensity.
+    CycleWeatherIntensity,
     AdvanceTick,
     Save,
     Load,
@@ -108,6 +114,9 @@ pub struct UiContext<'a> {
     pub divine_tab: usize,
     /// Focus of the next artifact to be forged.
     pub create_focus: crate::data::ArtifactFocus,
+    /// Selected weather pattern / intensity indices.
+    pub weather_pattern: usize,
+    pub weather_intensity: usize,
     pub mouse: Vec2,
 }
 

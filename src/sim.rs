@@ -6,6 +6,7 @@ mod champion;
 mod hero;
 mod region;
 mod speculation;
+mod weather;
 
 use crate::data::{fill, GameData};
 use crate::world::{EventKind, PlayerState, WorldState};
@@ -54,6 +55,13 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,
+    );
+
+    weather::tick_weather(
+        &mut world.weather,
+        &mut world.regions,
+        &data.balance.weather,
+        &data.balance.region,
     );
 
     speculation::tick_speculations(

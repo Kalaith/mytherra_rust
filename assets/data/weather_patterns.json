@@ -1,0 +1,7 @@
+[
+  { "id": "rain", "name": "Rains", "prosperity": 0.5, "chaos": -0.2, "danger": -0.2, "magic": 0.0 },
+  { "id": "drought", "name": "Drought", "prosperity": -0.5, "chaos": 0.3, "danger": 0.2, "magic": 0.0 },
+  { "id": "storm", "name": "Storms", "prosperity": -0.2, "chaos": 0.4, "danger": 0.5, "magic": 0.0 },
+  { "id": "bloom", "name": "Bloomtide", "prosperity": 0.4, "chaos": -0.1, "danger": 0.0, "magic": 0.4 },
+  { "id": "frost", "name": "Deep Frost", "prosperity": -0.3, "chaos": 0.1, "danger": 0.3, "magic": 0.0 }
+]

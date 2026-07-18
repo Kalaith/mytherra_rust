@@ -5,7 +5,7 @@
 
 use super::Game;
 use crate::data::{fill, ChampionFocus};
-use crate::world::{quote_event, Artifact, Bet, EventKind};
+use crate::world::{quote_event, weather_cost, Artifact, Bet, EventKind, WeatherEvent};
 
 impl Game {
     pub(super) fn apply_region_action(&mut self, id: &str) {
@@ -319,6 +319,54 @@ impl Game {
                 &[("name", name), ("region", next_name)],
             ));
         }
+    }
+
+    pub(super) fn shape_weather(&mut self) {
+        let notes = self.data.strings.notifications.clone();
+        if self.world.weather.len() >= self.data.balance.weather.max_active {
+            self.notifications.warning(notes.weather_max);
+            return;
+        }
+        let pattern = self.data.weather_patterns[self
+            .weather_pattern
+            .min(self.data.weather_patterns.len() - 1)]
+        .clone();
+        let intensity = self.data.weather_intensities[self
+            .weather_intensity
+            .min(self.data.weather_intensities.len() - 1)]
+        .clone();
+        let index = self
+            .selected_region
+            .min(self.world.regions.len().saturating_sub(1));
+        let Some((region_id, region_name, cost)) = self.world.regions.get(index).map(|r| {
+            let cost = weather_cost(
+                self.data.balance.weather.base_cost,
+                intensity.cost_mult,
+                r.cost_multiplier(&self.data.balance.region),
+            );
+            (r.id.clone(), r.name.clone(), cost)
+        }) else {
+            return;
+        };
+        if !self.player.spend(cost, &self.data.balance.player) {
+            self.notifications.warning(notes.not_enough_favor);
+            return;
+        }
+        self.world.weather.push(WeatherEvent {
+            region_id,
+            pattern_id: pattern.id.clone(),
+            pattern_name: pattern.name.clone(),
+            intensity_name: intensity.name.clone(),
+            magnitude: intensity.magnitude,
+            prosperity: pattern.prosperity,
+            chaos: pattern.chaos,
+            danger: pattern.danger,
+            magic: pattern.magic,
+        });
+        self.notifications.success(fill(
+            &notes.weather_shaped,
+            &[("pattern", pattern.name), ("region", region_name)],
+        ));
     }
 
     pub(super) fn hero_name(&self, hero_id: &str) -> String {

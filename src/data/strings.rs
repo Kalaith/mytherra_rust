@@ -110,6 +110,13 @@ pub struct DivineText {
     pub omen_dire: String,
     pub tool_todo: String,
     pub new_artifact_name: String,
+    pub weather_panel: String,
+    pub weather_pattern: String,
+    pub weather_intensity: String,
+    pub shape: String,
+    pub weather_empty: String,
+    pub weather_meta: String,
+    pub weather_magnitude: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -154,6 +161,8 @@ pub struct Notifications {
     pub artifact_empowered: String,
     pub artifact_stabilized: String,
     pub artifact_transferred: String,
+    pub weather_shaped: String,
+    pub weather_max: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

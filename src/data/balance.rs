@@ -15,6 +15,7 @@ pub struct Balance {
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
     pub artifact: ArtifactBalance,
+    pub weather: WeatherBalance,
     pub player: PlayerBalance,
 }
 
@@ -221,6 +222,15 @@ impl ArtifactFocusEffect {
             ArtifactFocus::Knowledge => self.knowledge,
         }
     }
+}
+
+/// Weather tool tuning (GDD 5.6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WeatherBalance {
+    pub base_cost: i64,
+    pub decay_per_tick: f32,
+    pub min_magnitude: f32,
+    pub max_active: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
