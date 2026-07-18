@@ -151,6 +151,7 @@
     "action_success": "{action} on {region} ({cost} favor).",
     "advance_tick": "You will the world forward a year.",
     "world_saved": "World saved.",
+    "world_autosaved": "World autosaved.",
     "save_failed": "Save failed: {error}",
     "world_restored": "World restored.",
     "load_failed": "Load failed: {error}",

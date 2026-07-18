@@ -44,6 +44,8 @@ pub struct Game {
     tick_speed_index: usize,
     /// Whether automatic world ticking is paused (Settings, GDD 10).
     paused: bool,
+    /// Tick count at the last autosave, so it fires once per interval.
+    last_autosave_tick: u64,
 }
 
 impl Game {
@@ -90,6 +92,7 @@ impl Game {
             hero_filter: 0,
             tick_speed_index,
             paused: false,
+            last_autosave_tick: 0,
         };
         game.refresh_save_state();
         game
@@ -259,6 +262,8 @@ impl Game {
         for action in actions {
             self.apply_action(action);
         }
+
+        self.maybe_autosave();
     }
 
     pub fn draw(&mut self) {
@@ -407,21 +412,52 @@ impl Game {
         self.player = PlayerState::new(&self.data.config);
         self.selected_region = 0;
         self.tick_accum = 0.0;
+        self.last_autosave_tick = 0;
         self.notifications
             .info(self.data.strings.notifications.new_world.clone());
     }
 
-    fn save_game(&mut self) {
+    /// Write the world to its save slot. Shared by manual save and autosave.
+    fn write_save(&self) -> Result<(), String> {
         let save = SaveData::new(&self.world, &self.player, &self.data.config.version);
-        let notes = self.data.strings.notifications.clone();
-        match save_to_slot_with_version(
+        save_to_slot_with_version(
             &self.data.config.game_name,
             &self.data.config.save_slot,
             &save,
             &self.data.config.version,
-        ) {
+        )
+    }
+
+    fn save_game(&mut self) {
+        let notes = self.data.strings.notifications.clone();
+        match self.write_save() {
             Ok(()) => {
                 self.notifications.success(notes.world_saved);
+                self.refresh_save_state();
+            }
+            Err(err) => self
+                .notifications
+                .danger(fill(&notes.save_failed, &[("error", err)])),
+        }
+    }
+
+    /// Persist the world once every `autosave_every_ticks` ticks of real play.
+    /// Lives in the interactive loop only — the capture harness drives
+    /// `run_tick` directly, so headless runs never touch the disk.
+    fn maybe_autosave(&mut self) {
+        let interval = self.data.config.autosave_every_ticks;
+        if interval == 0
+            || self.world.tick_count == 0
+            || self.world.tick_count == self.last_autosave_tick
+            || !self.world.tick_count.is_multiple_of(interval)
+        {
+            return;
+        }
+        self.last_autosave_tick = self.world.tick_count;
+        let notes = self.data.strings.notifications.clone();
+        match self.write_save() {
+            Ok(()) => {
+                self.notifications.info(notes.world_autosaved);
                 self.refresh_save_state();
             }
             Err(err) => self
@@ -444,6 +480,7 @@ impl Game {
                 self.player = save.player;
                 self.selected_region = 0;
                 self.tick_accum = 0.0;
+                self.last_autosave_tick = self.world.tick_count;
                 self.notifications.success(notes.world_restored);
                 self.refresh_save_state();
             }

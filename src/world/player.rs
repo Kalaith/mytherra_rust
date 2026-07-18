@@ -122,6 +122,7 @@ mod tests {
             favor_per_tick: 10,
             max_favor: 600,
             seconds_per_tick: 10.0,
+            autosave_every_ticks: 6,
             start_year: 1,
             world_seed: 1,
         }

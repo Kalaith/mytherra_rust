@@ -20,6 +20,8 @@ pub struct GameConfig {
     pub max_favor: i64,
     /// Real seconds between automatic world ticks.
     pub seconds_per_tick: f32,
+    /// Autosave the world every N ticks (0 disables autosave).
+    pub autosave_every_ticks: u64,
     /// Calendar year the world begins on.
     pub start_year: u32,
     /// Seed for the world's deterministic simulation RNG (GDD 5.8).

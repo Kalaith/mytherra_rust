@@ -231,6 +231,7 @@ pub struct Notifications {
     pub action_success: String,
     pub advance_tick: String,
     pub world_saved: String,
+    pub world_autosaved: String,
     pub save_failed: String,
     pub world_restored: String,
     pub load_failed: String,
