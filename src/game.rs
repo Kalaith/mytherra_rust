@@ -80,7 +80,7 @@ impl Game {
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,
             "divine_tools" | "artifacts" | "omens" | "weather" | "magic" | "myths"
-            | "civilization" => Screen::DivineTools,
+            | "civilization" | "pantheon" => Screen::DivineTools,
             "betting" => Screen::Betting,
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
@@ -91,6 +91,7 @@ impl Game {
             "magic" => 3,
             "myths" => 4,
             "civilization" => 5,
+            "pantheon" => 6,
             _ => 0,
         };
         if scene == "weather" {
@@ -132,6 +133,13 @@ impl Game {
         if scene == "civilization" {
             self.advance_agenda(0);
             for _ in 0..3 {
+                self.run_tick();
+            }
+        }
+        if scene == "pantheon" {
+            self.challenge_deity("aurex");
+            self.appease_deity("mordath");
+            for _ in 0..2 {
                 self.run_tick();
             }
         }
@@ -292,6 +300,8 @@ impl Game {
             UiAction::ResearchMagic(id) => self.research_magic(&id),
             UiAction::PromoteMyth(id) => self.promote_myth(&id),
             UiAction::AdvanceAgenda(index) => self.advance_agenda(index),
+            UiAction::AppeaseDeity(id) => self.appease_deity(&id),
+            UiAction::ChallengeDeity(id) => self.challenge_deity(&id),
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications

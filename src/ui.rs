@@ -97,6 +97,10 @@ pub enum UiAction {
     PromoteMyth(String),
     /// Advance the agenda at the given index in the selected region.
     AdvanceAgenda(usize),
+    /// Appease the pantheon deity with the given id.
+    AppeaseDeity(String),
+    /// Challenge the pantheon deity with the given id.
+    ChallengeDeity(String),
     AdvanceTick,
     Save,
     Load,

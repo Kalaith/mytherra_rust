@@ -7,6 +7,7 @@ mod civilization;
 mod hero;
 mod magic;
 mod myth;
+mod pantheon;
 mod region;
 mod speculation;
 mod weather;
@@ -93,6 +94,13 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.regions,
         &data.agendas,
         &data.balance.civilization,
+        &data.balance.region,
+    );
+
+    pantheon::tick_pantheon(
+        &mut world.pantheon,
+        &mut world.regions,
+        &data.balance.pantheon,
         &data.balance.region,
     );
 

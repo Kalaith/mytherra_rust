@@ -1,19 +1,18 @@
-//! Divine Tools: a tabbed screen folding the seven divine tools into one
-//! destination (GDD 10). Artifacts and Omens are implemented; the rest show a
-//! placeholder until their iteration lands.
+//! Divine Tools: a tabbed screen folding all seven divine tools into one
+//! destination (GDD 10).
 
 mod artifacts;
 mod civilization;
 mod magic;
 mod myths;
 mod omens;
+mod pantheon;
 mod weather;
 
 use crate::ui::widgets::nav_tabs;
 use crate::ui::{content_rect, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
-use macroquad_toolkit::ui::draw_ui_text_ex;
 
 /// The seven divine tools, in GDD screen order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,22 +67,8 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         DivineTool::Magic => magic::draw(ctx, body, actions),
         DivineTool::Myths => myths::draw(ctx, body, actions),
         DivineTool::Civilization => civilization::draw(ctx, body, actions),
-        _ => draw_todo(ctx, body),
+        DivineTool::Pantheon => pantheon::draw(ctx, body, actions),
     }
-}
-
-fn draw_todo(ctx: &UiContext<'_>, rect: Rect) {
-    draw_surface(
-        rect,
-        &SurfaceStyle::new(Color::new(0.07, 0.075, 0.095, 0.96))
-            .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.5)),
-    );
-    draw_ui_text_ex(
-        &ctx.data.strings.divine.tool_todo,
-        rect.x + 24.0,
-        rect.y + 40.0,
-        TextStyle::new(16.0, dark::TEXT_DIM).params(),
-    );
 }
 
 /// Shared titled-surface helper for the divine-tool sub-screens.

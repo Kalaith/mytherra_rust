@@ -144,6 +144,17 @@ pub struct DivineText {
     pub agenda_score: String,
     pub civ_cooldown: String,
     pub civ_ready: String,
+    pub pantheon_panel: String,
+    pub appease: String,
+    pub challenge: String,
+    pub deity_meta: String,
+    pub deity_pressure: String,
+    pub pantheon_cooldown: String,
+    pub mood_dormant: String,
+    pub mood_stirring: String,
+    pub mood_roused: String,
+    pub mood_wrathful: String,
+    pub mood_ascendant: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -195,6 +206,9 @@ pub struct Notifications {
     pub myth_cap: String,
     pub agenda_advanced: String,
     pub agenda_cooldown: String,
+    pub deity_appeased: String,
+    pub deity_challenged: String,
+    pub deity_cooldown: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

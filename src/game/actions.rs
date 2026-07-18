@@ -5,7 +5,9 @@
 
 use super::Game;
 use crate::data::{fill, ChampionFocus};
-use crate::world::{quote_event, weather_cost, Artifact, Bet, EventKind, Myth, WeatherEvent};
+use crate::world::{
+    adjust_pressure, quote_event, weather_cost, Artifact, Bet, EventKind, Myth, WeatherEvent,
+};
 
 impl Game {
     pub(super) fn apply_region_action(&mut self, id: &str) {
@@ -319,6 +321,70 @@ impl Game {
                 &[("name", name), ("region", next_name)],
             ));
         }
+    }
+
+    pub(super) fn appease_deity(&mut self, id: &str) {
+        let amount = self.data.balance.pantheon.appease_amount;
+        let cost = self.data.balance.pantheon.appease_cost;
+        self.influence_deity(id, -amount, -1.0, cost, true);
+    }
+
+    pub(super) fn challenge_deity(&mut self, id: &str) {
+        let amount = self.data.balance.pantheon.challenge_amount;
+        let cost = self.data.balance.pantheon.challenge_cost;
+        self.influence_deity(id, amount, 1.0, cost, false);
+    }
+
+    /// Shared appease/challenge logic: move the target's pressure, ripple the
+    /// opposite way to its ally (`ripple_sign`) and rival, honouring the
+    /// relationship cooldown (GDD 5.6).
+    fn influence_deity(
+        &mut self,
+        id: &str,
+        target_delta: f32,
+        ripple_sign: f32,
+        cost: i64,
+        appease: bool,
+    ) {
+        let notes = self.data.strings.notifications.clone();
+        let Some((ally_id, rival_id, name, on_cooldown)) =
+            self.world.pantheon.iter().find(|d| d.id == id).map(|d| {
+                (
+                    d.ally_id.clone(),
+                    d.rival_id.clone(),
+                    d.name.clone(),
+                    d.cooldown > 0,
+                )
+            })
+        else {
+            return;
+        };
+        if on_cooldown {
+            self.notifications
+                .warning(fill(&notes.deity_cooldown, &[("deity", name)]));
+            return;
+        }
+        if !self.player.spend(cost, &self.data.balance.player) {
+            self.notifications.warning(notes.not_enough_favor);
+            return;
+        }
+
+        let ripple = self.data.balance.pantheon.ripple;
+        let cooldown = self.data.balance.pantheon.cooldown;
+        adjust_pressure(&mut self.world.pantheon, id, target_delta);
+        adjust_pressure(&mut self.world.pantheon, &ally_id, ripple * ripple_sign);
+        adjust_pressure(&mut self.world.pantheon, &rival_id, -ripple * ripple_sign);
+        if let Some(deity) = self.world.pantheon.iter_mut().find(|d| d.id == id) {
+            deity.cooldown = cooldown;
+        }
+
+        let template = if appease {
+            &notes.deity_appeased
+        } else {
+            &notes.deity_challenged
+        };
+        self.notifications
+            .success(fill(template, &[("deity", name)]));
     }
 
     pub(super) fn advance_agenda(&mut self, agenda_index: usize) {

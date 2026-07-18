@@ -1,0 +1,42 @@
+[
+  {
+    "id": "aurex",
+    "name": "Aurex",
+    "domain": "Radiance",
+    "ally_id": "sylva",
+    "rival_id": "mordath",
+    "effect_stat": "prosperity",
+    "effect_amount": 0.3,
+    "start_pressure": 45.0
+  },
+  {
+    "id": "mordath",
+    "name": "Mordath",
+    "domain": "War",
+    "ally_id": "kael",
+    "rival_id": "aurex",
+    "effect_stat": "danger",
+    "effect_amount": 0.3,
+    "start_pressure": 40.0
+  },
+  {
+    "id": "sylva",
+    "name": "Sylva",
+    "domain": "Growth",
+    "ally_id": "aurex",
+    "rival_id": "kael",
+    "effect_stat": "magic",
+    "effect_amount": 0.3,
+    "start_pressure": 38.0
+  },
+  {
+    "id": "kael",
+    "name": "Kael",
+    "domain": "Discord",
+    "ally_id": "mordath",
+    "rival_id": "sylva",
+    "effect_stat": "chaos",
+    "effect_amount": 0.3,
+    "start_pressure": 42.0
+  }
+]

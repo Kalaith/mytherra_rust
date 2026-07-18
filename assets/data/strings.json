@@ -89,7 +89,18 @@
     "agenda_dormant": "Dormant",
     "agenda_score": "{name}  {score}",
     "civ_cooldown": "diplomacy rests {years}y",
-    "civ_ready": "diplomacy ready"
+    "civ_ready": "diplomacy ready",
+    "pantheon_panel": "Pantheon",
+    "appease": "Appease {cost}",
+    "challenge": "Challenge {cost}",
+    "deity_meta": "{domain}  ·  ally {ally}  ·  rival {rival}",
+    "deity_pressure": "{mood}  ({pressure})",
+    "pantheon_cooldown": "resting {years}y",
+    "mood_dormant": "Dormant",
+    "mood_stirring": "Stirring",
+    "mood_roused": "Roused",
+    "mood_wrathful": "Wrathful",
+    "mood_ascendant": "Ascendant"
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
@@ -120,7 +131,10 @@
     "myth_promoted": "{title} enters legend.",
     "myth_cap": "The world can hold no more myths.",
     "agenda_advanced": "You press the {agenda} agenda in {region}.",
-    "agenda_cooldown": "Diplomacy must rest before another push."
+    "agenda_cooldown": "Diplomacy must rest before another push.",
+    "deity_appeased": "You appease {deity}.",
+    "deity_challenged": "You challenge {deity}.",
+    "deity_cooldown": "{deity} will not hear you again so soon."
   },
   "heroes": {
     "panel": "Heroes & Champions",

@@ -19,6 +19,7 @@ pub struct Balance {
     pub magic: MagicBalance,
     pub myth: MythBalance,
     pub civilization: CivilizationBalance,
+    pub pantheon: PantheonBalance,
     pub player: PlayerBalance,
 }
 
@@ -234,6 +235,23 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+}
+
+/// Pantheon tool tuning (GDD 5.6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PantheonBalance {
+    pub appease_cost: i64,
+    pub challenge_cost: i64,
+    pub appease_amount: f32,
+    pub challenge_amount: f32,
+    /// How much an action ripples to the target's ally / rival.
+    pub ripple: f32,
+    pub cooldown: i32,
+    pub drift_target: f32,
+    pub drift_rate: f32,
+    /// Ascending pressure tier thresholds and their effect multipliers.
+    pub tiers: Vec<f32>,
+    pub tier_mults: Vec<f32>,
 }
 
 /// Civilization tool tuning (GDD 5.6).

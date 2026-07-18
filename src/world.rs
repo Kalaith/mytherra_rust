@@ -9,6 +9,7 @@ mod civilization;
 mod hero;
 mod magic;
 mod myth;
+mod pantheon;
 mod player;
 mod region;
 mod speculation;
@@ -22,6 +23,7 @@ pub use civilization::{agenda_score, RegionAgendas};
 pub use hero::Hero;
 pub use magic::{MagicPath, MagicState};
 pub use myth::{Myth, MythCandidate};
+pub use pantheon::{adjust_pressure, PantheonDeity};
 pub use player::PlayerState;
 pub use region::{Region, RegionStatus};
 pub use speculation::SpeculationEvent;
@@ -59,6 +61,7 @@ pub struct WorldState {
     /// Monotonic counter for unique myth ids.
     pub myth_seq: u64,
     pub civilization: Vec<RegionAgendas>,
+    pub pantheon: Vec<PantheonDeity>,
     pub speculations: Vec<SpeculationEvent>,
     /// Monotonic counter for unique speculation event ids.
     pub speculation_seq: u64,
@@ -84,6 +87,7 @@ impl WorldState {
             .iter()
             .map(|seed| RegionAgendas::new(seed.id.clone(), data.agendas.len()))
             .collect();
+        let pantheon = data.pantheon.iter().map(PantheonDeity::from_seed).collect();
         let mut world = Self {
             year: data.config.start_year,
             tick_count: 0,
@@ -97,6 +101,7 @@ impl WorldState {
             myth_candidates: Vec::new(),
             myth_seq: 0,
             civilization,
+            pantheon,
             speculations: Vec::new(),
             speculation_seq: 0,
             chronicle: Chronicle::default(),

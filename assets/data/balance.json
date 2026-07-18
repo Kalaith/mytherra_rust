@@ -154,6 +154,18 @@
     "boost_decay": 2.0,
     "advance_cooldown": 5
   },
+  "pantheon": {
+    "appease_cost": 12,
+    "challenge_cost": 18,
+    "appease_amount": 20.0,
+    "challenge_amount": 18.0,
+    "ripple": 8.0,
+    "cooldown": 3,
+    "drift_target": 40.0,
+    "drift_rate": 1.0,
+    "tiers": [25.0, 35.0, 55.0, 75.0],
+    "tier_mults": [0.4, 0.7, 1.0, 1.4]
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60
