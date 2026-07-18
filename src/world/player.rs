@@ -5,7 +5,7 @@
 //! that boundary explicit so a future server can own one row per account.
 
 use crate::data::{ChampionBalance, ChampionFocus, GameConfig, PlayerBalance};
-use crate::world::Champion;
+use crate::world::{Bet, Champion};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,6 +19,8 @@ pub struct PlayerState {
     pub nudges: u32,
     /// The player's cultivated champion roster (GDD 5.4).
     pub champions: Vec<Champion>,
+    /// The player's placed bets (GDD 5.5).
+    pub bets: Vec<Bet>,
 }
 
 impl PlayerState {
@@ -30,7 +32,19 @@ impl PlayerState {
             favor_spent: 0,
             nudges: 0,
             champions: Vec::new(),
+            bets: Vec::new(),
         }
+    }
+
+    /// Debit favor for a wager stake (no experience / nudge accounting, unlike
+    /// a divine action). Returns false without mutating if unaffordable.
+    pub fn place_stake(&mut self, stake: i64) -> bool {
+        if !self.can_afford(stake) {
+            return false;
+        }
+        self.favor -= stake;
+        self.favor_spent += stake;
+        true
     }
 
     pub fn is_champion(&self, hero_id: &str) -> bool {

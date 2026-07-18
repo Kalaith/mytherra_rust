@@ -4,6 +4,7 @@
 mod champion;
 mod hero;
 mod region;
+mod speculation;
 
 use crate::data::{fill, GameData};
 use crate::world::{EventKind, PlayerState, WorldState};
@@ -41,6 +42,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
         &mut world.chronicle,
         &data.strings.chronicle,
+        world.year,
+    );
+
+    speculation::tick_speculations(
+        &mut world.speculations,
+        &mut world.speculation_seq,
+        player,
+        &world.heroes,
+        &world.regions,
+        &mut world.chronicle,
+        &mut world.rng,
+        data,
         world.year,
     );
 

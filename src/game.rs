@@ -5,7 +5,7 @@ use crate::data::{fill, ChampionFocus, GameData};
 use crate::save::{migrate_save_value, SaveData};
 use crate::sim::tick_world;
 use crate::ui::{self, Screen, UiAction, UiContext};
-use crate::world::{EventKind, PlayerState, WorldState};
+use crate::world::{quote_event, Bet, EventKind, PlayerState, WorldState};
 use macroquad::prelude::*;
 use macroquad_toolkit::events::EventBus;
 use macroquad_toolkit::notifications::{
@@ -26,6 +26,9 @@ pub struct Game {
     selected_region: usize,
     save_exists: bool,
     tick_accum: f32,
+    /// Betting selectors (transient UI state, not persisted).
+    bet_confidence: usize,
+    bet_stake_index: usize,
 }
 
 impl Game {
@@ -53,6 +56,8 @@ impl Game {
             selected_region: 0,
             save_exists: false,
             tick_accum: 0.0,
+            bet_confidence: 1,
+            bet_stake_index: 0,
         };
         game.refresh_save_state();
         game
@@ -68,22 +73,49 @@ impl Game {
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
         };
-        // Demo a couple of champions so the heroes screen shows the roster.
-        if matches!(self.screen, Screen::Heroes) {
-            let ids: Vec<String> = self
-                .world
-                .heroes
-                .iter()
-                .filter(|h| h.is_alive)
-                .take(2)
-                .map(|h| h.id.clone())
-                .collect();
-            for id in ids {
-                self.designate_champion(&id);
+        match self.screen {
+            // Demo a couple of champions so the heroes screen shows the roster.
+            Screen::Heroes => {
+                let ids: Vec<String> = self
+                    .world
+                    .heroes
+                    .iter()
+                    .filter(|h| h.is_alive)
+                    .take(2)
+                    .map(|h| h.id.clone())
+                    .collect();
+                for id in ids {
+                    self.designate_champion(&id);
+                }
+                for _ in 0..8 {
+                    self.run_tick();
+                }
             }
-        }
-        for _ in 0..8 {
-            self.run_tick();
+            // Demo a couple of wagers so the Observatory shows events and bets.
+            Screen::Betting => {
+                for _ in 0..3 {
+                    self.run_tick();
+                }
+                let ids: Vec<String> = self
+                    .world
+                    .speculations
+                    .iter()
+                    .filter(|e| e.is_active())
+                    .take(2)
+                    .map(|e| e.id.clone())
+                    .collect();
+                for id in ids {
+                    self.place_bet(&id);
+                }
+                for _ in 0..12 {
+                    self.run_tick();
+                }
+            }
+            _ => {
+                for _ in 0..5 {
+                    self.run_tick();
+                }
+            }
         }
     }
 
@@ -110,6 +142,8 @@ impl Game {
             selected_region: self.selected_region,
             save_exists: self.save_exists,
             seconds_to_tick: (self.data.config.seconds_per_tick - self.tick_accum).max(0.0),
+            bet_confidence: self.bet_confidence,
+            bet_stake_index: self.bet_stake_index,
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);
@@ -166,6 +200,14 @@ impl Game {
             UiAction::DesignateChampion(id) => self.designate_champion(&id),
             UiAction::CultivateChampion(id) => self.cultivate_champion(&id),
             UiAction::CycleChampionFocus(id) => self.cycle_champion_focus(&id),
+            UiAction::PlaceBet(id) => self.place_bet(&id),
+            UiAction::CycleConfidence => {
+                self.bet_confidence = (self.bet_confidence + 1) % self.data.confidence_levels.len();
+            }
+            UiAction::CycleStake => {
+                self.bet_stake_index =
+                    (self.bet_stake_index + 1) % self.data.balance.betting.stake_presets.len();
+            }
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications
@@ -297,6 +339,69 @@ impl Game {
         self.notifications.info(fill(
             &self.data.strings.notifications.champion_focus_changed,
             &[("hero", hero_name), ("focus", focus.label().to_owned())],
+        ));
+    }
+
+    fn place_bet(&mut self, event_id: &str) {
+        let notes = self.data.strings.notifications.clone();
+        let betting = &self.data.balance.betting;
+        let stake =
+            betting.stake_presets[self.bet_stake_index.min(betting.stake_presets.len() - 1)];
+        let confidence = self.data.confidence_levels[self
+            .bet_confidence
+            .min(self.data.confidence_levels.len() - 1)]
+        .clone();
+
+        let Some(idx) = self
+            .world
+            .speculations
+            .iter()
+            .position(|e| e.id == event_id && e.is_active())
+        else {
+            self.notifications.warning(notes.bet_closed);
+            return;
+        };
+
+        let (quote, target_name, bet_type_name, deadline) = {
+            let event = &self.world.speculations[idx];
+            let likelihood = event.likelihood(&self.world.heroes, &self.world.regions);
+            let quote = quote_event(
+                event,
+                likelihood,
+                &confidence,
+                stake,
+                &self.data.balance.betting,
+            );
+            (
+                quote,
+                event.target_name.clone(),
+                event.bet_type_name.clone(),
+                event.deadline_year,
+            )
+        };
+
+        if !self.player.place_stake(stake) {
+            self.notifications.warning(notes.bet_unaffordable);
+            return;
+        }
+        // The player joins the "yes" side, shifting the crowd lean for later bets.
+        self.world.speculations[idx].crowd_yes += stake as f32;
+
+        self.player.bets.push(Bet {
+            event_id: event_id.to_owned(),
+            bet_type_name,
+            target_name: target_name.clone(),
+            confidence_name: confidence.name.clone(),
+            stake,
+            potential_payout: quote.payout,
+            odds: quote.odds,
+            placed_year: self.world.year,
+            deadline_year: deadline,
+            resolved: None,
+        });
+        self.notifications.success(fill(
+            &notes.bet_placed,
+            &[("target", target_name), ("stake", stake.to_string())],
         ));
     }
 

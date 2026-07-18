@@ -12,6 +12,7 @@ pub struct Balance {
     pub region: RegionBalance,
     pub hero: HeroBalance,
     pub champion: ChampionBalance,
+    pub betting: BettingBalance,
     pub player: PlayerBalance,
 }
 
@@ -153,6 +154,31 @@ impl ChampionFocuses {
 pub struct FocusParams {
     pub cost_modifier: i64,
     pub quest_bonus: f32,
+}
+
+/// Divine Observatory betting tuning (GDD 5.5).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BettingBalance {
+    /// How many active (unresolved) speculation events to keep available.
+    pub active_events: usize,
+    /// Hard cap on stored events before old resolved ones are pruned.
+    pub event_cap: usize,
+    /// Selectable stake amounts.
+    pub stake_presets: Vec<i64>,
+    /// Range of simulated crowd stake seeded onto each outcome.
+    pub crowd_seed_min: f32,
+    pub crowd_seed_max: f32,
+    /// Bounds on the world-state-derived target odds modifier.
+    pub target_mod_min: f32,
+    pub target_mod_max: f32,
+    /// Bounds on the crowd-lean payout adjustment.
+    pub crowd_lean_min: f32,
+    pub crowd_lean_max: f32,
+    /// Bounds on the final gross payout multiplier.
+    pub payout_min_mult: f32,
+    pub payout_max_mult: f32,
+    /// Floor on final odds.
+    pub min_odds: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

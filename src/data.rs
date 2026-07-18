@@ -6,6 +6,7 @@
 
 mod action;
 mod balance;
+mod bet;
 mod champion;
 mod config;
 mod hero;
@@ -13,7 +14,10 @@ mod region;
 pub mod strings;
 
 pub use action::RegionActionDef;
-pub use balance::{Balance, ChampionBalance, HeroBalance, PlayerBalance, RegionBalance};
+pub use balance::{
+    Balance, BettingBalance, ChampionBalance, HeroBalance, PlayerBalance, RegionBalance,
+};
+pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
 pub use config::GameConfig;
 pub use hero::{HeroRole, HeroSeed};
@@ -28,6 +32,9 @@ const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
 const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
 const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
 const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
+const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
+const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
+const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
 const BALANCE_JSON: &str = include_str!("../assets/data/balance.json");
 const STRINGS_JSON: &str = include_str!("../assets/data/strings.json");
 
@@ -38,6 +45,9 @@ pub struct GameData {
     pub regions: Vec<RegionSeed>,
     pub region_actions: DataRegistry<RegionActionDef>,
     pub heroes: Vec<HeroSeed>,
+    pub bet_types: Vec<BetType>,
+    pub confidence_levels: Vec<ConfidenceLevel>,
+    pub timeframes: Vec<TimeframeModifier>,
     pub balance: Balance,
     pub strings: Strings,
 }
@@ -48,11 +58,17 @@ impl GameData {
         let regions: Vec<RegionSeed> = load_embedded_json(REGIONS_JSON)?;
         let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
         let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
+        let bet_types: Vec<BetType> = load_embedded_json(BET_TYPES_JSON)?;
+        let confidence_levels: Vec<ConfidenceLevel> = load_embedded_json(CONFIDENCE_JSON)?;
+        let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
         let balance: Balance = load_embedded_json_labeled("balance", BALANCE_JSON)?;
         let strings: Strings = load_embedded_json_labeled("strings", STRINGS_JSON)?;
 
         if regions.is_empty() {
             return Err("regions.json contained no regions".to_owned());
+        }
+        if bet_types.is_empty() || confidence_levels.is_empty() || timeframes.is_empty() {
+            return Err("betting config tables must not be empty".to_owned());
         }
 
         Ok(Self {
@@ -60,6 +76,9 @@ impl GameData {
             regions,
             region_actions,
             heroes,
+            bet_types,
+            confidence_levels,
+            timeframes,
             balance,
             strings,
         })

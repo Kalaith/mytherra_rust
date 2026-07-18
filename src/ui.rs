@@ -4,6 +4,7 @@
 //! returns `UiAction` intents; it never mutates world or player state directly.
 //! `Game::apply_action` interprets the intents.
 
+mod betting;
 mod dashboard;
 mod heroes;
 mod placeholder;
@@ -65,6 +66,12 @@ pub enum UiAction {
     CultivateChampion(String),
     /// Cycle the cultivation focus of the champion bonded to the given hero id.
     CycleChampionFocus(String),
+    /// Place a bet on the given speculation event id (using current selectors).
+    PlaceBet(String),
+    /// Cycle the selected confidence tier for the next bet.
+    CycleConfidence,
+    /// Cycle the selected stake preset for the next bet.
+    CycleStake,
     AdvanceTick,
     Save,
     Load,
@@ -80,6 +87,10 @@ pub struct UiContext<'a> {
     pub selected_region: usize,
     pub save_exists: bool,
     pub seconds_to_tick: f32,
+    /// Index into `data.confidence_levels` for the next bet.
+    pub bet_confidence: usize,
+    /// Index into `balance.betting.stake_presets` for the next bet.
+    pub bet_stake_index: usize,
     pub mouse: Vec2,
 }
 
@@ -96,7 +107,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
         Screen::Regions => regions::draw(ctx, &mut actions),
         Screen::Heroes => heroes::draw(ctx, &mut actions),
         Screen::DivineTools => placeholder::draw(ctx, &placeholders.divine_tools),
-        Screen::Betting => placeholder::draw(ctx, &placeholders.betting),
+        Screen::Betting => betting::draw(ctx, &mut actions),
         Screen::Eras => placeholder::draw(ctx, &placeholders.eras),
     }
 

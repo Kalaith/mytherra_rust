@@ -1,17 +1,21 @@
 //! The shared world state: everything the simulation advances that is NOT
 //! private to one player (GDD 6 "shared/global tables").
 
+mod bet;
 mod champion;
 mod chronicle;
 mod hero;
 mod player;
 mod region;
+mod speculation;
 
+pub use bet::{quote_event, Bet};
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
 pub use hero::Hero;
 pub use player::PlayerState;
 pub use region::{Region, RegionStatus};
+pub use speculation::SpeculationEvent;
 
 use crate::data::GameData;
 use macroquad_toolkit::rng::SeededRng;
@@ -35,6 +39,9 @@ pub struct WorldState {
     pub tick_count: u64,
     pub regions: Vec<Region>,
     pub heroes: Vec<Hero>,
+    pub speculations: Vec<SpeculationEvent>,
+    /// Monotonic counter for unique speculation event ids.
+    pub speculation_seq: u64,
     pub chronicle: Chronicle,
     /// The world's own deterministic RNG (GDD 5.8); serialized so saves resume
     /// the exact same sequence.
@@ -55,6 +62,8 @@ impl WorldState {
             tick_count: 0,
             regions,
             heroes,
+            speculations: Vec::new(),
+            speculation_seq: 0,
             chronicle: Chronicle::default(),
             rng: SeededRng::new(data.config.world_seed),
         };

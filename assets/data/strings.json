@@ -20,10 +20,6 @@
       "title": "Divine Tools",
       "body": "Artifacts, Weather, Omens, Magic, Myths, Civilization, and the Pantheon are coming."
     },
-    "betting": {
-      "title": "Divine Observatory",
-      "body": "Speculation events, house odds, and the crowd-lean adjustment are coming."
-    },
     "eras": {
       "title": "Eras",
       "body": "Era pressure, legacy, and transition history are coming."
@@ -59,7 +55,10 @@
     "champion_designated": "{hero} becomes your champion.",
     "champion_designate_failed": "Roster full, or already your champion.",
     "champion_cultivated": "You deepen your bond with {hero}.",
-    "champion_focus_changed": "{hero} now channels {focus}."
+    "champion_focus_changed": "{hero} now channels {focus}.",
+    "bet_placed": "Wager placed on {target} ({stake} favor).",
+    "bet_unaffordable": "Not enough favor for that stake.",
+    "bet_closed": "That speculation has already resolved."
   },
   "heroes": {
     "panel": "Heroes & Champions",
@@ -79,6 +78,22 @@
     "quest": "Quest {progress}/{goal}",
     "roster_label": "Roster"
   },
+  "betting": {
+    "panel_events": "Speculation Events",
+    "panel_bets": "Your Wagers",
+    "no_events": "The Observatory is quiet.",
+    "no_bets": "You hold no wagers.",
+    "confidence_btn": "{confidence}",
+    "stake_btn": "Stake {stake}",
+    "place": "Bet {stake} -> {payout}",
+    "odds": "Odds {odds}x  ·  crowd {crowd}% yes",
+    "deadline": "by year {deadline}",
+    "pending": "Pending",
+    "won": "Won",
+    "lost": "Lost",
+    "bet_line": "{bet_type}  ·  {target}",
+    "bet_meta": "{confidence}  ·  stake {stake}  ·  win {payout}  ·  by {deadline}"
+  },
   "chronicle": {
     "world_awakens": "The world awakens.",
     "year_dawns": "Year {year} dawns. Favor +{favor}.",
@@ -87,6 +102,8 @@
     "hero_level_up": "{hero} of {region} rises to level {level}.",
     "hero_death": "{hero} has fallen in {region}.",
     "champion_resolved": "{hero} quells a rivalry in {region}.",
-    "champion_escalated": "{hero}'s rivalry in {region} escalates."
+    "champion_escalated": "{hero}'s rivalry in {region} escalates.",
+    "bet_won": "Your wager on {target} pays out {payout} favor.",
+    "bet_lost": "Your wager on {target} lapses unfulfilled."
   }
 }

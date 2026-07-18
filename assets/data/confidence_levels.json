@@ -1,0 +1,30 @@
+[
+  {
+    "id": "long_shot",
+    "name": "Long shot",
+    "odds_modifier": 2.0,
+    "stake_multiplier": 0.5,
+    "house_edge": 0.92
+  },
+  {
+    "id": "possible",
+    "name": "Possible",
+    "odds_modifier": 1.0,
+    "stake_multiplier": 1.0,
+    "house_edge": 0.88
+  },
+  {
+    "id": "likely",
+    "name": "Likely",
+    "odds_modifier": 0.7,
+    "stake_multiplier": 1.5,
+    "house_edge": 0.86
+  },
+  {
+    "id": "near_certain",
+    "name": "Near-certain",
+    "odds_modifier": 0.4,
+    "stake_multiplier": 2.0,
+    "house_edge": 0.8
+  }
+]

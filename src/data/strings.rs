@@ -15,6 +15,7 @@ pub struct Strings {
     pub placeholders: Placeholders,
     pub ui: UiText,
     pub heroes: HeroText,
+    pub betting: BettingText,
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
 }
@@ -48,7 +49,6 @@ pub struct PlaceholderText {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Placeholders {
     pub divine_tools: PlaceholderText,
-    pub betting: PlaceholderText,
     pub eras: PlaceholderText,
 }
 
@@ -70,6 +70,24 @@ pub struct HeroText {
     pub champion_meta: String,
     pub quest: String,
     pub roster_label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BettingText {
+    pub panel_events: String,
+    pub panel_bets: String,
+    pub no_events: String,
+    pub no_bets: String,
+    pub confidence_btn: String,
+    pub stake_btn: String,
+    pub place: String,
+    pub odds: String,
+    pub deadline: String,
+    pub pending: String,
+    pub won: String,
+    pub lost: String,
+    pub bet_line: String,
+    pub bet_meta: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,6 +124,9 @@ pub struct Notifications {
     pub champion_designate_failed: String,
     pub champion_cultivated: String,
     pub champion_focus_changed: String,
+    pub bet_placed: String,
+    pub bet_unaffordable: String,
+    pub bet_closed: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -118,6 +139,8 @@ pub struct ChronicleText {
     pub hero_death: String,
     pub champion_resolved: String,
     pub champion_escalated: String,
+    pub bet_won: String,
+    pub bet_lost: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

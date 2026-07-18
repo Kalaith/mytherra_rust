@@ -1,0 +1,5 @@
+[
+  { "id": "near", "name": "Near", "years": 10, "modifier": 1.2 },
+  { "id": "generation", "name": "Generation", "years": 30, "modifier": 1.0 },
+  { "id": "era", "name": "Era", "years": 60, "modifier": 0.85 }
+]

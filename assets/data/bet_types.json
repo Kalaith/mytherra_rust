@@ -1,0 +1,50 @@
+[
+  {
+    "id": "hero_fall",
+    "name": "Hero's Fall",
+    "base_odds": 2.4,
+    "predicate": "hero_dies",
+    "threshold": 0.0,
+    "description": "{target} will fall before the wager expires."
+  },
+  {
+    "id": "ascension",
+    "name": "Ascension",
+    "base_odds": 2.0,
+    "predicate": "hero_level_at_least",
+    "threshold": 14.0,
+    "description": "{target} will rise to level {threshold}."
+  },
+  {
+    "id": "golden_age",
+    "name": "Golden Age",
+    "base_odds": 2.6,
+    "predicate": "region_prosperity_at_least",
+    "threshold": 80.0,
+    "description": "{target}'s prosperity will reach {threshold}."
+  },
+  {
+    "id": "enduring_peace",
+    "name": "Enduring Peace",
+    "base_odds": 1.8,
+    "predicate": "region_prosperity_at_least",
+    "threshold": 65.0,
+    "description": "{target}'s prosperity will hold at {threshold}."
+  },
+  {
+    "id": "descent",
+    "name": "Descent",
+    "base_odds": 2.2,
+    "predicate": "region_chaos_at_least",
+    "threshold": 70.0,
+    "description": "{target}'s chaos will surge to {threshold}."
+  },
+  {
+    "id": "calamity",
+    "name": "Calamity",
+    "base_odds": 3.0,
+    "predicate": "region_crisis",
+    "threshold": 0.0,
+    "description": "{target} will fall into crisis."
+  }
+]
