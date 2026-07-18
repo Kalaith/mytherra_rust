@@ -27,6 +27,7 @@ pub struct Balance {
     pub culture: CultureBalance,
     pub trade: TradeBalance,
     pub player: PlayerBalance,
+    pub settings: SettingsBalance,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -427,4 +428,11 @@ pub struct MagicBalance {
 pub struct PlayerBalance {
     pub level_base_cost: i64,
     pub level_cost_step: i64,
+}
+
+/// Settings-screen tuning (GDD 10): the selectable auto-tick cadences, in real
+/// seconds between world ticks.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettingsBalance {
+    pub tick_speed_presets: Vec<f32>,
 }

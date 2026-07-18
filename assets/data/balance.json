@@ -244,5 +244,8 @@
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60
+  },
+  "settings": {
+    "tick_speed_presets": [2.0, 5.0, 10.0, 30.0]
   }
 }

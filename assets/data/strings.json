@@ -126,6 +126,22 @@
     "count_line": "{shown} of {total} events  ·  {filter}",
     "empty_filtered": "No {filter} events recorded yet."
   },
+  "settings": {
+    "panel": "Settings",
+    "tick_speed_title": "World Tick Speed",
+    "tick_speed_hint": "Real seconds between automatic world ticks.",
+    "speed_chip": "{seconds}s",
+    "pacing_title": "Pacing",
+    "pause": "Pause World",
+    "resume": "Resume World",
+    "status_running": "The world advances automatically.",
+    "status_paused": "The world is paused; advance it with Space.",
+    "world_title": "This World",
+    "info_display": "World:  {name}",
+    "info_version": "Version:  {version}",
+    "info_seed": "Seed:  {seed}",
+    "info_year": "Year:  {year}  ·  {regions} regions watched"
+  },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
     "not_enough_favor": "Not enough Divine Favor.",

@@ -38,6 +38,10 @@ pub struct Game {
     weather_intensity: usize,
     /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     chronicle_filter: usize,
+    /// Auto-tick cadence (index into `balance.settings.tick_speed_presets`).
+    tick_speed_index: usize,
+    /// Whether automatic world ticking is paused (Settings, GDD 10).
+    paused: bool,
 }
 
 impl Game {
@@ -54,6 +58,15 @@ impl Game {
             &data.strings.notifications.awaken,
             &[("regions", world.regions.len().to_string())],
         ));
+
+        // Start at the tick-speed preset matching the configured default.
+        let tick_speed_index = data
+            .balance
+            .settings
+            .tick_speed_presets
+            .iter()
+            .position(|s| (*s - data.config.seconds_per_tick).abs() < f32::EPSILON)
+            .unwrap_or(0);
 
         let mut game = Self {
             data,
@@ -72,6 +85,8 @@ impl Game {
             weather_pattern: 0,
             weather_intensity: 0,
             chronicle_filter: 0,
+            tick_speed_index,
+            paused: false,
         };
         game.refresh_save_state();
         game
@@ -87,6 +102,7 @@ impl Game {
             | "civilization" | "pantheon" => Screen::DivineTools,
             "betting" => Screen::Betting,
             "eras" => Screen::Eras,
+            "settings" => Screen::Settings,
             _ => Screen::Dashboard,
         };
         self.divine_tab = match scene {
@@ -227,7 +243,7 @@ impl Game {
             screen: self.screen,
             selected_region: self.selected_region,
             save_exists: self.save_exists,
-            seconds_to_tick: (self.data.config.seconds_per_tick - self.tick_accum).max(0.0),
+            seconds_to_tick: (self.tick_interval() - self.tick_accum).max(0.0),
             bet_confidence: self.bet_confidence,
             bet_stake_index: self.bet_stake_index,
             divine_tab: self.divine_tab,
@@ -235,6 +251,8 @@ impl Game {
             weather_pattern: self.weather_pattern,
             weather_intensity: self.weather_intensity,
             chronicle_filter: self.chronicle_filter,
+            tick_speed_index: self.tick_speed_index,
+            paused: self.paused,
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);
@@ -266,9 +284,25 @@ impl Game {
         }
     }
 
+    /// Real seconds between automatic ticks at the selected pacing preset.
+    fn tick_interval(&self) -> f32 {
+        self.data
+            .balance
+            .settings
+            .tick_speed_presets
+            .get(self.tick_speed_index)
+            .copied()
+            .unwrap_or(self.data.config.seconds_per_tick)
+            .max(0.1)
+    }
+
     fn advance_tick_timer(&mut self, dt: f32) {
+        if self.paused {
+            self.tick_accum = 0.0;
+            return;
+        }
         self.tick_accum += dt;
-        let interval = self.data.config.seconds_per_tick.max(0.1);
+        let interval = self.tick_interval();
         while self.tick_accum >= interval {
             self.tick_accum -= interval;
             self.run_tick();
@@ -300,6 +334,12 @@ impl Game {
                     (self.bet_stake_index + 1) % self.data.balance.betting.stake_presets.len();
             }
             UiAction::SetChronicleFilter(index) => self.chronicle_filter = index,
+            UiAction::SetTickSpeed(index) => {
+                if index < self.data.balance.settings.tick_speed_presets.len() {
+                    self.tick_speed_index = index;
+                }
+            }
+            UiAction::TogglePause => self.paused = !self.paused,
             UiAction::SelectDivineTab(index) => self.divine_tab = index,
             UiAction::CycleArtifactFocus => self.create_focus = self.create_focus.next(),
             UiAction::CreateArtifact => self.create_artifact(),

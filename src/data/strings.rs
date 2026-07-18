@@ -18,8 +18,27 @@ pub struct Strings {
     pub divine: DivineText,
     pub eras: EraText,
     pub event_log: EventLogText,
+    pub settings: SettingsText,
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettingsText {
+    pub panel: String,
+    pub tick_speed_title: String,
+    pub tick_speed_hint: String,
+    pub speed_chip: String,
+    pub pacing_title: String,
+    pub pause: String,
+    pub resume: String,
+    pub status_running: String,
+    pub status_paused: String,
+    pub world_title: String,
+    pub info_display: String,
+    pub info_version: String,
+    pub info_seed: String,
+    pub info_year: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

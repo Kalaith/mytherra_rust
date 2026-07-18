@@ -11,6 +11,7 @@ mod divine_tools;
 mod eras;
 mod heroes;
 mod regions;
+mod settings;
 mod shell;
 mod widgets;
 
@@ -32,10 +33,11 @@ pub enum Screen {
     DivineTools,
     Betting,
     Eras,
+    Settings,
 }
 
 impl Screen {
-    pub const ALL: [Screen; 7] = [
+    pub const ALL: [Screen; 8] = [
         Screen::Dashboard,
         Screen::Chronicle,
         Screen::Regions,
@@ -43,6 +45,7 @@ impl Screen {
         Screen::DivineTools,
         Screen::Betting,
         Screen::Eras,
+        Screen::Settings,
     ];
 
     pub fn label(self) -> &'static str {
@@ -54,6 +57,7 @@ impl Screen {
             Screen::DivineTools => "Divine Tools",
             Screen::Betting => "Observatory",
             Screen::Eras => "Eras",
+            Screen::Settings => "Settings",
         }
     }
 }
@@ -79,6 +83,10 @@ pub enum UiAction {
     CycleStake,
     /// Set the Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     SetChronicleFilter(usize),
+    /// Select the auto-tick cadence by preset index (Settings, GDD 10).
+    SetTickSpeed(usize),
+    /// Toggle automatic world ticking on/off (Settings, GDD 10).
+    TogglePause,
     /// Select a divine-tool sub-tab by index.
     SelectDivineTab(usize),
     /// Cycle the focus of the next artifact to be forged.
@@ -135,6 +143,10 @@ pub struct UiContext<'a> {
     pub weather_intensity: usize,
     /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     pub chronicle_filter: usize,
+    /// Selected auto-tick cadence (index into `balance.settings.tick_speed_presets`).
+    pub tick_speed_index: usize,
+    /// Whether automatic world ticking is paused.
+    pub paused: bool,
     pub mouse: Vec2,
 }
 
@@ -153,6 +165,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
         Screen::DivineTools => divine_tools::draw(ctx, &mut actions),
         Screen::Betting => betting::draw(ctx, &mut actions),
         Screen::Eras => eras::draw(ctx),
+        Screen::Settings => settings::draw(ctx, &mut actions),
     }
 
     shell::draw_footer(ctx);
