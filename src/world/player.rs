@@ -4,7 +4,8 @@
 //! shared. In this local build there is a single player, but the type keeps
 //! that boundary explicit so a future server can own one row per account.
 
-use crate::data::{GameConfig, PlayerBalance};
+use crate::data::{ChampionBalance, ChampionFocus, GameConfig, PlayerBalance};
+use crate::world::Champion;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,6 +17,8 @@ pub struct PlayerState {
     pub favor_spent: i64,
     /// Number of divine nudges the player has performed.
     pub nudges: u32,
+    /// The player's cultivated champion roster (GDD 5.4).
+    pub champions: Vec<Champion>,
 }
 
 impl PlayerState {
@@ -26,7 +29,32 @@ impl PlayerState {
             experience: 0,
             favor_spent: 0,
             nudges: 0,
+            champions: Vec::new(),
         }
+    }
+
+    pub fn is_champion(&self, hero_id: &str) -> bool {
+        self.champions.iter().any(|c| c.hero_id == hero_id)
+    }
+
+    pub fn champion_mut(&mut self, hero_id: &str) -> Option<&mut Champion> {
+        self.champions.iter_mut().find(|c| c.hero_id == hero_id)
+    }
+
+    /// Designate a hero as a champion if there is room and they aren't already
+    /// one. Returns false without mutating otherwise.
+    pub fn designate_champion(
+        &mut self,
+        hero_id: &str,
+        focus: ChampionFocus,
+        balance: &ChampionBalance,
+    ) -> bool {
+        if self.is_champion(hero_id) || self.champions.len() >= balance.max_roster {
+            return false;
+        }
+        self.champions
+            .push(Champion::designate(hero_id.to_owned(), focus));
+        true
     }
 
     pub fn can_afford(&self, cost: i64) -> bool {

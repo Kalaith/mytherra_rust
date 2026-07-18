@@ -45,6 +45,41 @@
     },
     "move_chance": 0.12
   },
+  "champion": {
+    "max_roster": 3,
+    "designate_cost": 20,
+    "cultivate_bond_gain": 8.0,
+    "base_cultivate_cost": 15,
+    "rank_per_bond": 25.0,
+    "rank_per_quests": 3.0,
+    "rank_cap": 10,
+    "quest": {
+      "base": 7.0,
+      "rank_mult": 3.0,
+      "bond_div": 12.0,
+      "level_div": 8.0,
+      "min": 8.0,
+      "max": 35.0,
+      "goal": 100.0
+    },
+    "rivalry": {
+      "strength_bond": 1.0,
+      "strength_rank": 8.0,
+      "strength_level": 2.0,
+      "threat_danger": 0.5,
+      "threat_chaos_div": 3.0,
+      "resolved_danger": -5.0,
+      "resolved_chaos": -3.0,
+      "resolved_prosperity": 1.0,
+      "escalated_danger": 4.0,
+      "escalated_chaos": 3.0
+    },
+    "focuses": {
+      "valor": { "cost_modifier": 4, "quest_bonus": 2.0 },
+      "wisdom": { "cost_modifier": 2, "quest_bonus": 4.0 },
+      "devotion": { "cost_modifier": 0, "quest_bonus": 3.0 }
+    }
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

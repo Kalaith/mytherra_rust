@@ -4,12 +4,14 @@
 //! than in Rust source, per the data-driven design rule. Rust only names the
 //! shape; designers tune the values in JSON.
 
+use crate::data::champion::ChampionFocus;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Balance {
     pub region: RegionBalance,
     pub hero: HeroBalance,
+    pub champion: ChampionBalance,
     pub player: PlayerBalance,
 }
 
@@ -86,6 +88,71 @@ pub struct DeathParams {
     pub danger_divisor: f32,
     pub level_divisor: f32,
     pub min_chance: f32,
+}
+
+/// Champion cultivation, questing, and rivalry tuning (GDD 5.4).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChampionBalance {
+    pub max_roster: usize,
+    pub designate_cost: i64,
+    pub cultivate_bond_gain: f32,
+    pub base_cultivate_cost: i64,
+    pub rank_per_bond: f32,
+    pub rank_per_quests: f32,
+    pub rank_cap: u32,
+    pub quest: QuestParams,
+    pub rivalry: RivalryParams,
+    pub focuses: ChampionFocuses,
+}
+
+/// Per-tick quest-progress formula parameters.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuestParams {
+    pub base: f32,
+    pub rank_mult: f32,
+    pub bond_div: f32,
+    pub level_div: f32,
+    pub min: f32,
+    pub max: f32,
+    pub goal: f32,
+}
+
+/// Deterministic rivalry-resolution parameters (strength vs. threat).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RivalryParams {
+    pub strength_bond: f32,
+    pub strength_rank: f32,
+    pub strength_level: f32,
+    pub threat_danger: f32,
+    pub threat_chaos_div: f32,
+    pub resolved_danger: f32,
+    pub resolved_chaos: f32,
+    pub resolved_prosperity: f32,
+    pub escalated_danger: f32,
+    pub escalated_chaos: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChampionFocuses {
+    pub valor: FocusParams,
+    pub wisdom: FocusParams,
+    pub devotion: FocusParams,
+}
+
+impl ChampionFocuses {
+    pub fn get(&self, focus: ChampionFocus) -> &FocusParams {
+        match focus {
+            ChampionFocus::Valor => &self.valor,
+            ChampionFocus::Wisdom => &self.wisdom,
+            ChampionFocus::Devotion => &self.devotion,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FocusParams {
+    pub cost_modifier: i64,
+    pub quest_bonus: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

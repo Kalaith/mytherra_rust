@@ -61,6 +61,15 @@ pub struct HeroText {
     pub life: String,
     pub alive: String,
     pub fallen: String,
+    pub champions_title: String,
+    pub no_champions: String,
+    pub designate: String,
+    pub champion_tag: String,
+    pub cultivate: String,
+    pub focus_cycle: String,
+    pub champion_meta: String,
+    pub quest: String,
+    pub roster_label: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,6 +102,10 @@ pub struct Notifications {
     pub load_failed: String,
     pub new_world: String,
     pub unknown_action: String,
+    pub champion_designated: String,
+    pub champion_designate_failed: String,
+    pub champion_cultivated: String,
+    pub champion_focus_changed: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,6 +116,8 @@ pub struct ChronicleText {
     pub divine_action: String,
     pub hero_level_up: String,
     pub hero_death: String,
+    pub champion_resolved: String,
+    pub champion_escalated: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

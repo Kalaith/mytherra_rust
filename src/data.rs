@@ -6,13 +6,15 @@
 
 mod action;
 mod balance;
+mod champion;
 mod config;
 mod hero;
 mod region;
 pub mod strings;
 
 pub use action::RegionActionDef;
-pub use balance::{Balance, HeroBalance, PlayerBalance, RegionBalance};
+pub use balance::{Balance, ChampionBalance, HeroBalance, PlayerBalance, RegionBalance};
+pub use champion::ChampionFocus;
 pub use config::GameConfig;
 pub use hero::{HeroRole, HeroSeed};
 pub use region::{ClimateType, Culture, RegionSeed};

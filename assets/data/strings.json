@@ -55,7 +55,11 @@
     "world_restored": "World restored.",
     "load_failed": "Load failed: {error}",
     "new_world": "A new world takes shape.",
-    "unknown_action": "Unknown action: {id}"
+    "unknown_action": "Unknown action: {id}",
+    "champion_designated": "{hero} becomes your champion.",
+    "champion_designate_failed": "Roster full, or already your champion.",
+    "champion_cultivated": "You deepen your bond with {hero}.",
+    "champion_focus_changed": "{hero} now channels {focus}."
   },
   "heroes": {
     "panel": "Heroes & Champions",
@@ -64,7 +68,16 @@
     "level": "Lv {level}",
     "life": "Age {age} / ~{life}",
     "alive": "Alive",
-    "fallen": "Fallen"
+    "fallen": "Fallen",
+    "champions_title": "Champions ({count}/{max})",
+    "no_champions": "Designate a hero below to cultivate a champion.",
+    "designate": "Designate",
+    "champion_tag": "Champion",
+    "cultivate": "Cultivate {cost}",
+    "focus_cycle": "{focus}",
+    "champion_meta": "Rank {rank}  ·  {quests} quests  ·  Bond {bond}",
+    "quest": "Quest {progress}/{goal}",
+    "roster_label": "Roster"
   },
   "chronicle": {
     "world_awakens": "The world awakens.",
@@ -72,6 +85,8 @@
     "crisis": "{region} has slipped into crisis.",
     "divine_action": "A deity used {action} on {region}.",
     "hero_level_up": "{hero} of {region} rises to level {level}.",
-    "hero_death": "{hero} has fallen in {region}."
+    "hero_death": "{hero} has fallen in {region}.",
+    "champion_resolved": "{hero} quells a rivalry in {region}.",
+    "champion_escalated": "{hero}'s rivalry in {region} escalates."
   }
 }

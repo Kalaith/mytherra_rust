@@ -1,11 +1,13 @@
 //! The shared world state: everything the simulation advances that is NOT
 //! private to one player (GDD 6 "shared/global tables").
 
+mod champion;
 mod chronicle;
 mod hero;
 mod player;
 mod region;
 
+pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
 pub use hero::Hero;
 pub use player::PlayerState;

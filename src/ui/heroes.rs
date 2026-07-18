@@ -1,30 +1,149 @@
-//! Heroes screen: the roster of heroes across the world, their vocations,
-//! levels, and lifespans (GDD 10 "Heroes & Champions"). Read-only for now;
-//! champion cultivation actions arrive in a later iteration.
+//! Heroes screen: cultivated champions on the left, the full hero roster with
+//! designation on the right (GDD 10 "Heroes & Champions").
 
 use crate::data::fill;
-use crate::ui::widgets::good_stat_color;
-use crate::ui::{content_rect, UiContext};
-use crate::world::Hero;
+use crate::ui::widgets::{button, good_stat_color};
+use crate::ui::{content_rect, UiAction, UiContext};
+use crate::world::{Champion, Hero};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
 
-pub fn draw(ctx: &UiContext<'_>) {
-    let strings = &ctx.data.strings.heroes;
-    let rect = content_rect();
-    let style = SurfaceStyle::new(Color::new(0.07, 0.075, 0.095, 0.96))
-        .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.5))
-        .with_header(42.0, Color::new(0.1, 0.115, 0.145, 1.0))
-        .with_header_divider(1.0, Color::new(0.38, 0.45, 0.58, 0.4));
-    draw_surface_with_title(
-        rect,
-        Some(&strings.panel),
-        &style,
-        TextStyle::new(20.0, dark::TEXT),
+pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
+    let area = content_rect();
+    let left = Rect::new(area.x, area.y, 372.0, area.h);
+    let right = Rect::new(
+        left.right() + 16.0,
+        area.y,
+        area.right() - left.right() - 16.0,
+        area.h,
     );
 
-    let content = rect.inset(18.0);
+    draw_champions_panel(ctx, left, actions);
+    draw_roster_panel(ctx, right, actions);
+}
+
+fn draw_champions_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
+    let strings = &ctx.data.strings.heroes;
+    let max = ctx.data.balance.champion.max_roster;
+    let title = fill(
+        &strings.champions_title,
+        &[
+            ("count", ctx.player.champions.len().to_string()),
+            ("max", max.to_string()),
+        ],
+    );
+    draw_titled(rect, &title);
+    let content = rect.inset(16.0);
+
+    if ctx.player.champions.is_empty() {
+        draw_ui_text_ex(
+            &strings.no_champions,
+            content.x,
+            content.y + 34.0,
+            TextStyle::new(15.0, dark::TEXT_DIM).params(),
+        );
+        return;
+    }
+
+    let mut y = content.y + 30.0;
+    for champion in &ctx.player.champions {
+        draw_champion_card(
+            ctx,
+            champion,
+            Rect::new(content.x, y, content.w, 116.0),
+            actions,
+        );
+        y += 128.0;
+    }
+}
+
+fn draw_champion_card(
+    ctx: &UiContext<'_>,
+    champion: &Champion,
+    rect: Rect,
+    actions: &mut Vec<UiAction>,
+) {
+    let strings = &ctx.data.strings.heroes;
+    let balance = &ctx.data.balance.champion;
+    let hero = ctx.world.heroes.iter().find(|h| h.id == champion.hero_id);
+    let alive = hero.map(|h| h.is_alive).unwrap_or(false);
+    let name = hero.map(|h| h.name.as_str()).unwrap_or(&champion.hero_id);
+
+    draw_surface(
+        rect,
+        &SurfaceStyle::new(Color::new(0.1, 0.11, 0.15, 1.0))
+            .with_left_accent(4.0, if alive { dark::ACCENT } else { dark::TEXT_DIM })
+            .with_border(1.0, Color::new(0.4, 0.46, 0.58, 0.35)),
+    );
+    draw_ui_text_ex(
+        name,
+        rect.x + 14.0,
+        rect.y + 24.0,
+        TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+    );
+    draw_ui_text_ex(
+        &fill(
+            &strings.champion_meta,
+            &[
+                ("rank", champion.rank.to_string()),
+                ("quests", champion.quests.to_string()),
+                ("bond", format!("{:.0}", champion.bond)),
+            ],
+        ),
+        rect.x + 14.0,
+        rect.y + 46.0,
+        TextStyle::new(13.0, dark::TEXT_DIM).params(),
+    );
+
+    // Quest progress meter.
+    meter(
+        Rect::new(rect.x + 14.0, rect.y + 58.0, rect.w - 28.0, 14.0),
+        champion.quest_progress,
+        balance.quest.goal,
+        dark::ACCENT,
+        Some(&fill(
+            &strings.quest,
+            &[
+                ("progress", format!("{:.0}", champion.quest_progress)),
+                ("goal", format!("{:.0}", balance.quest.goal)),
+            ],
+        )),
+    );
+
+    // Focus cycle + cultivate buttons.
+    let btn_y = rect.bottom() - 34.0;
+    let half = (rect.w - 28.0 - 8.0) / 2.0;
+    if button(
+        Rect::new(rect.x + 14.0, btn_y, half, 28.0),
+        &fill(
+            &strings.focus_cycle,
+            &[("focus", champion.focus.label().to_owned())],
+        ),
+        true,
+        ButtonTone::Secondary,
+        ctx.mouse,
+    ) {
+        actions.push(UiAction::CycleChampionFocus(champion.hero_id.clone()));
+    }
+    let cost = champion.cultivate_cost(balance);
+    let can = alive && ctx.player.can_afford(cost);
+    if button(
+        Rect::new(rect.x + 22.0 + half, btn_y, half, 28.0),
+        &fill(&strings.cultivate, &[("cost", cost.to_string())]),
+        can,
+        ButtonTone::Positive,
+        ctx.mouse,
+    ) {
+        actions.push(UiAction::CultivateChampion(champion.hero_id.clone()));
+    }
+}
+
+fn draw_roster_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
+    let strings = &ctx.data.strings.heroes;
+    draw_titled(rect, &strings.roster_label);
+    let content = rect.inset(16.0);
+
     let living = ctx.world.living_heroes();
     draw_ui_text_ex(
         &fill(
@@ -35,46 +154,44 @@ pub fn draw(ctx: &UiContext<'_>) {
             ],
         ),
         content.x,
-        content.y + 30.0,
+        content.y + 26.0,
         TextStyle::new(15.0, dark::TEXT_DIM).params(),
     );
 
-    if ctx.world.heroes.is_empty() {
-        draw_ui_text_ex(
-            &strings.empty,
-            content.x,
-            content.y + 64.0,
-            TextStyle::new(15.0, dark::TEXT_DIM).params(),
+    let roster_full = ctx.player.champions.len() >= ctx.data.balance.champion.max_roster;
+    let mut y = content.y + 42.0;
+    for hero in &ctx.world.heroes {
+        draw_hero_card(
+            ctx,
+            hero,
+            Rect::new(content.x, y, content.w, 66.0),
+            roster_full,
+            actions,
         );
-        return;
-    }
-
-    // Two columns of hero cards.
-    let top = content.y + 48.0;
-    let col_gap = 20.0;
-    let card_w = (content.w - col_gap) / 2.0;
-    let card_h = 92.0;
-    let row_gap = 12.0;
-    for (index, hero) in ctx.world.heroes.iter().enumerate() {
-        let col = (index % 2) as f32;
-        let row = (index / 2) as f32;
-        let x = content.x + col * (card_w + col_gap);
-        let y = top + row * (card_h + row_gap);
-        draw_hero_card(ctx, hero, Rect::new(x, y, card_w, card_h));
+        y += 74.0;
     }
 }
 
-fn draw_hero_card(ctx: &UiContext<'_>, hero: &Hero, rect: Rect) {
+fn draw_hero_card(
+    ctx: &UiContext<'_>,
+    hero: &Hero,
+    rect: Rect,
+    roster_full: bool,
+    actions: &mut Vec<UiAction>,
+) {
     let strings = &ctx.data.strings.heroes;
+    let is_champion = ctx.player.is_champion(&hero.id);
     let accent = if hero.is_alive {
         good_stat_color(hero.level as f32 * 4.0)
     } else {
         dark::TEXT_DIM
     };
-    let style = SurfaceStyle::new(Color::new(0.09, 0.1, 0.13, 1.0))
-        .with_left_accent(4.0, accent)
-        .with_border(1.0, Color::new(0.4, 0.46, 0.58, 0.35));
-    draw_surface(rect, &style);
+    draw_surface(
+        rect,
+        &SurfaceStyle::new(Color::new(0.09, 0.1, 0.13, 1.0))
+            .with_left_accent(4.0, accent)
+            .with_border(1.0, Color::new(0.4, 0.46, 0.58, 0.35)),
+    );
 
     let name_color = if hero.is_alive {
         dark::TEXT_BRIGHT
@@ -83,59 +200,65 @@ fn draw_hero_card(ctx: &UiContext<'_>, hero: &Hero, rect: Rect) {
     };
     draw_ui_text_ex(
         &hero.name,
-        rect.x + 16.0,
-        rect.y + 28.0,
-        TextStyle::new(19.0, name_color).params(),
+        rect.x + 14.0,
+        rect.y + 25.0,
+        TextStyle::new(18.0, name_color).params(),
     );
     let region = ctx
         .world
         .region_name(&hero.region_id)
         .unwrap_or(&hero.region_id);
     draw_ui_text_ex(
-        &format!("{}  ·  {}", hero.role.label(), region),
-        rect.x + 16.0,
-        rect.y + 50.0,
-        TextStyle::new(14.0, dark::TEXT_DIM).params(),
+        &format!(
+            "{}  ·  {}  ·  {}",
+            hero.role.label(),
+            region,
+            fill(&strings.level, &[("level", hero.level.to_string())])
+        ),
+        rect.x + 14.0,
+        rect.y + 47.0,
+        TextStyle::new(13.0, dark::TEXT_DIM).params(),
     );
 
-    // Level badge + alive/fallen state, right-aligned.
-    let status = if hero.is_alive {
-        &strings.alive
-    } else {
-        &strings.fallen
-    };
-    draw_badge(
-        Rect::new(rect.right() - 96.0, rect.y + 14.0, 80.0, 24.0),
-        &fill(&strings.level, &[("level", hero.level.to_string())]),
-        Color::new(0.16, 0.2, 0.28, 1.0),
-        dark::TEXT,
-    );
-    draw_badge(
-        Rect::new(rect.right() - 96.0, rect.y + 44.0, 80.0, 22.0),
-        status,
-        Color::new(0.14, 0.16, 0.2, 1.0),
-        accent,
-    );
-
-    // Lifespan meter (age vs. life expectancy).
+    // Lifespan meter (middle).
     let life = hero.life_expectancy(&ctx.data.balance.hero);
-    let label = fill(
-        &strings.life,
-        &[
-            ("age", hero.age.to_string()),
-            ("life", format!("{life:.0}")),
-        ],
-    );
     meter(
-        Rect::new(rect.x + 16.0, rect.bottom() - 24.0, rect.w - 128.0, 16.0),
+        Rect::new(rect.x + 360.0, rect.y + 14.0, 220.0, 16.0),
         hero.age as f32,
         life,
         life_color(hero.age as f32, life),
-        Some(&label),
+        Some(&fill(
+            &strings.life,
+            &[
+                ("age", hero.age.to_string()),
+                ("life", format!("{life:.0}")),
+            ],
+        )),
     );
+
+    // Champion tag or Designate button (right).
+    let action_rect = Rect::new(rect.right() - 128.0, rect.y + 16.0, 114.0, 34.0);
+    if is_champion {
+        draw_badge(
+            action_rect,
+            &strings.champion_tag,
+            Color::new(0.16, 0.2, 0.28, 1.0),
+            dark::ACCENT,
+        );
+    } else {
+        let can = hero.is_alive && !roster_full;
+        if button(
+            action_rect,
+            &strings.designate,
+            can,
+            ButtonTone::Primary,
+            ctx.mouse,
+        ) {
+            actions.push(UiAction::DesignateChampion(hero.id.clone()));
+        }
+    }
 }
 
-/// Green when young, warning as the hero nears life expectancy, red past it.
 fn life_color(age: f32, life: f32) -> Color {
     let ratio = if life > 0.0 { age / life } else { 1.0 };
     if ratio < 0.6 {
@@ -145,4 +268,12 @@ fn life_color(age: f32, life: f32) -> Color {
     } else {
         dark::NEGATIVE
     }
+}
+
+fn draw_titled(rect: Rect, title: &str) {
+    let style = SurfaceStyle::new(Color::new(0.07, 0.075, 0.095, 0.96))
+        .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.5))
+        .with_header(42.0, Color::new(0.1, 0.115, 0.145, 1.0))
+        .with_header_divider(1.0, Color::new(0.38, 0.45, 0.58, 0.4));
+    draw_surface_with_title(rect, Some(title), &style, TextStyle::new(20.0, dark::TEXT));
 }

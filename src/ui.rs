@@ -59,6 +59,12 @@ pub enum UiAction {
     SelectRegion(usize),
     /// Apply a region action (by id) to the currently selected region.
     RegionAction(String),
+    /// Designate the given hero (by id) as a champion.
+    DesignateChampion(String),
+    /// Cultivate the champion bonded to the given hero id.
+    CultivateChampion(String),
+    /// Cycle the cultivation focus of the champion bonded to the given hero id.
+    CycleChampionFocus(String),
     AdvanceTick,
     Save,
     Load,
@@ -88,7 +94,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
     match ctx.screen {
         Screen::Dashboard => dashboard::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
-        Screen::Heroes => heroes::draw(ctx),
+        Screen::Heroes => heroes::draw(ctx, &mut actions),
         Screen::DivineTools => placeholder::draw(ctx, &placeholders.divine_tools),
         Screen::Betting => placeholder::draw(ctx, &placeholders.betting),
         Screen::Eras => placeholder::draw(ctx, &placeholders.eras),

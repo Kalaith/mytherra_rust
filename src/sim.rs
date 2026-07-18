@@ -1,6 +1,7 @@
 //! World tick orchestration. The server would own this in the multiplayer
 //! design (GDD 7.1); in this local build the client runs it on a timer.
 
+mod champion;
 mod hero;
 mod region;
 
@@ -27,6 +28,17 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &world.regions,
         &mut world.rng,
         &data.balance.hero,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    champion::tick_champions(
+        &mut player.champions,
+        &world.heroes,
+        &mut world.regions,
+        &data.balance.champion,
+        &data.balance.region,
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,

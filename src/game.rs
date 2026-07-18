@@ -1,7 +1,7 @@
 //! High-level game loop: owns the world, the player, and screen navigation,
 //! runs the tick timer, and interprets UI intents.
 
-use crate::data::{fill, GameData};
+use crate::data::{fill, ChampionFocus, GameData};
 use crate::save::{migrate_save_value, SaveData};
 use crate::sim::tick_world;
 use crate::ui::{self, Screen, UiAction, UiContext};
@@ -68,7 +68,21 @@ impl Game {
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
         };
-        for _ in 0..5 {
+        // Demo a couple of champions so the heroes screen shows the roster.
+        if matches!(self.screen, Screen::Heroes) {
+            let ids: Vec<String> = self
+                .world
+                .heroes
+                .iter()
+                .filter(|h| h.is_alive)
+                .take(2)
+                .map(|h| h.id.clone())
+                .collect();
+            for id in ids {
+                self.designate_champion(&id);
+            }
+        }
+        for _ in 0..8 {
             self.run_tick();
         }
     }
@@ -149,6 +163,9 @@ impl Game {
                 }
             }
             UiAction::RegionAction(id) => self.apply_region_action(&id),
+            UiAction::DesignateChampion(id) => self.designate_champion(&id),
+            UiAction::CultivateChampion(id) => self.cultivate_champion(&id),
+            UiAction::CycleChampionFocus(id) => self.cycle_champion_focus(&id),
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications
@@ -206,6 +223,90 @@ impl Game {
                 ("cost", cost.to_string()),
             ],
         ));
+    }
+
+    fn designate_champion(&mut self, hero_id: &str) {
+        let notes = self.data.strings.notifications.clone();
+        let hero_name = match self
+            .world
+            .heroes
+            .iter()
+            .find(|h| h.id == hero_id && h.is_alive)
+        {
+            Some(hero) => hero.name.clone(),
+            None => return,
+        };
+        let balance = &self.data.balance.champion;
+        if self.player.is_champion(hero_id) || self.player.champions.len() >= balance.max_roster {
+            self.notifications.warning(notes.champion_designate_failed);
+            return;
+        }
+        if !self
+            .player
+            .spend(balance.designate_cost, &self.data.balance.player)
+        {
+            self.notifications.warning(notes.not_enough_favor);
+            return;
+        }
+        self.player
+            .designate_champion(hero_id, ChampionFocus::Valor, &self.data.balance.champion);
+        self.notifications
+            .success(fill(&notes.champion_designated, &[("hero", hero_name)]));
+    }
+
+    fn cultivate_champion(&mut self, hero_id: &str) {
+        let notes = self.data.strings.notifications.clone();
+        let Some(cost) = self
+            .player
+            .champions
+            .iter()
+            .find(|c| c.hero_id == hero_id)
+            .map(|c| c.cultivate_cost(&self.data.balance.champion))
+        else {
+            return;
+        };
+        let alive = self
+            .world
+            .heroes
+            .iter()
+            .any(|h| h.id == hero_id && h.is_alive);
+        if !alive {
+            return;
+        }
+        if !self.player.spend(cost, &self.data.balance.player) {
+            self.notifications.warning(notes.not_enough_favor);
+            return;
+        }
+        let gain = self.data.balance.champion.cultivate_bond_gain;
+        if let Some(champion) = self.player.champion_mut(hero_id) {
+            champion.bond += gain;
+            champion.recompute_rank(&self.data.balance.champion);
+        }
+        let hero_name = self.hero_name(hero_id);
+        self.notifications
+            .success(fill(&notes.champion_cultivated, &[("hero", hero_name)]));
+    }
+
+    fn cycle_champion_focus(&mut self, hero_id: &str) {
+        let Some(champion) = self.player.champion_mut(hero_id) else {
+            return;
+        };
+        champion.focus = champion.focus.next();
+        let focus = champion.focus;
+        let hero_name = self.hero_name(hero_id);
+        self.notifications.info(fill(
+            &self.data.strings.notifications.champion_focus_changed,
+            &[("hero", hero_name), ("focus", focus.label().to_owned())],
+        ));
+    }
+
+    fn hero_name(&self, hero_id: &str) -> String {
+        self.world
+            .heroes
+            .iter()
+            .find(|h| h.id == hero_id)
+            .map(|h| h.name.clone())
+            .unwrap_or_else(|| hero_id.to_owned())
     }
 
     fn new_world(&mut self) {

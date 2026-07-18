@@ -105,6 +105,27 @@ impl Region {
         self.refresh_status(balance);
     }
 
+    /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
+    /// rivalry resolution as the region's threat baseline.
+    pub fn pressure(&self) -> f32 {
+        self.chaos * 0.38 + self.danger * 0.42 + (100.0 - self.prosperity) * 0.2
+    }
+
+    /// Apply raw (already-computed) stat deltas, clamp, and refresh status.
+    /// Used by systems other than divine actions (e.g. champion rivalries).
+    pub fn apply_deltas(
+        &mut self,
+        prosperity: f32,
+        chaos: f32,
+        danger: f32,
+        balance: &RegionBalance,
+    ) {
+        self.prosperity = clamp_stat(self.prosperity + prosperity);
+        self.chaos = clamp_stat(self.chaos + chaos);
+        self.danger = clamp_stat(self.danger + danger);
+        self.refresh_status(balance);
+    }
+
     /// Recompute the derived status band from current stats (thresholds from
     /// `balance.json`).
     pub fn refresh_status(&mut self, balance: &RegionBalance) {
