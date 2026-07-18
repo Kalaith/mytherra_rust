@@ -36,6 +36,8 @@ pub struct Game {
     create_focus: ArtifactFocus,
     weather_pattern: usize,
     weather_intensity: usize,
+    /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
+    chronicle_filter: usize,
 }
 
 impl Game {
@@ -69,6 +71,7 @@ impl Game {
             create_focus: ArtifactFocus::Protection,
             weather_pattern: 0,
             weather_intensity: 0,
+            chronicle_filter: 0,
         };
         game.refresh_save_state();
         game
@@ -77,6 +80,7 @@ impl Game {
     /// Seed a named screen (and some world history) for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
         self.screen = match scene {
+            "chronicle" | "event_log" => Screen::Chronicle,
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,
             "divine_tools" | "artifacts" | "omens" | "weather" | "magic" | "myths"
@@ -230,6 +234,7 @@ impl Game {
             create_focus: self.create_focus,
             weather_pattern: self.weather_pattern,
             weather_intensity: self.weather_intensity,
+            chronicle_filter: self.chronicle_filter,
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);
@@ -294,6 +299,7 @@ impl Game {
                 self.bet_stake_index =
                     (self.bet_stake_index + 1) % self.data.balance.betting.stake_presets.len();
             }
+            UiAction::SetChronicleFilter(index) => self.chronicle_filter = index,
             UiAction::SelectDivineTab(index) => self.divine_tab = index,
             UiAction::CycleArtifactFocus => self.create_focus = self.create_focus.next(),
             UiAction::CreateArtifact => self.create_artifact(),

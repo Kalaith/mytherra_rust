@@ -17,8 +17,18 @@ pub struct Strings {
     pub betting: BettingText,
     pub divine: DivineText,
     pub eras: EraText,
+    pub event_log: EventLogText,
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventLogText {
+    pub panel: String,
+    pub filter_all: String,
+    pub filter_label: String,
+    pub count_line: String,
+    pub empty_filtered: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

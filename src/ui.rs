@@ -5,6 +5,7 @@
 //! `Game::apply_action` interprets the intents.
 
 mod betting;
+mod chronicle;
 mod dashboard;
 mod divine_tools;
 mod eras;
@@ -25,6 +26,7 @@ pub const LOGICAL_HEIGHT: f32 = 720.0;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Screen {
     Dashboard,
+    Chronicle,
     Regions,
     Heroes,
     DivineTools,
@@ -33,8 +35,9 @@ pub enum Screen {
 }
 
 impl Screen {
-    pub const ALL: [Screen; 6] = [
+    pub const ALL: [Screen; 7] = [
         Screen::Dashboard,
+        Screen::Chronicle,
         Screen::Regions,
         Screen::Heroes,
         Screen::DivineTools,
@@ -45,6 +48,7 @@ impl Screen {
     pub fn label(self) -> &'static str {
         match self {
             Screen::Dashboard => "Dashboard",
+            Screen::Chronicle => "Event Log",
             Screen::Regions => "Regions",
             Screen::Heroes => "Heroes",
             Screen::DivineTools => "Divine Tools",
@@ -73,6 +77,8 @@ pub enum UiAction {
     CycleConfidence,
     /// Cycle the selected stake preset for the next bet.
     CycleStake,
+    /// Set the Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
+    SetChronicleFilter(usize),
     /// Select a divine-tool sub-tab by index.
     SelectDivineTab(usize),
     /// Cycle the focus of the next artifact to be forged.
@@ -127,6 +133,8 @@ pub struct UiContext<'a> {
     /// Selected weather pattern / intensity indices.
     pub weather_pattern: usize,
     pub weather_intensity: usize,
+    /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
+    pub chronicle_filter: usize,
     pub mouse: Vec2,
 }
 
@@ -139,6 +147,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
 
     match ctx.screen {
         Screen::Dashboard => dashboard::draw(ctx, &mut actions),
+        Screen::Chronicle => chronicle::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
         Screen::Heroes => heroes::draw(ctx, &mut actions),
         Screen::DivineTools => divine_tools::draw(ctx, &mut actions),

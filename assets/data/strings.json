@@ -119,6 +119,13 @@
     "mood_wrathful": "Wrathful",
     "mood_ascendant": "Ascendant"
   },
+  "event_log": {
+    "panel": "Event Log",
+    "filter_all": "All",
+    "filter_label": "Filter:",
+    "count_line": "{shown} of {total} events  ·  {filter}",
+    "empty_filtered": "No {filter} events recorded yet."
+  },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
     "not_enough_favor": "Not enough Divine Favor.",

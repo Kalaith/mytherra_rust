@@ -19,6 +19,28 @@ pub enum EventKind {
     System,
 }
 
+impl EventKind {
+    pub const ALL: [EventKind; 5] = [
+        EventKind::Tick,
+        EventKind::Divine,
+        EventKind::Region,
+        EventKind::Hero,
+        EventKind::System,
+    ];
+
+    /// Canonical display name (the Event Log filter chips, GDD 10). Type
+    /// formatting stays in code; authored copy lives in `strings.json`.
+    pub fn label(self) -> &'static str {
+        match self {
+            EventKind::Tick => "Ticks",
+            EventKind::Divine => "Divine",
+            EventKind::Region => "Regions",
+            EventKind::Hero => "Heroes",
+            EventKind::System => "System",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldEvent {
     pub year: u32,
@@ -62,6 +84,12 @@ impl Chronicle {
     /// The most recent `count` events, newest first.
     pub fn recent(&self, count: usize) -> impl Iterator<Item = &WorldEvent> {
         self.events.iter().rev().take(count)
+    }
+
+    /// Every retained event, newest first — the Event Log screen (GDD 10)
+    /// filters this by kind.
+    pub fn iter_newest(&self) -> impl Iterator<Item = &WorldEvent> {
+        self.events.iter().rev()
     }
 }
 
