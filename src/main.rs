@@ -1,19 +1,25 @@
-//! Macroquad game template wired to macroquad-toolkit.
+//! Mytherra — a minor deity watching one living, shared world.
+//!
+//! This binary is the macroquad client. It currently runs a local, deterministic
+//! simulation of the world (GDD 5.2-5.7 mechanics); the multiplayer server layer
+//! (GDD 7) is a later phase.
 
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
 
 mod data;
 mod game;
-mod state;
+mod save;
+mod sim;
 mod ui;
+mod world;
 
 use game::Game;
 
 fn window_conf() -> Conf {
     capture::capture_window_conf(
-        "GAME_TEMPLATE",
-        "Game Template",
+        "MYTHERRA",
+        "Mytherra",
         ui::LOGICAL_WIDTH as i32,
         ui::LOGICAL_HEIGHT as i32,
     )
@@ -23,11 +29,10 @@ fn window_conf() -> Conf {
 async fn main() {
     let mut game = Game::new().await;
 
-    // Screenshot harness: when GAME_TEMPLATE_CAPTURE_PATH is set, render
-    // deterministic frames, write a PNG, and exit. This is a minimal starter
-    // template with a single boot state, so the capture just photographs
-    // whatever the boot flow lands on.
-    if let Some(config) = capture::CaptureConfig::from_env("GAME_TEMPLATE") {
+    // Screenshot harness: when MYTHERRA_CAPTURE_PATH is set, render deterministic
+    // frames, write a PNG, and exit.
+    if let Some(config) = capture::CaptureConfig::from_env("MYTHERRA") {
+        game.begin_capture_scene(&config.scene);
         capture::run_capture(&config, |dt| {
             game.update(dt);
             game.draw();

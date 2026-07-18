@@ -1,56 +1,56 @@
-//! Embedded game data and asset manifests.
+//! Embedded, data-driven game content loaded from `assets/data/*.json`.
+//!
+//! Content and balance values live in JSON per the RustGames data-driven rule;
+//! Rust only describes their shape. Native builds could later read these from
+//! disk, but the embedded copies keep WASM builds self-contained.
 
-use macroquad_toolkit::assets::TextureConfig;
+mod action;
+mod config;
+mod region;
+
+pub use action::RegionActionDef;
+pub use config::GameConfig;
+pub use region::{ClimateType, Culture, RegionSeed};
+
 use macroquad_toolkit::data_loader::{
     load_embedded_json, load_embedded_json_labeled, DataRegistry,
 };
-use serde::{Deserialize, Serialize};
 
 const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
-const ACTIONS_JSON: &str = include_str!("../assets/data/actions.json");
-const TEXTURE_MANIFEST_JSON: &str = include_str!("../assets/data/texture_manifest.json");
+const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
+const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GameConfig {
-    pub game_name: String,
-    pub display_name: String,
-    pub save_slot: String,
-    pub version: String,
-    pub starting_points: i64,
-    pub starting_energy: f32,
-    pub max_energy: f32,
-    pub energy_per_second: f32,
-    pub world_width: usize,
-    pub world_height: usize,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ActionDef {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub energy_cost: f32,
-    pub points_reward: i64,
-}
-
+/// All static content the game needs, resolved once at boot.
 #[derive(Debug, Clone)]
 pub struct GameData {
     pub config: GameConfig,
-    pub actions: DataRegistry<ActionDef>,
-    pub texture_manifest: Vec<TextureConfig>,
+    pub regions: Vec<RegionSeed>,
+    pub region_actions: DataRegistry<RegionActionDef>,
 }
 
 impl GameData {
     pub fn load() -> Result<Self, String> {
         let config = load_embedded_json_labeled("game_config", GAME_CONFIG_JSON)?;
-        let actions = DataRegistry::from_embedded_json(ACTIONS_JSON, "id")?;
-        let texture_manifest = load_embedded_json(TEXTURE_MANIFEST_JSON)?;
+        let regions: Vec<RegionSeed> = load_embedded_json(REGIONS_JSON)?;
+        let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
+
+        if regions.is_empty() {
+            return Err("regions.json contained no regions".to_owned());
+        }
 
         Ok(Self {
             config,
-            actions,
-            texture_manifest,
+            regions,
+            region_actions,
         })
+    }
+
+    /// Region actions in a stable authored order (cheapest first) for the UI.
+    pub fn ordered_region_actions(&self) -> Vec<&RegionActionDef> {
+        let mut actions: Vec<&RegionActionDef> =
+            self.region_actions.iter().map(|(_, a)| a).collect();
+        actions.sort_by(|a, b| a.cost.cmp(&b.cost).then_with(|| a.id.cmp(&b.id)));
+        actions
     }
 }
 
@@ -61,10 +61,18 @@ mod tests {
     #[test]
     fn embedded_data_loads() {
         let data = GameData::load().unwrap();
+        assert_eq!(data.config.game_name, "mytherra");
+        assert!(data.regions.len() >= 3);
+        assert!(data.region_actions.contains("bless"));
+        assert!(data.region_actions.contains("corrupt"));
+        assert!(data.region_actions.contains("guide"));
+    }
 
-        assert!(!data.config.game_name.is_empty());
-        assert!(data.actions.contains("gather"));
-        assert!(data.config.world_width > 0);
-        assert!(data.config.world_height > 0);
+    #[test]
+    fn region_actions_have_positive_cost() {
+        let data = GameData::load().unwrap();
+        for (_, action) in data.region_actions.iter() {
+            assert!(action.cost > 0, "{} has non-positive cost", action.id);
+        }
     }
 }

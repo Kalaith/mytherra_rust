@@ -1,0 +1,41 @@
+[
+  {
+    "id": "aldermoor",
+    "name": "Aldermoor",
+    "climate": "temperate",
+    "culture": "scholarly",
+    "prosperity": 58.0,
+    "chaos": 24.0,
+    "danger": 20.0,
+    "magic_affinity": 46.0,
+    "population": 12000.0,
+    "cultural_influence": 40.0,
+    "divine_resonance": 52.0
+  },
+  {
+    "id": "kharzul",
+    "name": "Kharzul Reaches",
+    "climate": "highland",
+    "culture": "martial",
+    "prosperity": 44.0,
+    "chaos": 52.0,
+    "danger": 58.0,
+    "magic_affinity": 30.0,
+    "population": 8600.0,
+    "cultural_influence": 34.0,
+    "divine_resonance": 41.0
+  },
+  {
+    "id": "sylvenmar",
+    "name": "Sylvenmar",
+    "climate": "coastal",
+    "culture": "mystical",
+    "prosperity": 62.0,
+    "chaos": 30.0,
+    "danger": 26.0,
+    "magic_affinity": 64.0,
+    "population": 15400.0,
+    "cultural_influence": 55.0,
+    "divine_resonance": 60.0
+  }
+]

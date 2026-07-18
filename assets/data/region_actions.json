@@ -1,0 +1,32 @@
+[
+  {
+    "id": "bless",
+    "name": "Bless Region",
+    "description": "Pour favor into the land: prosperity rises, chaos and danger ebb.",
+    "cost": 15,
+    "prosperity": 8.0,
+    "chaos": -4.0,
+    "danger": -3.0,
+    "magic_affinity": 0.0
+  },
+  {
+    "id": "corrupt",
+    "name": "Corrupt Region",
+    "description": "Sow discord: chaos and danger surge as prosperity withers.",
+    "cost": 15,
+    "prosperity": -3.0,
+    "chaos": 8.0,
+    "danger": 5.0,
+    "magic_affinity": 0.0
+  },
+  {
+    "id": "guide",
+    "name": "Guide Research",
+    "description": "Nudge scholars toward the arcane: magic affinity and prosperity grow.",
+    "cost": 12,
+    "prosperity": 2.0,
+    "chaos": 0.0,
+    "danger": 0.0,
+    "magic_affinity": 7.0
+  }
+]
