@@ -175,6 +175,28 @@ impl Game {
                 self.run_tick();
             }
         }
+        if scene == "omens" {
+            // Seed a few divine works so the forces read-out is meaningful.
+            self.create_artifact();
+            self.selected_region = 2;
+            self.weather_intensity = 2;
+            self.shape_weather();
+            self.selected_region = 0;
+            self.weather_intensity = 0;
+            for _ in 0..2 {
+                self.run_tick();
+            }
+            let ids: Vec<String> = self
+                .world
+                .myth_candidates
+                .iter()
+                .take(1)
+                .map(|c| c.id.clone())
+                .collect();
+            for id in ids {
+                self.promote_myth(&id);
+            }
+        }
         if scene == "settings" {
             // Demonstrate the paused state (Resume control + "Paused" header).
             self.paused = true;

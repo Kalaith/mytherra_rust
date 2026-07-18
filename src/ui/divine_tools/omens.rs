@@ -44,7 +44,46 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
                 ],
             )),
         );
-        y += 74.0;
+
+        // The divine works currently shaping this region — omens surface cause,
+        // never change it.
+        let relics = ctx
+            .world
+            .artifacts
+            .iter()
+            .filter(|a| a.region_id == region.id)
+            .count();
+        let storms = ctx
+            .world
+            .weather
+            .iter()
+            .filter(|w| w.region_id == region.id)
+            .count();
+        let myths = ctx
+            .world
+            .myths
+            .iter()
+            .filter(|m| m.region_id == region.id)
+            .count();
+        let forces = if relics + storms + myths == 0 {
+            strings.omen_no_forces.clone()
+        } else {
+            fill(
+                &strings.omen_forces,
+                &[
+                    ("relics", relics.to_string()),
+                    ("storms", storms.to_string()),
+                    ("myths", myths.to_string()),
+                ],
+            )
+        };
+        draw_ui_text_ex(
+            &forces,
+            content.x,
+            y + 68.0,
+            TextStyle::new(14.0, dark::TEXT_DIM).params(),
+        );
+        y += 84.0;
     }
 }
 

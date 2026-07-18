@@ -72,6 +72,8 @@
     "omen_stirring": "Stirring",
     "omen_turbulent": "Turbulent",
     "omen_dire": "Dire",
+    "omen_forces": "Relics {relics}   ·   Storms {storms}   ·   Myths {myths}",
+    "omen_no_forces": "No divine works stir here.",
     "tool_todo": "This divine tool awaits its awakening.",
     "new_artifact_name": "{focus} Relic {n}",
     "weather_panel": "Weather",

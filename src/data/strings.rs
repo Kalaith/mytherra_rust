@@ -141,6 +141,8 @@ pub struct DivineText {
     pub omen_stirring: String,
     pub omen_turbulent: String,
     pub omen_dire: String,
+    pub omen_forces: String,
+    pub omen_no_forces: String,
     pub tool_todo: String,
     pub new_artifact_name: String,
     pub weather_panel: String,
