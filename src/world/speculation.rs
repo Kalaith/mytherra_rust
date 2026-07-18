@@ -4,7 +4,7 @@
 //! payout adjustment is meaningful in this local build.
 
 use crate::data::{BetPredicate, TargetKind};
-use crate::world::{Hero, Region};
+use crate::world::{Hero, Region, Settlement};
 use macroquad_toolkit::math::clamp01;
 use serde::{Deserialize, Serialize};
 
@@ -40,7 +40,12 @@ impl SpeculationEvent {
     }
 
     /// Whether the proposition is currently satisfied by world state.
-    pub fn is_satisfied(&self, heroes: &[Hero], regions: &[Region]) -> bool {
+    pub fn is_satisfied(
+        &self,
+        heroes: &[Hero],
+        regions: &[Region],
+        settlements: &[Settlement],
+    ) -> bool {
         match self.predicate {
             BetPredicate::HeroDies => self.hero(heroes).map(|h| !h.is_alive).unwrap_or(false),
             BetPredicate::HeroLevelAtLeast => self
@@ -59,12 +64,25 @@ impl SpeculationEvent {
                 .region(regions)
                 .map(|r| r.status.is_crisis())
                 .unwrap_or(false),
+            BetPredicate::SettlementPopulationAtLeast => self
+                .settlement(settlements)
+                .map(|s| s.population >= self.threshold)
+                .unwrap_or(false),
+            BetPredicate::SettlementProsperityAtLeast => self
+                .settlement(settlements)
+                .map(|s| s.prosperity >= self.threshold)
+                .unwrap_or(false),
         }
     }
 
     /// Rough current likelihood in [0, 1], used to derive the target odds
     /// modifier so odds react to real world state.
-    pub fn likelihood(&self, heroes: &[Hero], regions: &[Region]) -> f32 {
+    pub fn likelihood(
+        &self,
+        heroes: &[Hero],
+        regions: &[Region],
+        settlements: &[Settlement],
+    ) -> f32 {
         match self.predicate {
             BetPredicate::HeroDies => self
                 .hero(heroes)
@@ -96,6 +114,14 @@ impl SpeculationEvent {
                     )
                 })
                 .unwrap_or(0.5),
+            BetPredicate::SettlementPopulationAtLeast => self
+                .settlement(settlements)
+                .map(|s| clamp01(s.population / self.threshold.max(1.0)))
+                .unwrap_or(0.5),
+            BetPredicate::SettlementProsperityAtLeast => self
+                .settlement(settlements)
+                .map(|s| clamp01(s.prosperity / self.threshold.max(1.0)))
+                .unwrap_or(0.5),
         }
     }
 
@@ -105,5 +131,9 @@ impl SpeculationEvent {
 
     fn region<'a>(&self, regions: &'a [Region]) -> Option<&'a Region> {
         regions.iter().find(|r| r.id == self.target_id)
+    }
+
+    fn settlement<'a>(&self, settlements: &'a [Settlement]) -> Option<&'a Settlement> {
+        settlements.iter().find(|s| s.id == self.target_id)
     }
 }

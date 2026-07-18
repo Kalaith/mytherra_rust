@@ -124,7 +124,11 @@ fn draw_event_card(
         TextStyle::new(13.0, dark::TEXT_DIM).params(),
     );
 
-    let likelihood = event.likelihood(&ctx.world.heroes, &ctx.world.regions);
+    let likelihood = event.likelihood(
+        &ctx.world.heroes,
+        &ctx.world.regions,
+        &ctx.world.settlements,
+    );
     let quote = quote_event(
         event,
         likelihood,

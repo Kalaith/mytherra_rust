@@ -4,7 +4,7 @@
 //! is a pure win/lose credit.
 
 use crate::data::{fill, GameData, TargetKind};
-use crate::world::{Chronicle, EventKind, Hero, PlayerState, Region, SpeculationEvent};
+use crate::world::{Chronicle, EventKind, Hero, PlayerState, Region, Settlement, SpeculationEvent};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Resolve, replenish, and prune speculation events for one tick.
@@ -15,21 +15,33 @@ pub fn tick_speculations(
     player: &mut PlayerState,
     heroes: &[Hero],
     regions: &[Region],
+    settlements: &[Settlement],
     chronicle: &mut Chronicle,
     rng: &mut SeededRng,
     data: &GameData,
     year: u32,
 ) {
-    resolve_due(events, player, heroes, regions, chronicle, data, year);
-    replenish(events, seq, heroes, regions, rng, data, year);
+    resolve_due(
+        events,
+        player,
+        heroes,
+        regions,
+        settlements,
+        chronicle,
+        data,
+        year,
+    );
+    replenish(events, seq, heroes, regions, settlements, rng, data, year);
     prune(events, data.balance.betting.event_cap);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn resolve_due(
     events: &mut [SpeculationEvent],
     player: &mut PlayerState,
     heroes: &[Hero],
     regions: &[Region],
+    settlements: &[Settlement],
     chronicle: &mut Chronicle,
     data: &GameData,
     year: u32,
@@ -39,7 +51,7 @@ fn resolve_due(
         if !event.is_active() {
             continue;
         }
-        let outcome = if event.is_satisfied(heroes, regions) {
+        let outcome = if event.is_satisfied(heroes, regions, settlements) {
             Some(true)
         } else if year >= event.deadline_year {
             Some(false)
@@ -78,11 +90,13 @@ fn resolve_due(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn replenish(
     events: &mut Vec<SpeculationEvent>,
     seq: &mut u64,
     heroes: &[Hero],
     regions: &[Region],
+    settlements: &[Settlement],
     rng: &mut SeededRng,
     data: &GameData,
     year: u32,
@@ -92,7 +106,7 @@ fn replenish(
     let mut attempts = 0;
     while active < target && attempts < target * 6 {
         attempts += 1;
-        if let Some(event) = generate_event(seq, heroes, regions, rng, data, year) {
+        if let Some(event) = generate_event(seq, heroes, regions, settlements, rng, data, year) {
             events.push(event);
             active += 1;
         }
@@ -103,6 +117,7 @@ fn generate_event(
     seq: &mut u64,
     heroes: &[Hero],
     regions: &[Region],
+    settlements: &[Settlement],
     rng: &mut SeededRng,
     data: &GameData,
     year: u32,
@@ -119,6 +134,10 @@ fn generate_event(
         TargetKind::Region => {
             let region = rng.choose(regions)?;
             (region.id.clone(), region.name.clone())
+        }
+        TargetKind::Settlement => {
+            let settlement = rng.choose(settlements)?;
+            (settlement.id.clone(), settlement.name.clone())
         }
     };
 
@@ -178,6 +197,7 @@ mod tests {
             &mut player,
             &world.heroes,
             &world.regions,
+            &world.settlements,
             &mut world.chronicle,
             &mut world.rng,
             &data,
@@ -199,6 +219,7 @@ mod tests {
                 &mut player,
                 &world.heroes,
                 &world.regions,
+                &world.settlements,
                 &mut world.chronicle,
                 &mut world.rng,
                 &data,

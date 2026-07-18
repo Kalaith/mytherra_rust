@@ -46,5 +46,21 @@
     "predicate": "region_crisis",
     "threshold": 0.0,
     "description": "{target} will fall into crisis."
+  },
+  {
+    "id": "boomtown",
+    "name": "Boomtown",
+    "base_odds": 2.2,
+    "predicate": "settlement_population_at_least",
+    "threshold": 9000.0,
+    "description": "{target} will swell past {threshold} souls."
+  },
+  {
+    "id": "gilded_town",
+    "name": "Gilded Town",
+    "base_odds": 2.0,
+    "predicate": "settlement_prosperity_at_least",
+    "threshold": 75.0,
+    "description": "{target}'s fortunes will rise to {threshold}."
   }
 ]

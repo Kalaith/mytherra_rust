@@ -17,6 +17,10 @@ pub enum BetPredicate {
     RegionChaosAtLeast,
     /// The target region falls into a crisis status.
     RegionCrisis,
+    /// The target settlement's population reaches at least `threshold`.
+    SettlementPopulationAtLeast,
+    /// The target settlement's prosperity reaches at least `threshold`.
+    SettlementProsperityAtLeast,
 }
 
 /// Which kind of world entity a predicate targets.
@@ -24,6 +28,7 @@ pub enum BetPredicate {
 pub enum TargetKind {
     Hero,
     Region,
+    Settlement,
 }
 
 impl BetPredicate {
@@ -33,6 +38,8 @@ impl BetPredicate {
             BetPredicate::RegionProsperityAtLeast
             | BetPredicate::RegionChaosAtLeast
             | BetPredicate::RegionCrisis => TargetKind::Region,
+            BetPredicate::SettlementPopulationAtLeast
+            | BetPredicate::SettlementProsperityAtLeast => TargetKind::Settlement,
         }
     }
 }

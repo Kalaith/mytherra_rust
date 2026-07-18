@@ -155,7 +155,11 @@ impl Game {
 
         let (quote, target_name, bet_type_name, deadline) = {
             let event = &self.world.speculations[idx];
-            let likelihood = event.likelihood(&self.world.heroes, &self.world.regions);
+            let likelihood = event.likelihood(
+                &self.world.heroes,
+                &self.world.regions,
+                &self.world.settlements,
+            );
             let quote = quote_event(
                 event,
                 likelihood,
