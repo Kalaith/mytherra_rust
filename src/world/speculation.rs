@@ -60,6 +60,14 @@ impl SpeculationEvent {
                 .region(regions)
                 .map(|r| r.chaos >= self.threshold)
                 .unwrap_or(false),
+            BetPredicate::RegionDangerAtLeast => self
+                .region(regions)
+                .map(|r| r.danger >= self.threshold)
+                .unwrap_or(false),
+            BetPredicate::RegionMagicAtLeast => self
+                .region(regions)
+                .map(|r| r.magic_affinity >= self.threshold)
+                .unwrap_or(false),
             BetPredicate::RegionCrisis => self
                 .region(regions)
                 .map(|r| r.status.is_crisis())
@@ -105,6 +113,14 @@ impl SpeculationEvent {
             BetPredicate::RegionChaosAtLeast => self
                 .region(regions)
                 .map(|r| clamp01(r.chaos / self.threshold.max(1.0)))
+                .unwrap_or(0.5),
+            BetPredicate::RegionDangerAtLeast => self
+                .region(regions)
+                .map(|r| clamp01(r.danger / self.threshold.max(1.0)))
+                .unwrap_or(0.5),
+            BetPredicate::RegionMagicAtLeast => self
+                .region(regions)
+                .map(|r| clamp01(r.magic_affinity / self.threshold.max(1.0)))
                 .unwrap_or(0.5),
             BetPredicate::RegionCrisis => self
                 .region(regions)

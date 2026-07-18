@@ -62,5 +62,21 @@
     "predicate": "settlement_prosperity_at_least",
     "threshold": 75.0,
     "description": "{target}'s fortunes will rise to {threshold}."
+  },
+  {
+    "id": "rising_peril",
+    "name": "Rising Peril",
+    "base_odds": 2.5,
+    "predicate": "region_danger_at_least",
+    "threshold": 70.0,
+    "description": "{target}'s danger will climb to {threshold}."
+  },
+  {
+    "id": "arcane_awakening",
+    "name": "Arcane Awakening",
+    "base_odds": 2.4,
+    "predicate": "region_magic_at_least",
+    "threshold": 75.0,
+    "description": "{target}'s magic will awaken to {threshold}."
   }
 ]

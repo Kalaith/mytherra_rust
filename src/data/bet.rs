@@ -15,6 +15,10 @@ pub enum BetPredicate {
     RegionProsperityAtLeast,
     /// The target region's chaos reaches at least `threshold`.
     RegionChaosAtLeast,
+    /// The target region's danger reaches at least `threshold`.
+    RegionDangerAtLeast,
+    /// The target region's magic reaches at least `threshold`.
+    RegionMagicAtLeast,
     /// The target region falls into a crisis status.
     RegionCrisis,
     /// The target settlement's population reaches at least `threshold`.
@@ -37,6 +41,8 @@ impl BetPredicate {
             BetPredicate::HeroDies | BetPredicate::HeroLevelAtLeast => TargetKind::Hero,
             BetPredicate::RegionProsperityAtLeast
             | BetPredicate::RegionChaosAtLeast
+            | BetPredicate::RegionDangerAtLeast
+            | BetPredicate::RegionMagicAtLeast
             | BetPredicate::RegionCrisis => TargetKind::Region,
             BetPredicate::SettlementPopulationAtLeast
             | BetPredicate::SettlementProsperityAtLeast => TargetKind::Settlement,
