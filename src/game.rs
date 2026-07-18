@@ -38,6 +38,8 @@ pub struct Game {
     weather_intensity: usize,
     /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     chronicle_filter: usize,
+    /// Hero roster region filter (0 = all, else `regions[n-1]`).
+    hero_filter: usize,
     /// Auto-tick cadence (index into `balance.settings.tick_speed_presets`).
     tick_speed_index: usize,
     /// Whether automatic world ticking is paused (Settings, GDD 10).
@@ -85,6 +87,7 @@ impl Game {
             weather_pattern: 0,
             weather_intensity: 0,
             chronicle_filter: 0,
+            hero_filter: 0,
             tick_speed_index,
             paused: false,
         };
@@ -277,6 +280,7 @@ impl Game {
             weather_pattern: self.weather_pattern,
             weather_intensity: self.weather_intensity,
             chronicle_filter: self.chronicle_filter,
+            hero_filter: self.hero_filter,
             tick_speed_index: self.tick_speed_index,
             paused: self.paused,
             mouse: virtual_ui.mouse_position(),
@@ -360,6 +364,7 @@ impl Game {
                     (self.bet_stake_index + 1) % self.data.balance.betting.stake_presets.len();
             }
             UiAction::SetChronicleFilter(index) => self.chronicle_filter = index,
+            UiAction::SetHeroFilter(index) => self.hero_filter = index,
             UiAction::SetTickSpeed(index) => {
                 if index < self.data.balance.settings.tick_speed_presets.len() {
                     self.tick_speed_index = index;

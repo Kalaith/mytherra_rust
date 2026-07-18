@@ -103,6 +103,8 @@ pub struct HeroText {
     pub champion_meta: String,
     pub quest: String,
     pub roster_label: String,
+    pub filter_all: String,
+    pub roster_more: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

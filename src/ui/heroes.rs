@@ -154,13 +154,41 @@ fn draw_roster_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction
             ],
         ),
         content.x,
-        content.y + 26.0,
+        content.y + 24.0,
         TextStyle::new(15.0, dark::TEXT_DIM).params(),
     );
 
+    draw_roster_filter(ctx, content, actions);
+
+    // The roster outgrows the panel (12+ heroes, more born over time), so filter
+    // by region, sort the most notable first, and truncate what doesn't fit.
+    let region_id: Option<&str> = ctx
+        .hero_filter
+        .checked_sub(1)
+        .and_then(|i| ctx.world.regions.get(i))
+        .map(|r| r.id.as_str());
+    let mut heroes: Vec<&Hero> = ctx
+        .world
+        .heroes
+        .iter()
+        .filter(|h| region_id.is_none_or(|id| h.region_id == id))
+        .collect();
+    // Living before fallen, then higher level, then stable by id.
+    heroes.sort_by(|a, b| {
+        b.is_alive
+            .cmp(&a.is_alive)
+            .then(b.level.cmp(&a.level))
+            .then(a.id.cmp(&b.id))
+    });
+
     let roster_full = ctx.player.champions.len() >= ctx.data.balance.champion.max_roster;
-    let mut y = content.y + 42.0;
-    for hero in &ctx.world.heroes {
+    let mut y = content.y + 74.0;
+    let mut shown = 0;
+    for hero in &heroes {
+        // Leave a row's worth of space for the "+N more" note if truncating.
+        if y + 66.0 > content.bottom() - 22.0 {
+            break;
+        }
         draw_hero_card(
             ctx,
             hero,
@@ -169,6 +197,39 @@ fn draw_roster_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction
             actions,
         );
         y += 74.0;
+        shown += 1;
+    }
+    if shown < heroes.len() {
+        draw_ui_text_ex(
+            &fill(
+                &strings.roster_more,
+                &[("count", (heroes.len() - shown).to_string())],
+            ),
+            content.x,
+            y + 16.0,
+            TextStyle::new(14.0, dark::TEXT_DIM).params(),
+        );
+    }
+}
+
+/// Region filter chips (All + one per region) for the roster.
+fn draw_roster_filter(ctx: &UiContext<'_>, content: Rect, actions: &mut Vec<UiAction>) {
+    let mut labels: Vec<&str> = vec![ctx.data.strings.heroes.filter_all.as_str()];
+    labels.extend(ctx.world.regions.iter().map(|r| r.name.as_str()));
+
+    let gap = 8.0;
+    let chip_w = ((content.w - gap * (labels.len() as f32 - 1.0)) / labels.len() as f32).min(168.0);
+    let y = content.y + 36.0;
+    for (index, label) in labels.iter().enumerate() {
+        let rect = Rect::new(content.x + index as f32 * (chip_w + gap), y, chip_w, 30.0);
+        let tone = if index == ctx.hero_filter {
+            ButtonTone::Primary
+        } else {
+            ButtonTone::Secondary
+        };
+        if button(rect, label, true, tone, ctx.mouse) {
+            actions.push(UiAction::SetHeroFilter(index));
+        }
     }
 }
 

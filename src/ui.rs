@@ -83,6 +83,8 @@ pub enum UiAction {
     CycleStake,
     /// Set the Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     SetChronicleFilter(usize),
+    /// Set the hero roster's region filter (0 = all, else `regions[n-1]`).
+    SetHeroFilter(usize),
     /// Select the auto-tick cadence by preset index (Settings, GDD 10).
     SetTickSpeed(usize),
     /// Toggle automatic world ticking on/off (Settings, GDD 10).
@@ -143,6 +145,8 @@ pub struct UiContext<'a> {
     pub weather_intensity: usize,
     /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     pub chronicle_filter: usize,
+    /// Hero roster region filter (0 = all, else `regions[n-1]`).
+    pub hero_filter: usize,
     /// Selected auto-tick cadence (index into `balance.settings.tick_speed_presets`).
     pub tick_speed_index: usize,
     /// Whether automatic world ticking is paused.
