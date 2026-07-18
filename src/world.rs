@@ -2,14 +2,17 @@
 //! private to one player (GDD 6 "shared/global tables").
 
 mod chronicle;
+mod hero;
 mod player;
 mod region;
 
 pub use chronicle::{Chronicle, EventKind};
+pub use hero::Hero;
 pub use player::PlayerState;
 pub use region::{Region, RegionStatus};
 
 use crate::data::GameData;
+use macroquad_toolkit::rng::SeededRng;
 use serde::{Deserialize, Serialize};
 
 /// Aggregate, read-only snapshot of the world's regions for dashboards.
@@ -29,7 +32,11 @@ pub struct WorldState {
     pub year: u32,
     pub tick_count: u64,
     pub regions: Vec<Region>,
+    pub heroes: Vec<Hero>,
     pub chronicle: Chronicle,
+    /// The world's own deterministic RNG (GDD 5.8); serialized so saves resume
+    /// the exact same sequence.
+    pub rng: SeededRng,
 }
 
 impl WorldState {
@@ -40,11 +47,14 @@ impl WorldState {
             .iter()
             .map(|seed| Region::from_seed(seed, &data.balance.region))
             .collect();
+        let heroes = data.heroes.iter().map(Hero::from_seed).collect();
         let mut world = Self {
             year: data.config.start_year,
             tick_count: 0,
             regions,
+            heroes,
             chronicle: Chronicle::default(),
+            rng: SeededRng::new(data.config.world_seed),
         };
         world.chronicle.push(
             world.year,
@@ -60,6 +70,19 @@ impl WorldState {
 
     pub fn region_mut(&mut self, index: usize) -> Option<&mut Region> {
         self.regions.get_mut(index)
+    }
+
+    /// Count of living heroes.
+    pub fn living_heroes(&self) -> usize {
+        self.heroes.iter().filter(|h| h.is_alive).count()
+    }
+
+    /// Look up a region's display name by id (for hero/UI cross-references).
+    pub fn region_name(&self, id: &str) -> Option<&str> {
+        self.regions
+            .iter()
+            .find(|r| r.id == id)
+            .map(|r| r.name.as_str())
     }
 
     /// Aggregate region stats for the dashboard.

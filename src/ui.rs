@@ -5,6 +5,7 @@
 //! `Game::apply_action` interprets the intents.
 
 mod dashboard;
+mod heroes;
 mod placeholder;
 mod regions;
 mod shell;
@@ -87,7 +88,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
     match ctx.screen {
         Screen::Dashboard => dashboard::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
-        Screen::Heroes => placeholder::draw(ctx, &placeholders.heroes),
+        Screen::Heroes => heroes::draw(ctx),
         Screen::DivineTools => placeholder::draw(ctx, &placeholders.divine_tools),
         Screen::Betting => placeholder::draw(ctx, &placeholders.betting),
         Screen::Eras => placeholder::draw(ctx, &placeholders.eras),

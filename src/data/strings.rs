@@ -14,6 +14,7 @@ pub struct Strings {
     pub stats: Stats,
     pub placeholders: Placeholders,
     pub ui: UiText,
+    pub heroes: HeroText,
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
 }
@@ -46,10 +47,20 @@ pub struct PlaceholderText {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Placeholders {
-    pub heroes: PlaceholderText,
     pub divine_tools: PlaceholderText,
     pub betting: PlaceholderText,
     pub eras: PlaceholderText,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HeroText {
+    pub panel: String,
+    pub empty: String,
+    pub count: String,
+    pub level: String,
+    pub life: String,
+    pub alive: String,
+    pub fallen: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,6 +101,8 @@ pub struct ChronicleText {
     pub year_dawns: String,
     pub crisis: String,
     pub divine_action: String,
+    pub hero_level_up: String,
+    pub hero_death: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

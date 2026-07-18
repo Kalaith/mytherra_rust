@@ -22,4 +22,6 @@ pub struct GameConfig {
     pub seconds_per_tick: f32,
     /// Calendar year the world begins on.
     pub start_year: u32,
+    /// Seed for the world's deterministic simulation RNG (GDD 5.8).
+    pub world_seed: u64,
 }

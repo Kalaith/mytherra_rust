@@ -13,6 +13,8 @@ pub enum EventKind {
     Divine,
     /// An emergent region change (status shift, crisis).
     Region,
+    /// A hero lifecycle event (level-up, death).
+    Hero,
     /// System / bookkeeping messages.
     System,
 }

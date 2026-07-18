@@ -1,0 +1,50 @@
+[
+  {
+    "id": "elara",
+    "name": "Elara Dawnheart",
+    "role": "mage",
+    "region_id": "aldermoor",
+    "level": 6,
+    "age": 34
+  },
+  {
+    "id": "tomas",
+    "name": "Tomas Vale",
+    "role": "scholar",
+    "region_id": "aldermoor",
+    "level": 4,
+    "age": 51
+  },
+  {
+    "id": "brogan",
+    "name": "Brogan Stonefist",
+    "role": "warrior",
+    "region_id": "kharzul",
+    "level": 9,
+    "age": 41
+  },
+  {
+    "id": "sable",
+    "name": "Sable Quick",
+    "role": "ranger",
+    "region_id": "kharzul",
+    "level": 5,
+    "age": 27
+  },
+  {
+    "id": "isolde",
+    "name": "Isolde Marsh",
+    "role": "mage",
+    "region_id": "sylvenmar",
+    "level": 8,
+    "age": 38
+  },
+  {
+    "id": "corvin",
+    "name": "Corvin Tide",
+    "role": "ranger",
+    "region_id": "sylvenmar",
+    "level": 3,
+    "age": 22
+  }
+]

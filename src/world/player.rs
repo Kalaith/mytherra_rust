@@ -81,6 +81,7 @@ mod tests {
             max_favor: 600,
             seconds_per_tick: 10.0,
             start_year: 1,
+            world_seed: 1,
         }
     }
 

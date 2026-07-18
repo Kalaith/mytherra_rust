@@ -16,10 +16,6 @@
     "population": "Population"
   },
   "placeholders": {
-    "heroes": {
-      "title": "Heroes & Champions",
-      "body": "Hero lifecycles and champion cultivation arrive in a later iteration."
-    },
     "divine_tools": {
       "title": "Divine Tools",
       "body": "Artifacts, Weather, Omens, Magic, Myths, Civilization, and the Pantheon are coming."
@@ -61,10 +57,21 @@
     "new_world": "A new world takes shape.",
     "unknown_action": "Unknown action: {id}"
   },
+  "heroes": {
+    "panel": "Heroes & Champions",
+    "empty": "No heroes walk the world.",
+    "count": "{alive} living  |  {fallen} fallen",
+    "level": "Lv {level}",
+    "life": "Age {age} / ~{life}",
+    "alive": "Alive",
+    "fallen": "Fallen"
+  },
   "chronicle": {
     "world_awakens": "The world awakens.",
     "year_dawns": "Year {year} dawns. Favor +{favor}.",
     "crisis": "{region} has slipped into crisis.",
-    "divine_action": "A deity used {action} on {region}."
+    "divine_action": "A deity used {action} on {region}.",
+    "hero_level_up": "{hero} of {region} rises to level {level}.",
+    "hero_death": "{hero} has fallen in {region}."
   }
 }

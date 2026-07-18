@@ -25,6 +25,26 @@
       "magic_rate": 0.5
     }
   },
+  "hero": {
+    "life_expectancy_base": 70.0,
+    "life_expectancy_per_level": 2.0,
+    "level_up": {
+      "base_chance": 0.3,
+      "low_tier_max_level": 15,
+      "high_tier_min_level": 50,
+      "low_tier_mult": 4.0,
+      "mid_tier_mult": 1.5,
+      "high_tier_mult": 0.3,
+      "decay": 0.95
+    },
+    "death": {
+      "elder_roll": 0.2,
+      "danger_divisor": 1000.0,
+      "level_divisor": 3000.0,
+      "min_chance": 0.005
+    },
+    "move_chance": 0.12
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

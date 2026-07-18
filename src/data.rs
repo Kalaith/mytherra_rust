@@ -7,12 +7,14 @@
 mod action;
 mod balance;
 mod config;
+mod hero;
 mod region;
 pub mod strings;
 
 pub use action::RegionActionDef;
-pub use balance::{Balance, PlayerBalance, RegionBalance};
+pub use balance::{Balance, HeroBalance, PlayerBalance, RegionBalance};
 pub use config::GameConfig;
+pub use hero::{HeroRole, HeroSeed};
 pub use region::{ClimateType, Culture, RegionSeed};
 pub use strings::{fill, Strings};
 
@@ -23,6 +25,7 @@ use macroquad_toolkit::data_loader::{
 const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
 const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
 const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
+const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
 const BALANCE_JSON: &str = include_str!("../assets/data/balance.json");
 const STRINGS_JSON: &str = include_str!("../assets/data/strings.json");
 
@@ -32,6 +35,7 @@ pub struct GameData {
     pub config: GameConfig,
     pub regions: Vec<RegionSeed>,
     pub region_actions: DataRegistry<RegionActionDef>,
+    pub heroes: Vec<HeroSeed>,
     pub balance: Balance,
     pub strings: Strings,
 }
@@ -41,6 +45,7 @@ impl GameData {
         let config = load_embedded_json_labeled("game_config", GAME_CONFIG_JSON)?;
         let regions: Vec<RegionSeed> = load_embedded_json(REGIONS_JSON)?;
         let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
+        let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
         let balance: Balance = load_embedded_json_labeled("balance", BALANCE_JSON)?;
         let strings: Strings = load_embedded_json_labeled("strings", STRINGS_JSON)?;
 
@@ -52,6 +57,7 @@ impl GameData {
             config,
             regions,
             region_actions,
+            heroes,
             balance,
             strings,
         })
