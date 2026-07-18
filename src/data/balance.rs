@@ -207,6 +207,8 @@ pub struct BettingBalance {
     pub active_events: usize,
     /// Hard cap on stored events before old resolved ones are pruned.
     pub event_cap: usize,
+    /// Cap on retained *resolved* wagers; pending wagers are never pruned.
+    pub bet_history_cap: usize,
     /// Selectable stake amounts.
     pub stake_presets: Vec<i64>,
     /// Range of simulated crowd stake seeded onto each outcome.

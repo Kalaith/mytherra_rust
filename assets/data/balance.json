@@ -82,6 +82,7 @@
   "betting": {
     "active_events": 5,
     "event_cap": 14,
+    "bet_history_cap": 20,
     "stake_presets": [10, 25, 50, 100],
     "crowd_seed_min": 20.0,
     "crowd_seed_max": 120.0,

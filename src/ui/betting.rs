@@ -183,10 +183,36 @@ fn draw_bets_panel(ctx: &UiContext<'_>, rect: Rect) {
         return;
     }
 
+    // Pending wagers first (they still matter), then most recent — and truncate
+    // what doesn't fit rather than silently dropping the tail.
+    let mut bets: Vec<(usize, &Bet)> = ctx.player.bets.iter().enumerate().collect();
+    bets.sort_by(|(ia, a), (ib, b)| {
+        a.resolved
+            .is_some()
+            .cmp(&b.resolved.is_some())
+            .then(ib.cmp(ia))
+    });
+
     let mut y = content.y + 26.0;
-    for bet in ctx.player.bets.iter().rev().take(8) {
+    let mut shown = 0;
+    for (_, bet) in &bets {
+        if y + 56.0 > content.bottom() - 20.0 {
+            break;
+        }
         draw_bet_card(ctx, bet, Rect::new(content.x, y, content.w, 56.0));
         y += 64.0;
+        shown += 1;
+    }
+    if shown < bets.len() {
+        draw_ui_text_ex(
+            &fill(
+                &strings.bets_more,
+                &[("count", (bets.len() - shown).to_string())],
+            ),
+            content.x,
+            y + 14.0,
+            TextStyle::new(13.0, dark::TEXT_DIM).params(),
+        );
     }
 }
 

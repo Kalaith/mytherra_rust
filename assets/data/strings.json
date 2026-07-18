@@ -213,7 +213,8 @@
     "won": "Won",
     "lost": "Lost",
     "bet_line": "{bet_type}  ·  {target}",
-    "bet_meta": "{confidence}  ·  stake {stake}  ·  win {payout}  ·  by {deadline}"
+    "bet_meta": "{confidence}  ·  stake {stake}  ·  win {payout}  ·  by {deadline}",
+    "bets_more": "+{count} older wagers"
   },
   "chronicle": {
     "world_awakens": "The world awakens.",

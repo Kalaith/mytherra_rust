@@ -4,7 +4,9 @@
 //! is a pure win/lose credit.
 
 use crate::data::{fill, GameData, TargetKind};
-use crate::world::{Chronicle, EventKind, Hero, PlayerState, Region, Settlement, SpeculationEvent};
+use crate::world::{
+    Bet, Chronicle, EventKind, Hero, PlayerState, Region, Settlement, SpeculationEvent,
+};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Resolve, replenish, and prune speculation events for one tick.
@@ -33,6 +35,7 @@ pub fn tick_speculations(
     );
     replenish(events, seq, heroes, regions, settlements, rng, data, year);
     prune(events, data.balance.betting.event_cap);
+    prune_bets(&mut player.bets, data.balance.betting.bet_history_cap);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -181,6 +184,24 @@ fn prune(events: &mut Vec<SpeculationEvent>, cap: usize) {
     }
 }
 
+/// Keep every pending wager but drop the oldest resolved ones past the cap, so
+/// the player's bet history (and the save file) can't grow without bound.
+fn prune_bets(bets: &mut Vec<Bet>, cap: usize) {
+    let resolved = bets.iter().filter(|b| b.resolved.is_some()).count();
+    if resolved <= cap {
+        return;
+    }
+    let mut to_drop = resolved - cap;
+    bets.retain(|bet| {
+        if to_drop > 0 && bet.resolved.is_some() {
+            to_drop -= 1;
+            false
+        } else {
+            true
+        }
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,5 +252,45 @@ mod tests {
         ids.sort_unstable();
         ids.dedup();
         assert_eq!(ids.len(), count, "ids must be unique");
+    }
+
+    fn bet(id: &str, resolved: Option<bool>) -> Bet {
+        Bet {
+            event_id: id.to_owned(),
+            bet_type_name: "t".to_owned(),
+            target_name: "x".to_owned(),
+            confidence_name: "c".to_owned(),
+            stake: 10,
+            potential_payout: 20,
+            odds: 2.0,
+            placed_year: 1,
+            deadline_year: 2,
+            resolved,
+        }
+    }
+
+    #[test]
+    fn prune_bets_keeps_pending_and_caps_resolved() {
+        // 3 pending + 5 resolved, cap 2: all pending survive, only the newest 2
+        // resolved (r3, r4) remain.
+        let mut bets = vec![
+            bet("r0", Some(true)),
+            bet("p0", None),
+            bet("r1", Some(false)),
+            bet("r2", Some(true)),
+            bet("p1", None),
+            bet("r3", Some(false)),
+            bet("p2", None),
+            bet("r4", Some(true)),
+        ];
+        prune_bets(&mut bets, 2);
+        let pending = bets.iter().filter(|b| b.resolved.is_none()).count();
+        let resolved: Vec<&str> = bets
+            .iter()
+            .filter(|b| b.resolved.is_some())
+            .map(|b| b.event_id.as_str())
+            .collect();
+        assert_eq!(pending, 3, "every pending wager must survive");
+        assert_eq!(resolved, vec!["r3", "r4"], "only the newest resolved kept");
     }
 }

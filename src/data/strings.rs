@@ -123,6 +123,7 @@ pub struct BettingText {
     pub lost: String,
     pub bet_line: String,
     pub bet_meta: String,
+    pub bets_more: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
