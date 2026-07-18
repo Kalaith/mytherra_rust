@@ -1,5 +1,6 @@
 //! Dashboard: world-at-a-glance, the player's standing, and the recent chronicle.
 
+use crate::data::fill;
 use crate::ui::widgets::{bad_stat_color, button, good_stat_color};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::EventKind;
@@ -22,47 +23,51 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
 }
 
 fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
-    draw_titled(rect, "The Shared World");
+    let strings = &ctx.data.strings;
+    draw_titled(rect, &strings.panels.world);
     let content = rect.inset(18.0);
     let mut y = content.y + 40.0;
 
     let summary = ctx.world.summary();
+    let stats = &strings.stats;
     y = stat_row(
         content,
         y,
-        "Prosperity",
+        &stats.prosperity,
         summary.avg_prosperity,
         good_stat_color(summary.avg_prosperity),
     );
     y = stat_row(
         content,
         y,
-        "Chaos",
+        &stats.chaos,
         summary.avg_chaos,
         bad_stat_color(summary.avg_chaos),
     );
     y = stat_row(
         content,
         y,
-        "Danger",
+        &stats.danger,
         summary.avg_danger,
         bad_stat_color(summary.avg_danger),
     );
     y = stat_row(
         content,
         y,
-        "Magic",
+        &stats.magic,
         summary.avg_magic,
         good_stat_color(summary.avg_magic),
     );
     y += 6.0;
 
     draw_ui_text_ex(
-        &format!(
-            "{} regions  |  {} in crisis  |  {} souls",
-            summary.region_count,
-            summary.regions_in_crisis,
-            format_population(summary.total_population)
+        &fill(
+            &strings.ui.world_summary,
+            &[
+                ("regions", summary.region_count.to_string()),
+                ("crisis", summary.regions_in_crisis.to_string()),
+                ("souls", format_population(summary.total_population)),
+            ],
         ),
         content.x,
         y + 6.0,
@@ -72,7 +77,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
 
     // Player standing.
     draw_ui_text_ex(
-        "Your Standing",
+        &strings.panels.standing,
         content.x,
         y,
         TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
@@ -83,29 +88,38 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         ctx.player.favor as f32,
         ctx.data.config.max_favor as f32,
         dark::POSITIVE,
-        Some(&format!(
-            "Favor {}/{}",
-            ctx.player.favor, ctx.data.config.max_favor
+        Some(&fill(
+            &strings.ui.favor_meter,
+            &[
+                ("favor", ctx.player.favor.to_string()),
+                ("max", ctx.data.config.max_favor.to_string()),
+            ],
         )),
     );
     y += 30.0;
+    let next_cost = ctx.player.next_level_cost(&ctx.data.balance.player);
     meter(
         Rect::new(content.x, y, content.w, 22.0),
         ctx.player.experience as f32,
-        ctx.player.next_level_cost() as f32,
+        next_cost as f32,
         dark::ACCENT,
-        Some(&format!(
-            "Level {}  ({}/{} xp)",
-            ctx.player.level,
-            ctx.player.experience,
-            ctx.player.next_level_cost()
+        Some(&fill(
+            &strings.ui.level_meter,
+            &[
+                ("level", ctx.player.level.to_string()),
+                ("xp", ctx.player.experience.to_string()),
+                ("next", next_cost.to_string()),
+            ],
         )),
     );
     y += 32.0;
     draw_ui_text_ex(
-        &format!(
-            "{} divine nudges  |  {} favor spent",
-            ctx.player.nudges, ctx.player.favor_spent
+        &fill(
+            &strings.ui.standing_summary,
+            &[
+                ("nudges", ctx.player.nudges.to_string()),
+                ("spent", ctx.player.favor_spent.to_string()),
+            ],
         ),
         content.x,
         y,
@@ -145,13 +159,13 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
 }
 
 fn draw_chronicle_panel(ctx: &UiContext<'_>, rect: Rect) {
-    draw_titled(rect, "Chronicle");
+    draw_titled(rect, &ctx.data.strings.panels.chronicle);
     let content = rect.inset(18.0);
     let mut y = content.y + 40.0;
 
     if ctx.world.chronicle.is_empty() {
         draw_ui_text_ex(
-            "Nothing has happened yet.",
+            &ctx.data.strings.ui.empty_chronicle,
             content.x,
             y,
             TextStyle::new(15.0, dark::TEXT_DIM).params(),

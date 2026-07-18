@@ -1,0 +1,70 @@
+{
+  "panels": {
+    "world": "The Shared World",
+    "chronicle": "Chronicle",
+    "regions": "Regions",
+    "standing": "Your Standing",
+    "divine_actions": "Divine Actions"
+  },
+  "stats": {
+    "prosperity": "Prosperity",
+    "chaos": "Chaos",
+    "danger": "Danger",
+    "magic": "Magic",
+    "culture": "Culture",
+    "resonance": "Resonance",
+    "population": "Population"
+  },
+  "placeholders": {
+    "heroes": {
+      "title": "Heroes & Champions",
+      "body": "Hero lifecycles and champion cultivation arrive in a later iteration."
+    },
+    "divine_tools": {
+      "title": "Divine Tools",
+      "body": "Artifacts, Weather, Omens, Magic, Myths, Civilization, and the Pantheon are coming."
+    },
+    "betting": {
+      "title": "Divine Observatory",
+      "body": "Speculation events, house odds, and the crowd-lean adjustment are coming."
+    },
+    "eras": {
+      "title": "Eras",
+      "body": "Era pressure, legacy, and transition history are coming."
+    }
+  },
+  "ui": {
+    "footer_hint": "The world advances on its own. {regions} regions watched  |  S save  L load  N new world  Space advance tick",
+    "empty_chronicle": "Nothing has happened yet.",
+    "no_region": "No region",
+    "world_summary": "{regions} regions  |  {crisis} in crisis  |  {souls} souls",
+    "standing_summary": "{nudges} divine nudges  |  {spent} favor spent",
+    "region_meta": "Population {pop}   Resonance x{effect} effect, x{cost} cost",
+    "region_subtitle": "{status}  |  {culture}",
+    "favor_meter": "Favor {favor}/{max}",
+    "level_meter": "Level {level}  ({xp}/{next} xp)",
+    "action_cost": "{cost} favor",
+    "year_badge": "Year {year}",
+    "favor_badge": "Favor {favor}",
+    "level_badge": "Lv {level}",
+    "tick_badge": "Tick {seconds}s"
+  },
+  "notifications": {
+    "awaken": "Mytherra awakens: {regions} regions under watch.",
+    "not_enough_favor": "Not enough Divine Favor.",
+    "action_success": "{action} on {region} ({cost} favor).",
+    "advance_tick": "You will the world forward a year.",
+    "world_saved": "World saved.",
+    "save_failed": "Save failed: {error}",
+    "world_restored": "World restored.",
+    "load_failed": "Load failed: {error}",
+    "new_world": "A new world takes shape.",
+    "unknown_action": "Unknown action: {id}"
+  },
+  "chronicle": {
+    "world_awakens": "The world awakens.",
+    "year_dawns": "Year {year} dawns. Favor +{favor}.",
+    "crisis": "{region} has slipped into crisis.",
+    "divine_action": "A deity used {action} on {region}."
+  }
+}

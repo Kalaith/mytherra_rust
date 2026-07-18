@@ -1,7 +1,7 @@
 //! High-level game loop: owns the world, the player, and screen navigation,
 //! runs the tick timer, and interprets UI intents.
 
-use crate::data::GameData;
+use crate::data::{fill, GameData};
 use crate::save::{migrate_save_value, SaveData};
 use crate::sim::tick_world;
 use crate::ui::{self, Screen, UiAction, UiContext};
@@ -38,9 +38,9 @@ impl Game {
         let player = PlayerState::new(&data.config);
 
         let mut notifications = NotificationManager::new();
-        notifications.info(format!(
-            "Mytherra awakens: {} regions under watch.",
-            world.regions.len()
+        notifications.info(fill(
+            &data.strings.notifications.awaken,
+            &[("regions", world.regions.len().to_string())],
         ));
 
         let mut game = Self {
@@ -137,7 +137,7 @@ impl Game {
     }
 
     fn run_tick(&mut self) {
-        tick_world(&mut self.world, &mut self.player, &self.data.config);
+        tick_world(&mut self.world, &mut self.player, &self.data);
     }
 
     fn apply_action(&mut self, action: UiAction) {
@@ -152,7 +152,7 @@ impl Game {
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications
-                    .info("You will the world forward a year.");
+                    .info(self.data.strings.notifications.advance_tick.clone());
             }
             UiAction::Save => self.save_game(),
             UiAction::Load => self.load_game(),
@@ -161,8 +161,10 @@ impl Game {
     }
 
     fn apply_region_action(&mut self, id: &str) {
+        let notes = &self.data.strings.notifications;
         let Some(def) = self.data.region_actions.get(id).cloned() else {
-            self.notifications.warning(format!("Unknown action: {id}"));
+            self.notifications
+                .warning(fill(&notes.unknown_action, &[("id", id.to_owned())]));
             return;
         };
         let index = self
@@ -171,9 +173,9 @@ impl Game {
         let Some(region) = self.world.region(index) else {
             return;
         };
-        let cost = region.action_cost(&def);
-        if !self.player.spend(cost) {
-            self.notifications.warning("Not enough Divine Favor.");
+        let cost = region.action_cost(&def, &self.data.balance.region);
+        if !self.player.spend(cost, &self.data.balance.player) {
+            self.notifications.warning(notes.not_enough_favor.clone());
             return;
         }
 
@@ -181,16 +183,29 @@ impl Game {
         let region_name;
         {
             let region = self.world.region_mut(index).expect("index checked above");
-            region.apply_action(&def);
+            region.apply_action(&def, &self.data.balance.region);
             region_name = region.name.clone();
         }
+        let text = &self.data.strings;
         self.world.chronicle.push(
             year,
             EventKind::Divine,
-            format!("A deity used {} on {region_name}.", def.name),
+            fill(
+                &text.chronicle.divine_action,
+                &[
+                    ("action", def.name.clone()),
+                    ("region", region_name.clone()),
+                ],
+            ),
         );
-        self.notifications
-            .success(format!("{} on {region_name} ({cost} favor).", def.name));
+        self.notifications.success(fill(
+            &text.notifications.action_success,
+            &[
+                ("action", def.name.clone()),
+                ("region", region_name),
+                ("cost", cost.to_string()),
+            ],
+        ));
     }
 
     fn new_world(&mut self) {
@@ -198,11 +213,13 @@ impl Game {
         self.player = PlayerState::new(&self.data.config);
         self.selected_region = 0;
         self.tick_accum = 0.0;
-        self.notifications.info("A new world takes shape.");
+        self.notifications
+            .info(self.data.strings.notifications.new_world.clone());
     }
 
     fn save_game(&mut self) {
         let save = SaveData::new(&self.world, &self.player, &self.data.config.version);
+        let notes = self.data.strings.notifications.clone();
         match save_to_slot_with_version(
             &self.data.config.game_name,
             &self.data.config.save_slot,
@@ -210,10 +227,12 @@ impl Game {
             &self.data.config.version,
         ) {
             Ok(()) => {
-                self.notifications.success("World saved.");
+                self.notifications.success(notes.world_saved);
                 self.refresh_save_state();
             }
-            Err(err) => self.notifications.danger(format!("Save failed: {err}")),
+            Err(err) => self
+                .notifications
+                .danger(fill(&notes.save_failed, &[("error", err)])),
         }
     }
 
@@ -224,16 +243,19 @@ impl Game {
             &self.data.config.version,
             |version, value| migrate_save_value(version, value, &self.data.config),
         );
+        let notes = self.data.strings.notifications.clone();
         match loaded {
             Ok(save) => {
                 self.world = save.world;
                 self.player = save.player;
                 self.selected_region = 0;
                 self.tick_accum = 0.0;
-                self.notifications.success("World restored.");
+                self.notifications.success(notes.world_restored);
                 self.refresh_save_state();
             }
-            Err(err) => self.notifications.warning(format!("Load failed: {err}")),
+            Err(err) => self
+                .notifications
+                .warning(fill(&notes.load_failed, &[("error", err)])),
         }
     }
 

@@ -1,6 +1,6 @@
 //! Runtime region state: the mutable, simulated form of a `RegionSeed`.
 
-use crate::data::{ClimateType, Culture, RegionActionDef, RegionSeed};
+use crate::data::{ClimateType, Culture, RegionActionDef, RegionBalance, RegionSeed};
 use serde::{Deserialize, Serialize};
 
 /// Derived, at-a-glance health of a region. Recomputed from stats each tick
@@ -56,7 +56,7 @@ pub struct Region {
 }
 
 impl Region {
-    pub fn from_seed(seed: &RegionSeed) -> Self {
+    pub fn from_seed(seed: &RegionSeed, balance: &RegionBalance) -> Self {
         let mut region = Self {
             id: seed.id.clone(),
             name: seed.name.clone(),
@@ -71,49 +71,53 @@ impl Region {
             divine_resonance: clamp_stat(seed.divine_resonance),
             status: RegionStatus::Peaceful,
         };
-        region.refresh_status();
+        region.refresh_status(balance);
         region
     }
 
     /// Cost multiplier from divine resonance: high-resonance regions are cheaper
-    /// to nudge. `clamp(0.7, 1.3, 1 - (resonance-50) * 0.006)` (GDD 5.2).
-    pub fn cost_multiplier(&self) -> f32 {
-        (1.0 - (self.divine_resonance - 50.0) * 0.006).clamp(0.7, 1.3)
+    /// to nudge (GDD 5.2, tuned in `balance.json`).
+    pub fn cost_multiplier(&self, balance: &RegionBalance) -> f32 {
+        let curve = &balance.cost_multiplier;
+        (1.0 - (self.divine_resonance - 50.0) * curve.coeff).clamp(curve.min, curve.max)
     }
 
     /// Effect multiplier from divine resonance: high-resonance regions respond
-    /// more strongly. `clamp(0.75, 1.35, 1 + (resonance-50) * 0.007)` (GDD 5.2).
-    pub fn effect_multiplier(&self) -> f32 {
-        (1.0 + (self.divine_resonance - 50.0) * 0.007).clamp(0.75, 1.35)
+    /// more strongly (GDD 5.2, tuned in `balance.json`).
+    pub fn effect_multiplier(&self, balance: &RegionBalance) -> f32 {
+        let curve = &balance.effect_multiplier;
+        (1.0 + (self.divine_resonance - 50.0) * curve.coeff).clamp(curve.min, curve.max)
     }
 
     /// Final favor cost of an action against this region.
-    pub fn action_cost(&self, def: &RegionActionDef) -> i64 {
-        ((def.cost as f32 * self.cost_multiplier()).round() as i64).max(1)
+    pub fn action_cost(&self, def: &RegionActionDef, balance: &RegionBalance) -> i64 {
+        ((def.cost as f32 * self.cost_multiplier(balance)).round() as i64).max(1)
     }
 
     /// Apply an action's resonance-scaled stat deltas. Does not touch favor;
     /// callers debit the player after confirming affordability.
-    pub fn apply_action(&mut self, def: &RegionActionDef) {
-        let mult = self.effect_multiplier();
+    pub fn apply_action(&mut self, def: &RegionActionDef, balance: &RegionBalance) {
+        let mult = self.effect_multiplier(balance);
         self.prosperity = clamp_stat(self.prosperity + scaled(def.prosperity, mult));
         self.chaos = clamp_stat(self.chaos + scaled(def.chaos, mult));
         self.danger = clamp_stat(self.danger + scaled(def.danger, mult));
         self.magic_affinity = clamp_stat(self.magic_affinity + scaled(def.magic_affinity, mult));
-        self.refresh_status();
+        self.refresh_status(balance);
     }
 
-    /// Recompute the derived status band from current stats.
-    pub fn refresh_status(&mut self) {
-        self.status = if self.danger >= 65.0 && self.chaos >= 60.0 {
+    /// Recompute the derived status band from current stats (thresholds from
+    /// `balance.json`).
+    pub fn refresh_status(&mut self, balance: &RegionBalance) {
+        let t = &balance.status;
+        self.status = if self.danger >= t.wartorn_danger && self.chaos >= t.wartorn_chaos {
             RegionStatus::WarTorn
-        } else if self.chaos >= 70.0 {
+        } else if self.chaos >= t.unrest_chaos {
             RegionStatus::Unrest
-        } else if self.prosperity >= 75.0 && self.chaos < 40.0 {
+        } else if self.prosperity >= t.thriving_prosperity && self.chaos < t.thriving_chaos_max {
             RegionStatus::Thriving
-        } else if self.prosperity < 30.0 {
+        } else if self.prosperity < t.struggling_prosperity {
             RegionStatus::Struggling
-        } else if self.prosperity >= 55.0 {
+        } else if self.prosperity >= t.prospering_prosperity {
             RegionStatus::Prospering
         } else {
             RegionStatus::Peaceful
@@ -164,11 +168,16 @@ mod tests {
         }
     }
 
+    fn balance() -> crate::data::Balance {
+        crate::data::GameData::load().unwrap().balance
+    }
+
     #[test]
     fn neutral_resonance_gives_base_cost_and_effect() {
-        let mut region = Region::from_seed(&seed());
-        assert_eq!(region.action_cost(&bless()), 15);
-        region.apply_action(&bless());
+        let b = balance();
+        let mut region = Region::from_seed(&seed(), &b.region);
+        assert_eq!(region.action_cost(&bless(), &b.region), 15);
+        region.apply_action(&bless(), &b.region);
         assert!((region.prosperity - 58.0).abs() < f32::EPSILON);
         assert!((region.chaos - 46.0).abs() < f32::EPSILON);
         assert!((region.danger - 47.0).abs() < f32::EPSILON);
@@ -176,20 +185,22 @@ mod tests {
 
     #[test]
     fn high_resonance_is_cheaper_and_stronger() {
+        let b = balance();
         let mut s = seed();
         s.divine_resonance = 100.0;
-        let region = Region::from_seed(&s);
-        assert!(region.action_cost(&bless()) < 15);
-        assert!(region.effect_multiplier() > 1.0);
+        let region = Region::from_seed(&s, &b.region);
+        assert!(region.action_cost(&bless(), &b.region) < 15);
+        assert!(region.effect_multiplier(&b.region) > 1.0);
     }
 
     #[test]
     fn stats_clamp_to_valid_range() {
+        let b = balance();
         let mut s = seed();
         s.prosperity = 98.0;
-        let mut region = Region::from_seed(&s);
+        let mut region = Region::from_seed(&s, &b.region);
         for _ in 0..10 {
-            region.apply_action(&bless());
+            region.apply_action(&bless(), &b.region);
         }
         assert!(region.prosperity <= 100.0);
         assert!(region.danger >= 0.0);

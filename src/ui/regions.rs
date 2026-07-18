@@ -1,7 +1,7 @@
 //! Regions screen: a region roster on the left, detail + divine actions on the
 //! right (GDD 10 "World Map / Regions").
 
-use crate::data::RegionActionDef;
+use crate::data::{fill, RegionActionDef};
 use crate::ui::widgets::{bad_stat_color, button, good_stat_color};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::Region;
@@ -24,7 +24,7 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
 }
 
 fn draw_region_list(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
-    draw_titled(rect, "Regions");
+    draw_titled(rect, &ctx.data.strings.panels.regions);
     let content = rect.inset(16.0);
     let selected = selected_index(ctx);
     let mut y = content.y + 34.0;
@@ -33,14 +33,14 @@ fn draw_region_list(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         let card = Rect::new(content.x, y, content.w, 68.0);
         let hovered = card.contains_point(ctx.mouse);
         let is_selected = index == selected;
-        let fill = if is_selected {
+        let fill_color = if is_selected {
             Color::new(0.15, 0.19, 0.26, 1.0)
         } else if hovered {
             Color::new(0.12, 0.14, 0.18, 1.0)
         } else {
             Color::new(0.09, 0.1, 0.13, 1.0)
         };
-        let style = SurfaceStyle::new(fill)
+        let style = SurfaceStyle::new(fill_color)
             .with_left_accent(4.0, status_color(region))
             .with_border(1.0, Color::new(0.4, 0.46, 0.58, 0.35));
         draw_surface(card, &style);
@@ -52,7 +52,13 @@ fn draw_region_list(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
             TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
         );
         draw_ui_text_ex(
-            &format!("{}  |  {}", region.status.label(), region.culture.label()),
+            &fill(
+                &ctx.data.strings.ui.region_subtitle,
+                &[
+                    ("status", region.status.label().to_owned()),
+                    ("culture", region.culture.label().to_owned()),
+                ],
+            ),
             card.x + 16.0,
             card.y + 48.0,
             TextStyle::new(14.0, dark::TEXT_DIM).params(),
@@ -73,9 +79,10 @@ fn draw_region_list(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
 }
 
 fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
+    let strings = &ctx.data.strings;
     let selected = selected_index(ctx);
     let Some(region) = ctx.world.region(selected) else {
-        draw_titled(rect, "No region");
+        draw_titled(rect, &strings.ui.no_region);
         return;
     };
     draw_titled(rect, &region.name);
@@ -93,12 +100,13 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
     let col_w = (content.w - 24.0) / 2.0;
     let left_x = content.x;
     let right_x = content.x + col_w + 24.0;
+    let stats = &strings.stats;
     let mut ly = y;
     ly = stat(
         left_x,
         ly,
         col_w,
-        "Prosperity",
+        &stats.prosperity,
         region.prosperity,
         good_stat_color(region.prosperity),
     );
@@ -106,7 +114,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         left_x,
         ly,
         col_w,
-        "Chaos",
+        &stats.chaos,
         region.chaos,
         bad_stat_color(region.chaos),
     );
@@ -114,7 +122,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         left_x,
         ly,
         col_w,
-        "Danger",
+        &stats.danger,
         region.danger,
         bad_stat_color(region.danger),
     );
@@ -123,7 +131,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         right_x,
         ry,
         col_w,
-        "Magic",
+        &stats.magic,
         region.magic_affinity,
         good_stat_color(region.magic_affinity),
     );
@@ -131,7 +139,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         right_x,
         ry,
         col_w,
-        "Culture",
+        &stats.culture,
         region.cultural_influence,
         good_stat_color(region.cultural_influence),
     );
@@ -139,18 +147,27 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         right_x,
         ry,
         col_w,
-        "Resonance",
+        &stats.resonance,
         region.divine_resonance,
         good_stat_color(region.divine_resonance),
     );
     y = ly.max(ry) + 8.0;
 
+    let region_balance = &ctx.data.balance.region;
     draw_ui_text_ex(
-        &format!(
-            "Population {}   Resonance x{:.2} effect, x{:.2} cost",
-            region.population as i64,
-            region.effect_multiplier(),
-            region.cost_multiplier()
+        &fill(
+            &strings.ui.region_meta,
+            &[
+                ("pop", (region.population as i64).to_string()),
+                (
+                    "effect",
+                    format!("{:.2}", region.effect_multiplier(region_balance)),
+                ),
+                (
+                    "cost",
+                    format!("{:.2}", region.cost_multiplier(region_balance)),
+                ),
+            ],
         ),
         content.x,
         y,
@@ -160,7 +177,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
 
     // Divine action buttons.
     draw_ui_text_ex(
-        "Divine Actions",
+        &strings.panels.divine_actions,
         content.x,
         y,
         TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
@@ -185,10 +202,10 @@ fn draw_action_card(
     rect: Rect,
     actions: &mut Vec<UiAction>,
 ) {
-    let cost = region.action_cost(def);
+    let cost = region.action_cost(def, &ctx.data.balance.region);
     let affordable = ctx.player.can_afford(cost);
     let hovered = affordable && rect.contains_point(ctx.mouse);
-    let fill = if hovered {
+    let fill_color = if hovered {
         Color::new(0.14, 0.17, 0.22, 1.0)
     } else {
         Color::new(0.1, 0.115, 0.145, 1.0)
@@ -196,7 +213,7 @@ fn draw_action_card(
     let tone = action_tone(&def.id);
     draw_surface(
         rect,
-        &SurfaceStyle::new(fill)
+        &SurfaceStyle::new(fill_color)
             .with_left_accent(4.0, ButtonStyle::from_tone(tone).normal)
             .with_border(1.0, Color::new(0.4, 0.46, 0.58, 0.35)),
     );
@@ -222,7 +239,11 @@ fn draw_action_card(
     );
 
     let btn = Rect::new(rect.right() - 118.0, rect.y + 14.0, 104.0, 36.0);
-    if button(btn, &format!("{} favor", cost), affordable, tone, ctx.mouse) {
+    let label = fill(
+        &ctx.data.strings.ui.action_cost,
+        &[("cost", cost.to_string())],
+    );
+    if button(btn, &label, affordable, tone, ctx.mouse) {
         actions.push(UiAction::RegionAction(def.id.clone()));
     }
 }

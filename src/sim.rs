@@ -3,39 +3,43 @@
 
 mod region;
 
-use crate::data::GameConfig;
+use crate::data::{fill, GameData};
 use crate::world::{EventKind, PlayerState, WorldState};
 
 /// Advance the entire world by one tick: age every region, credit passive
 /// favor, and record the chronicle entries a returning player would read.
-pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, config: &GameConfig) {
+pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameData) {
     world.year += 1;
     world.tick_count += 1;
 
     let mut newly_in_crisis: Vec<String> = Vec::new();
     for region in &mut world.regions {
         let was_crisis = region.status.is_crisis();
-        region::tick_region(region);
+        region::tick_region(region, &data.balance.region);
         if region.status.is_crisis() && !was_crisis {
             newly_in_crisis.push(region.name.clone());
         }
     }
 
-    player.recover(config);
+    player.recover(&data.config);
 
+    let text = &data.strings.chronicle;
     world.chronicle.push(
         world.year,
         EventKind::Tick,
-        format!(
-            "Year {} dawns. Favor +{}.",
-            world.year, config.favor_per_tick
+        fill(
+            &text.year_dawns,
+            &[
+                ("year", world.year.to_string()),
+                ("favor", data.config.favor_per_tick.to_string()),
+            ],
         ),
     );
     for name in newly_in_crisis {
         world.chronicle.push(
             world.year,
             EventKind::Region,
-            format!("{name} has slipped into crisis."),
+            fill(&text.crisis, &[("region", name)]),
         );
     }
 }
@@ -43,7 +47,6 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, config: &Gam
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::GameData;
 
     #[test]
     fn tick_advances_year_and_favor() {
@@ -53,7 +56,7 @@ mod tests {
         player.favor = 0;
         let start_year = world.year;
 
-        tick_world(&mut world, &mut player, &data.config);
+        tick_world(&mut world, &mut player, &data);
 
         assert_eq!(world.year, start_year + 1);
         assert_eq!(world.tick_count, 1);

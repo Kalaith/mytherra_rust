@@ -83,29 +83,14 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
     shell::draw_header(ctx);
     shell::draw_nav(ctx, &mut actions);
 
+    let placeholders = &ctx.data.strings.placeholders;
     match ctx.screen {
         Screen::Dashboard => dashboard::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
-        Screen::Heroes => placeholder::draw(
-            ctx,
-            "Heroes & Champions",
-            "Hero lifecycles and champion cultivation arrive in a later iteration.",
-        ),
-        Screen::DivineTools => placeholder::draw(
-            ctx,
-            "Divine Tools",
-            "Artifacts, Weather, Omens, Magic, Myths, Civilization, and the Pantheon are coming.",
-        ),
-        Screen::Betting => placeholder::draw(
-            ctx,
-            "Divine Observatory",
-            "Speculation events, house odds, and the crowd-lean adjustment are coming.",
-        ),
-        Screen::Eras => placeholder::draw(
-            ctx,
-            "Eras",
-            "Era pressure, legacy, and transition history are coming.",
-        ),
+        Screen::Heroes => placeholder::draw(ctx, &placeholders.heroes),
+        Screen::DivineTools => placeholder::draw(ctx, &placeholders.divine_tools),
+        Screen::Betting => placeholder::draw(ctx, &placeholders.betting),
+        Screen::Eras => placeholder::draw(ctx, &placeholders.eras),
     }
 
     shell::draw_footer(ctx);

@@ -1,5 +1,6 @@
 //! Persistent chrome around every screen: header, nav tabs, footer.
 
+use crate::data::fill;
 use crate::ui::widgets::nav_tabs;
 use crate::ui::{Screen, UiAction, UiContext, LOGICAL_WIDTH};
 use macroquad::prelude::*;
@@ -20,27 +21,29 @@ pub fn draw_header(ctx: &UiContext<'_>) {
         TextStyle::new(28.0, dark::TEXT_BRIGHT).params(),
     );
 
+    let ui = &ctx.data.strings.ui;
+    let y = rect.y + 16.0;
     let mut x = rect.right() - 18.0;
-    x = badge_right(x, rect.y + 16.0, 118.0, &next_tick_label(ctx), TICK_FILL);
+    x = badge_right(x, y, 118.0, &next_tick_label(ctx), TICK_FILL);
     x = badge_right(
         x,
-        rect.y + 16.0,
+        y,
         96.0,
-        &format!("Lv {}", ctx.player.level),
+        &fill(&ui.level_badge, &[("level", ctx.player.level.to_string())]),
         LEVEL_FILL,
     );
     x = badge_right(
         x,
-        rect.y + 16.0,
+        y,
         132.0,
-        &format!("Favor {}", ctx.player.favor),
+        &fill(&ui.favor_badge, &[("favor", ctx.player.favor.to_string())]),
         FAVOR_FILL,
     );
     badge_right(
         x,
-        rect.y + 16.0,
+        y,
         118.0,
-        &format!("Year {}", ctx.world.year),
+        &fill(&ui.year_badge, &[("year", ctx.world.year.to_string())]),
         YEAR_FILL,
     );
 }
@@ -64,9 +67,9 @@ pub fn draw_footer(ctx: &UiContext<'_>) {
         &SurfaceStyle::new(Color::new(0.055, 0.06, 0.075, 0.96))
             .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.45)),
     );
-    let hint = format!(
-        "The world advances on its own. {} regions watched  |  S save  L load  N new world  Space advance tick",
-        ctx.world.regions.len()
+    let hint = fill(
+        &ctx.data.strings.ui.footer_hint,
+        &[("regions", ctx.world.regions.len().to_string())],
     );
     draw_ui_text_ex(
         &hint,
@@ -77,13 +80,14 @@ pub fn draw_footer(ctx: &UiContext<'_>) {
 }
 
 fn next_tick_label(ctx: &UiContext<'_>) -> String {
-    format!("Tick {:>2.0}s", ctx.seconds_to_tick.max(0.0).ceil())
+    let seconds = format!("{:>2}", ctx.seconds_to_tick.max(0.0).ceil() as i64);
+    fill(&ctx.data.strings.ui.tick_badge, &[("seconds", seconds)])
 }
 
 /// Draw a right-anchored badge, returning the new right edge (left of it).
-fn badge_right(right: f32, y: f32, w: f32, label: &str, fill: Color) -> f32 {
+fn badge_right(right: f32, y: f32, w: f32, label: &str, fill_color: Color) -> f32 {
     let rect = Rect::new(right - w, y, w, 28.0);
-    draw_badge(rect, label, fill, dark::TEXT);
+    draw_badge(rect, label, fill_color, dark::TEXT);
     rect.x - 8.0
 }
 

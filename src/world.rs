@@ -35,16 +35,22 @@ pub struct WorldState {
 impl WorldState {
     /// Build a fresh world from seed content.
     pub fn new(data: &GameData) -> Self {
-        let regions = data.regions.iter().map(Region::from_seed).collect();
+        let regions = data
+            .regions
+            .iter()
+            .map(|seed| Region::from_seed(seed, &data.balance.region))
+            .collect();
         let mut world = Self {
             year: data.config.start_year,
             tick_count: 0,
             regions,
             chronicle: Chronicle::default(),
         };
-        world
-            .chronicle
-            .push(world.year, EventKind::System, "The world awakens.");
+        world.chronicle.push(
+            world.year,
+            EventKind::System,
+            data.strings.chronicle.world_awakens.clone(),
+        );
         world
     }
 
