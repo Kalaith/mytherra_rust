@@ -1,5 +1,6 @@
-//! Pantheon: the four deities in their ally/rival diamond, with Appease and
-//! Challenge actions gated on relationship cooldowns (GDD 5.6).
+//! Pantheon: the six deities in their ally/rival web (a light triangle opposed
+//! to a shadow triangle), with Appease and Challenge actions gated on
+//! relationship cooldowns (GDD 5.6).
 
 use crate::data::fill;
 use crate::data::strings::DivineText;
@@ -15,10 +16,12 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
     draw_panel(rect, &ctx.data.strings.divine.pantheon_panel);
     let content = rect.inset(16.0);
 
-    let gap = 16.0;
+    // Two columns by three rows: the light triangle over the shadow triangle.
+    let gap = 14.0;
+    let rows = 3.0;
     let card_w = (content.w - gap) / 2.0;
-    let card_h = (content.h - 24.0 - gap) / 2.0;
-    for (index, deity) in ctx.world.pantheon.iter().enumerate().take(4) {
+    let card_h = (content.h - 24.0 - gap * (rows - 1.0)) / rows;
+    for (index, deity) in ctx.world.pantheon.iter().enumerate().take(6) {
         let col = (index % 2) as f32;
         let row = (index / 2) as f32;
         let x = content.x + col * (card_w + gap);

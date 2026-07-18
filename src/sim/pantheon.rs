@@ -73,4 +73,29 @@ mod tests {
         );
         assert!(world.regions[0].prosperity >= before);
     }
+
+    #[test]
+    fn every_ally_and_rival_id_resolves() {
+        // The ally/rival web is hand-wired; a typo would silently render as a raw
+        // id in the UI. Guard that every reference points at a real deity.
+        let data = GameData::load().unwrap();
+        let world = WorldState::new(&data);
+        let ids: Vec<&str> = world.pantheon.iter().map(|d| d.id.as_str()).collect();
+        for deity in &world.pantheon {
+            assert!(
+                ids.contains(&deity.ally_id.as_str()),
+                "{} has unknown ally {}",
+                deity.id,
+                deity.ally_id
+            );
+            assert!(
+                ids.contains(&deity.rival_id.as_str()),
+                "{} has unknown rival {}",
+                deity.id,
+                deity.rival_id
+            );
+            assert_ne!(deity.ally_id, deity.id, "{} allies itself", deity.id);
+            assert_ne!(deity.rival_id, deity.id, "{} rivals itself", deity.id);
+        }
+    }
 }
