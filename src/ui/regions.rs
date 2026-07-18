@@ -2,7 +2,7 @@
 //! right (GDD 10 "World Map / Regions").
 
 use crate::data::{fill, RegionActionDef};
-use crate::ui::widgets::{bad_stat_color, button, good_stat_color};
+use crate::ui::widgets::{bad_stat_color, button, good_stat_color, trend_marker};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::Region;
 use macroquad::prelude::*;
@@ -387,21 +387,9 @@ fn stat(x: f32, y: f32, w: f32, label: &str, value: f32, color: Color, trend: f3
         value,
         100.0,
         color,
-        Some(&format!("{label} {value:.0}{}", trend_arrow(trend))),
+        Some(&format!("{label} {value:.0}{}", trend_marker(trend))),
     );
     y + 28.0
-}
-
-/// A rising/falling marker for a stat's per-tick change, with a deadzone so
-/// slow mean-reversion drift doesn't flicker an arrow every tick.
-fn trend_arrow(delta: f32) -> &'static str {
-    if delta > 0.4 {
-        "  ^"
-    } else if delta < -0.4 {
-        "  v"
-    } else {
-        ""
-    }
 }
 
 fn badge(x: f32, y: f32, w: f32, label: &str) -> f32 {

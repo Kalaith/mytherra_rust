@@ -1,7 +1,7 @@
 //! Dashboard: world-at-a-glance, the player's standing, and the recent chronicle.
 
 use crate::data::fill;
-use crate::ui::widgets::{bad_stat_color, button, good_stat_color};
+use crate::ui::widgets::{bad_stat_color, button, good_stat_color, trend_marker};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::EventKind;
 use macroquad::prelude::*;
@@ -36,6 +36,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         &stats.prosperity,
         summary.avg_prosperity,
         good_stat_color(summary.avg_prosperity),
+        summary.trend_prosperity,
     );
     y = stat_row(
         content,
@@ -43,6 +44,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         &stats.chaos,
         summary.avg_chaos,
         bad_stat_color(summary.avg_chaos),
+        summary.trend_chaos,
     );
     y = stat_row(
         content,
@@ -50,6 +52,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         &stats.danger,
         summary.avg_danger,
         bad_stat_color(summary.avg_danger),
+        summary.trend_danger,
     );
     y = stat_row(
         content,
@@ -57,6 +60,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         &stats.magic,
         summary.avg_magic,
         good_stat_color(summary.avg_magic),
+        summary.trend_magic,
     );
     y += 6.0;
 
@@ -249,13 +253,13 @@ fn draw_chronicle_panel(ctx: &UiContext<'_>, rect: Rect) {
     }
 }
 
-fn stat_row(content: Rect, y: f32, label: &str, value: f32, color: Color) -> f32 {
+fn stat_row(content: Rect, y: f32, label: &str, value: f32, color: Color, trend: f32) -> f32 {
     meter(
         Rect::new(content.x, y, content.w, 22.0),
         value,
         100.0,
         color,
-        Some(&format!("{label}  {value:.0}")),
+        Some(&format!("{label}  {value:.0}{}", trend_marker(trend))),
     );
     y + 30.0
 }

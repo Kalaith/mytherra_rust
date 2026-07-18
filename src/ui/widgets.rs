@@ -95,6 +95,19 @@ pub fn nav_tabs(rect: Rect, labels: &[&str], active: usize, mouse: Vec2) -> Opti
     clicked
 }
 
+/// A rising/falling marker for a stat's per-tick change, with a deadzone so
+/// slow mean-reversion drift doesn't flicker an arrow every tick. Shared by the
+/// region detail and the dashboard so both read the same way.
+pub fn trend_marker(delta: f32) -> &'static str {
+    if delta > 0.4 {
+        "  ^"
+    } else if delta < -0.4 {
+        "  v"
+    } else {
+        ""
+    }
+}
+
 /// Color ramp for a 0-100 stat where higher is better (prosperity, magic).
 pub fn good_stat_color(value: f32) -> Color {
     if value >= 65.0 {

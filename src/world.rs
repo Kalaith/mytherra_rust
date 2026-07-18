@@ -53,6 +53,11 @@ pub struct WorldSummary {
     pub avg_chaos: f32,
     pub avg_danger: f32,
     pub avg_magic: f32,
+    /// Average per-region change over the last tick, for the dashboard arrows.
+    pub trend_prosperity: f32,
+    pub trend_chaos: f32,
+    pub trend_danger: f32,
+    pub trend_magic: f32,
     pub total_population: f32,
     pub regions_in_crisis: usize,
 }
@@ -205,6 +210,10 @@ impl WorldState {
             summary.avg_chaos += region.chaos;
             summary.avg_danger += region.danger;
             summary.avg_magic += region.magic_affinity;
+            summary.trend_prosperity += region.prosperity - region.prev.prosperity;
+            summary.trend_chaos += region.chaos - region.prev.chaos;
+            summary.trend_danger += region.danger - region.prev.danger;
+            summary.trend_magic += region.magic_affinity - region.prev.magic_affinity;
             summary.total_population += region.population;
             if region.status.is_crisis() {
                 summary.regions_in_crisis += 1;
@@ -215,6 +224,10 @@ impl WorldState {
         summary.avg_chaos /= n;
         summary.avg_danger /= n;
         summary.avg_magic /= n;
+        summary.trend_prosperity /= n;
+        summary.trend_chaos /= n;
+        summary.trend_danger /= n;
+        summary.trend_magic /= n;
         summary
     }
 }
