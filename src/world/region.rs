@@ -105,6 +105,11 @@ impl Region {
         self.refresh_status(balance);
     }
 
+    /// Nudge cultural influence (from myth echoes), clamped 0-100.
+    pub fn adjust_culture(&mut self, amount: f32) {
+        self.cultural_influence = clamp_stat(self.cultural_influence + amount);
+    }
+
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {

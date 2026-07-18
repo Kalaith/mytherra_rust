@@ -7,6 +7,7 @@ mod champion;
 mod chronicle;
 mod hero;
 mod magic;
+mod myth;
 mod player;
 mod region;
 mod speculation;
@@ -18,6 +19,7 @@ pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
 pub use hero::Hero;
 pub use magic::{MagicPath, MagicState};
+pub use myth::{Myth, MythCandidate};
 pub use player::PlayerState;
 pub use region::{Region, RegionStatus};
 pub use speculation::SpeculationEvent;
@@ -50,6 +52,10 @@ pub struct WorldState {
     pub artifact_seq: u64,
     pub weather: Vec<WeatherEvent>,
     pub magic_paths: Vec<MagicPath>,
+    pub myths: Vec<Myth>,
+    pub myth_candidates: Vec<MythCandidate>,
+    /// Monotonic counter for unique myth ids.
+    pub myth_seq: u64,
     pub speculations: Vec<SpeculationEvent>,
     /// Monotonic counter for unique speculation event ids.
     pub speculation_seq: u64,
@@ -79,6 +85,9 @@ impl WorldState {
             artifact_seq: 0,
             weather: Vec::new(),
             magic_paths,
+            myths: Vec::new(),
+            myth_candidates: Vec::new(),
+            myth_seq: 0,
             speculations: Vec::new(),
             speculation_seq: 0,
             chronicle: Chronicle::default(),

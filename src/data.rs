@@ -12,6 +12,7 @@ mod champion;
 mod config;
 mod hero;
 mod magic;
+mod myth;
 mod region;
 pub mod strings;
 mod weather;
@@ -27,6 +28,7 @@ pub use champion::ChampionFocus;
 pub use config::GameConfig;
 pub use hero::{HeroRole, HeroSeed};
 pub use magic::{MagicPathSeed, MagicStat};
+pub use myth::{MythStat, MythTheme};
 pub use region::{ClimateType, Culture, RegionSeed};
 pub use strings::{fill, Strings};
 pub use weather::{WeatherIntensity, WeatherPattern};
@@ -43,6 +45,7 @@ const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
 const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
 const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
 const MAGIC_PATHS_JSON: &str = include_str!("../assets/data/magic_paths.json");
+const MYTH_THEMES_JSON: &str = include_str!("../assets/data/myth_themes.json");
 const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
 const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
 const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
@@ -60,6 +63,7 @@ pub struct GameData {
     pub weather_patterns: Vec<WeatherPattern>,
     pub weather_intensities: Vec<WeatherIntensity>,
     pub magic_paths: Vec<MagicPathSeed>,
+    pub myth_themes: Vec<MythTheme>,
     pub bet_types: Vec<BetType>,
     pub confidence_levels: Vec<ConfidenceLevel>,
     pub timeframes: Vec<TimeframeModifier>,
@@ -78,6 +82,7 @@ impl GameData {
         let weather_intensities: Vec<WeatherIntensity> =
             load_embedded_json(WEATHER_INTENSITIES_JSON)?;
         let magic_paths: Vec<MagicPathSeed> = load_embedded_json(MAGIC_PATHS_JSON)?;
+        let myth_themes: Vec<MythTheme> = load_embedded_json(MYTH_THEMES_JSON)?;
         let bet_types: Vec<BetType> = load_embedded_json(BET_TYPES_JSON)?;
         let confidence_levels: Vec<ConfidenceLevel> = load_embedded_json(CONFIDENCE_JSON)?;
         let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
@@ -103,6 +108,7 @@ impl GameData {
             weather_patterns,
             weather_intensities,
             magic_paths,
+            myth_themes,
             bet_types,
             confidence_levels,
             timeframes,

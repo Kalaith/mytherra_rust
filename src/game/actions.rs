@@ -5,7 +5,7 @@
 
 use super::Game;
 use crate::data::{fill, ChampionFocus};
-use crate::world::{quote_event, weather_cost, Artifact, Bet, EventKind, WeatherEvent};
+use crate::world::{quote_event, weather_cost, Artifact, Bet, EventKind, Myth, WeatherEvent};
 
 impl Game {
     pub(super) fn apply_region_action(&mut self, id: &str) {
@@ -319,6 +319,30 @@ impl Game {
                 &[("name", name), ("region", next_name)],
             ));
         }
+    }
+
+    pub(super) fn promote_myth(&mut self, id: &str) {
+        let notes = self.data.strings.notifications.clone();
+        if self.world.myths.len() >= self.data.balance.myth.cap {
+            self.notifications.warning(notes.myth_cap);
+            return;
+        }
+        let Some(pos) = self.world.myth_candidates.iter().position(|c| c.id == id) else {
+            return;
+        };
+        let cost = self.data.balance.myth.promote_cost;
+        if !self.player.spend(cost, &self.data.balance.player) {
+            self.notifications.warning(notes.not_enough_favor);
+            return;
+        }
+        let cooldown = self.data.balance.myth.echo_cooldown;
+        let candidate = self.world.myth_candidates.remove(pos);
+        let title = candidate.title.clone();
+        self.world
+            .myths
+            .push(Myth::from_candidate(&candidate, cooldown));
+        self.notifications
+            .success(fill(&notes.myth_promoted, &[("title", title)]));
     }
 
     pub(super) fn research_magic(&mut self, id: &str) {

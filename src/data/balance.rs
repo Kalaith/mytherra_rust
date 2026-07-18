@@ -17,6 +17,7 @@ pub struct Balance {
     pub artifact: ArtifactBalance,
     pub weather: WeatherBalance,
     pub magic: MagicBalance,
+    pub myth: MythBalance,
     pub player: PlayerBalance,
 }
 
@@ -232,6 +233,20 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+}
+
+/// Myth tool tuning (GDD 5.6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MythBalance {
+    pub promote_cost: i64,
+    pub cap: usize,
+    pub echo_cooldown: i32,
+    pub echo_threshold: f32,
+    pub candidate_count: usize,
+    pub resonance_min: f32,
+    pub resonance_max: f32,
+    pub resonance_spread: f32,
+    pub resonance_scale: f32,
 }
 
 /// Magic tool tuning (GDD 5.6).

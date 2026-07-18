@@ -93,6 +93,8 @@ pub enum UiAction {
     CycleWeatherIntensity,
     /// Pour favor into researching the given magic path id.
     ResearchMagic(String),
+    /// Promote the myth candidate with the given id into a living myth.
+    PromoteMyth(String),
     AdvanceTick,
     Save,
     Load,

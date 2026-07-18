@@ -70,7 +70,17 @@
     "magic_evidence": "evidence {evidence}",
     "magic_dormant": "Dormant",
     "magic_emerging": "Emerging",
-    "magic_known": "Known"
+    "magic_known": "Known",
+    "myths_candidates": "Myth Candidates",
+    "myths_active": "Living Myths ({count}/{cap})",
+    "myths_no_candidates": "No tales stir yet.",
+    "myths_no_myths": "No myths endure.",
+    "promote": "Promote {cost}",
+    "myth_meta": "{theme}  ·  {region}",
+    "myth_resonance": "resonance {resonance}",
+    "myth_echo_in": "echoes in {years}y",
+    "myth_faint": "too faint to echo",
+    "new_myth_title": "The {theme} of {region}"
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
@@ -97,7 +107,9 @@
     "artifact_transferred": "{name} passes to {region}.",
     "weather_shaped": "You shape {pattern} over {region}.",
     "weather_max": "Too many storms already rage.",
-    "magic_researched": "You pour insight into {path}."
+    "magic_researched": "You pour insight into {path}.",
+    "myth_promoted": "{title} enters legend.",
+    "myth_cap": "The world can hold no more myths."
   },
   "heroes": {
     "panel": "Heroes & Champions",
@@ -145,6 +157,7 @@
     "bet_won": "Your wager on {target} pays out {payout} favor.",
     "bet_lost": "Your wager on {target} lapses unfulfilled.",
     "artifact_backlash": "{artifact} shatters, scarring {region}.",
-    "magic_known": "{path} passes into common knowledge."
+    "magic_known": "{path} passes into common knowledge.",
+    "myth_echo": "{title} echoes across {region}."
   }
 }

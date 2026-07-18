@@ -4,6 +4,7 @@
 
 mod artifacts;
 mod magic;
+mod myths;
 mod omens;
 mod weather;
 
@@ -64,6 +65,7 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         DivineTool::Weather => weather::draw(ctx, body, actions),
         DivineTool::Omens => omens::draw(ctx, body),
         DivineTool::Magic => magic::draw(ctx, body, actions),
+        DivineTool::Myths => myths::draw(ctx, body, actions),
         _ => draw_todo(ctx, body),
     }
 }

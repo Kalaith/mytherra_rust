@@ -79,7 +79,9 @@ impl Game {
         self.screen = match scene {
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,
-            "divine_tools" | "artifacts" | "omens" | "weather" | "magic" => Screen::DivineTools,
+            "divine_tools" | "artifacts" | "omens" | "weather" | "magic" | "myths" => {
+                Screen::DivineTools
+            }
             "betting" => Screen::Betting,
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
@@ -88,6 +90,7 @@ impl Game {
             "weather" => 1,
             "omens" => 2,
             "magic" => 3,
+            "myths" => 4,
             _ => 0,
         };
         if scene == "weather" {
@@ -105,6 +108,24 @@ impl Game {
                 self.research_magic("restoration");
             }
             for _ in 0..45 {
+                self.run_tick();
+            }
+        }
+        if scene == "myths" {
+            for _ in 0..2 {
+                self.run_tick();
+            }
+            let ids: Vec<String> = self
+                .world
+                .myth_candidates
+                .iter()
+                .take(2)
+                .map(|c| c.id.clone())
+                .collect();
+            for id in ids {
+                self.promote_myth(&id);
+            }
+            for _ in 0..6 {
                 self.run_tick();
             }
         }
@@ -263,6 +284,7 @@ impl Game {
                     (self.weather_intensity + 1) % self.data.weather_intensities.len();
             }
             UiAction::ResearchMagic(id) => self.research_magic(&id),
+            UiAction::PromoteMyth(id) => self.promote_myth(&id),
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications

@@ -136,6 +136,17 @@
     "emerging_effect_scale": 0.5,
     "stat_cap": 100.0
   },
+  "myth": {
+    "promote_cost": 22,
+    "cap": 24,
+    "echo_cooldown": 4,
+    "echo_threshold": 58.0,
+    "candidate_count": 5,
+    "resonance_min": 30.0,
+    "resonance_max": 92.0,
+    "resonance_spread": 15.0,
+    "resonance_scale": 1.4
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

@@ -1,0 +1,6 @@
+[
+  { "id": "valor", "name": "Valor", "cultural_effect": 2.0, "stat": "prosperity", "stat_effect": 1.0 },
+  { "id": "sorrow", "name": "Sorrow", "cultural_effect": 1.5, "stat": "chaos", "stat_effect": -1.0 },
+  { "id": "ruin", "name": "Ruin", "cultural_effect": 1.0, "stat": "danger", "stat_effect": -1.0 },
+  { "id": "wonder", "name": "Wonder", "cultural_effect": 2.0, "stat": "magic", "stat_effect": 1.0 }
+]
