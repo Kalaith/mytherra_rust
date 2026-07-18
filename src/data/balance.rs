@@ -6,6 +6,7 @@
 
 use crate::data::artifact::ArtifactFocus;
 use crate::data::champion::ChampionFocus;
+use crate::data::era::EraTrigger;
 use crate::data::resource::ResourceStatus;
 use serde::{Deserialize, Serialize};
 
@@ -372,6 +373,39 @@ pub struct EraBalance {
     pub renewal_chaos: f32,
     pub renewal_danger: f32,
     pub renewal_prosperity: f32,
+    /// Stat marks the *ending* trigger leaves on the reborn world, layered onto
+    /// the base renewal so each age's aftermath reflects how it fell (GDD 5.7).
+    pub aftermath: EraAftermath,
+}
+
+/// Per-trigger transition aftermath (GDD 5.7).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EraAftermath {
+    pub cataclysm: AftermathDelta,
+    pub collapse: AftermathDelta,
+    pub conquest: AftermathDelta,
+    pub rupture: AftermathDelta,
+    pub divine_war: AftermathDelta,
+}
+
+impl EraAftermath {
+    pub fn get(&self, trigger: EraTrigger) -> &AftermathDelta {
+        match trigger {
+            EraTrigger::Cataclysm => &self.cataclysm,
+            EraTrigger::Collapse => &self.collapse,
+            EraTrigger::Conquest => &self.conquest,
+            EraTrigger::MagicalRupture => &self.rupture,
+            EraTrigger::DivineWar => &self.divine_war,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AftermathDelta {
+    pub prosperity: f32,
+    pub chaos: f32,
+    pub danger: f32,
+    pub magic: f32,
 }
 
 /// Pantheon tool tuning (GDD 5.6).

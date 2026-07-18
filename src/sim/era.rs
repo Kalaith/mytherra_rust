@@ -123,13 +123,15 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         }
     }
 
-    // The land is renewed, and old storms pass.
+    // The land is renewed — plus the mark the ending age's trigger leaves, so a
+    // Collapse rebuilds prosperity while a Cataclysm leaves the new world scarred.
+    let aftermath = balance.aftermath.get(world.era.dominant_trigger);
     for region in world.regions.iter_mut() {
         region.apply_deltas(
-            balance.renewal_prosperity,
-            balance.renewal_chaos,
-            balance.renewal_danger,
-            0.0,
+            balance.renewal_prosperity + aftermath.prosperity,
+            balance.renewal_chaos + aftermath.chaos,
+            balance.renewal_danger + aftermath.danger,
+            aftermath.magic,
             &data.balance.region,
         );
     }
@@ -194,5 +196,31 @@ mod tests {
         let mut player = PlayerState::new(&data.config);
         tick_era(&mut world, &mut player, &data);
         assert_eq!(world.era.number, 1);
+    }
+
+    #[test]
+    fn aftermath_reflects_each_trigger_theme() {
+        use crate::data::EraTrigger;
+        let a = GameData::load().unwrap().balance.era.aftermath;
+        assert!(
+            a.get(EraTrigger::Collapse).prosperity > 0.0,
+            "a Collapse should rebuild prosperity"
+        );
+        assert!(
+            a.get(EraTrigger::Conquest).danger > 0.0,
+            "a Conquest should leave lingering danger"
+        );
+        assert!(
+            a.get(EraTrigger::MagicalRupture).magic > 0.0,
+            "a Rupture should leave arcane residue"
+        );
+        assert!(
+            a.get(EraTrigger::DivineWar).chaos > 0.0,
+            "a Divine War should leave chaos"
+        );
+        assert!(
+            a.get(EraTrigger::Cataclysm).danger > 0.0,
+            "a Cataclysm should scar the new world"
+        );
     }
 }
