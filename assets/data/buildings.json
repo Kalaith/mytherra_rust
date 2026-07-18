@@ -5,5 +5,7 @@
   { "id": "kharzkeep_guildhall", "name": "Kharzkeep Guildhall", "settlement_id": "kharzkeep", "type_id": "guildhall" },
   { "id": "tidehaven_harbor", "name": "Tidehaven Harbor", "settlement_id": "tidehaven", "type_id": "harbor" },
   { "id": "tidehaven_temple", "name": "Tidehaven Temple", "settlement_id": "tidehaven", "type_id": "temple" },
-  { "id": "greenhollow_granary", "name": "Greenhollow Granary", "settlement_id": "greenhollow", "type_id": "granary" }
+  { "id": "greenhollow_granary", "name": "Greenhollow Granary", "settlement_id": "greenhollow", "type_id": "granary" },
+  { "id": "fairholt_granary", "name": "Fairholt Granary", "settlement_id": "fairholt", "type_id": "granary" },
+  { "id": "millbrook_market", "name": "Millbrook Market", "settlement_id": "millbrook", "type_id": "market" }
 ]

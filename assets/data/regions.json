@@ -37,5 +37,18 @@
     "population": 15400.0,
     "cultural_influence": 55.0,
     "divine_resonance": 60.0
+  },
+  {
+    "id": "hearthmoor",
+    "name": "Hearthmoor",
+    "climate": "temperate",
+    "culture": "pastoral",
+    "prosperity": 54.0,
+    "chaos": 18.0,
+    "danger": 16.0,
+    "magic_affinity": 28.0,
+    "population": 9000.0,
+    "cultural_influence": 45.0,
+    "divine_resonance": 44.0
   }
 ]

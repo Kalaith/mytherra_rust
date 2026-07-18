@@ -8,5 +8,7 @@
   { "id": "sylvan_grove", "name": "Sylvan Grove", "region_id": "sylvenmar", "resource_type": "forest", "status": "blessed" },
   { "id": "manaspring", "name": "The Manaspring", "region_id": "sylvenmar", "resource_type": "manaspring", "status": "active" },
   { "id": "deepwood", "name": "Deepwood", "region_id": "sylvenmar", "resource_type": "forest", "status": "active" },
-  { "id": "coral_shoals", "name": "Coral Shoals", "region_id": "sylvenmar", "resource_type": "fishery", "status": "active" }
+  { "id": "coral_shoals", "name": "Coral Shoals", "region_id": "sylvenmar", "resource_type": "fishery", "status": "active" },
+  { "id": "wheatvale", "name": "Wheatvale", "region_id": "hearthmoor", "resource_type": "farmland", "status": "flourishing" },
+  { "id": "thornwood", "name": "Thornwood", "region_id": "hearthmoor", "resource_type": "forest", "status": "active" }
 ]

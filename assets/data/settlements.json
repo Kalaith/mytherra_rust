@@ -3,5 +3,7 @@
   { "id": "mooredge", "name": "Mooredge", "region_id": "aldermoor", "population": 3800.0, "prosperity": 52.0 },
   { "id": "kharzkeep", "name": "Kharzkeep", "region_id": "kharzul", "population": 5100.0, "prosperity": 44.0 },
   { "id": "tidehaven", "name": "Tidehaven", "region_id": "sylvenmar", "population": 7400.0, "prosperity": 62.0 },
-  { "id": "greenhollow", "name": "Greenhollow", "region_id": "sylvenmar", "population": 2900.0, "prosperity": 55.0 }
+  { "id": "greenhollow", "name": "Greenhollow", "region_id": "sylvenmar", "population": 2900.0, "prosperity": 55.0 },
+  { "id": "fairholt", "name": "Fairholt", "region_id": "hearthmoor", "population": 5600.0, "prosperity": 56.0 },
+  { "id": "millbrook", "name": "Millbrook", "region_id": "hearthmoor", "population": 3400.0, "prosperity": 50.0 }
 ]

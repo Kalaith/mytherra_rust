@@ -1,5 +1,6 @@
 [
   { "id": "iron_road", "name": "The Iron Road", "region_a": "aldermoor", "region_b": "kharzul", "volume": 1.5 },
   { "id": "tide_route", "name": "The Tide Route", "region_a": "aldermoor", "region_b": "sylvenmar", "volume": 2.0 },
-  { "id": "mountain_pass", "name": "The Mountain Pass", "region_a": "kharzul", "region_b": "sylvenmar", "volume": 1.0 }
+  { "id": "mountain_pass", "name": "The Mountain Pass", "region_a": "kharzul", "region_b": "sylvenmar", "volume": 1.0 },
+  { "id": "grain_road", "name": "The Grain Road", "region_a": "aldermoor", "region_b": "hearthmoor", "volume": 1.0 }
 ]

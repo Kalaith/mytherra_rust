@@ -70,5 +70,29 @@
     "region_id": "sylvenmar",
     "level": 6,
     "age": 29
+  },
+  {
+    "id": "rowan",
+    "name": "Rowan Fielding",
+    "role": "ranger",
+    "region_id": "hearthmoor",
+    "level": 5,
+    "age": 33
+  },
+  {
+    "id": "bramble",
+    "name": "Bramble Ashford",
+    "role": "ranger",
+    "region_id": "hearthmoor",
+    "level": 6,
+    "age": 47
+  },
+  {
+    "id": "wenna",
+    "name": "Wenna Gale",
+    "role": "scholar",
+    "region_id": "hearthmoor",
+    "level": 4,
+    "age": 29
   }
 ]

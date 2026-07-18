@@ -153,4 +153,29 @@ mod tests {
         let kharzul = world.regions.iter().find(|r| r.id == "kharzul").unwrap();
         assert_ne!(kharzul.culture, Culture::Pastoral);
     }
+
+    #[test]
+    fn hearthmoor_holds_pastoral_over_a_long_run() {
+        // Hearthmoor's rangers, farmland/forest, and Harvest Shrine should keep
+        // its Pastoral identity despite the Mercantile pull of its settlements
+        // and the Grain Road.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        for _ in 0..80 {
+            tick_culture(
+                &mut world.regions,
+                &world.heroes,
+                &world.landmarks,
+                &world.resource_nodes,
+                &world.settlements,
+                &world.trade_routes,
+                &data.balance.culture,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        }
+        let hearthmoor = world.regions.iter().find(|r| r.id == "hearthmoor").unwrap();
+        assert_eq!(hearthmoor.culture, Culture::Pastoral);
+    }
 }
