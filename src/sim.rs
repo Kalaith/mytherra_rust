@@ -4,6 +4,7 @@
 mod artifact;
 mod champion;
 mod civilization;
+mod era;
 mod hero;
 mod magic;
 mod myth;
@@ -115,6 +116,8 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         data,
         world.year,
     );
+
+    era::tick_era(world, player, data);
 
     player.recover(&data.config);
 

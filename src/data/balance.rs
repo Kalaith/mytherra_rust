@@ -20,6 +20,7 @@ pub struct Balance {
     pub myth: MythBalance,
     pub civilization: CivilizationBalance,
     pub pantheon: PantheonBalance,
+    pub era: EraBalance,
     pub player: PlayerBalance,
 }
 
@@ -235,6 +236,35 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+}
+
+/// Era system tuning (GDD 5.7).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EraBalance {
+    pub era_length: u32,
+    pub breaking_threshold: f32,
+    pub cataclysm_danger: f32,
+    pub cataclysm_chaos: f32,
+    pub cataclysm_crisis: f32,
+    pub collapse_prosperity: f32,
+    pub collapse_struggling: f32,
+    pub conquest_danger: f32,
+    pub conquest_wartorn: f32,
+    pub rupture_magic: f32,
+    pub rupture_known: f32,
+    pub divinewar_stake: f32,
+    pub divinewar_fallen: f32,
+    pub divinewar_lowfavor: f32,
+    pub reincarnate_age_min: u32,
+    pub reincarnate_age_max: u32,
+    pub death_chance: f32,
+    pub death_age: u32,
+    pub hero_level_scale: f32,
+    pub descendant_min: u32,
+    pub descendant_max: u32,
+    pub renewal_chaos: f32,
+    pub renewal_danger: f32,
+    pub renewal_prosperity: f32,
 }
 
 /// Pantheon tool tuning (GDD 5.6).

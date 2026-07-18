@@ -1,0 +1,11 @@
+{
+  "prefixes": [
+    "Sundered", "Golden", "Ashen", "Verdant", "Iron", "Silent",
+    "Radiant", "Broken", "Emerald", "Crimson", "Hollow", "Gilded"
+  ],
+  "titles": [
+    "Dawn", "Reckoning", "Bloom", "Silence", "Ascendance", "Ruin",
+    "Rebirth", "Tempest", "Concord", "Twilight", "Awakening", "Sorrow"
+  ],
+  "descendant_titles": ["the Young", "the Heir", "Scion", "the Reborn", "the Kindled"]
+}

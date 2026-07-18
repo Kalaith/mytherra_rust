@@ -15,11 +15,18 @@
     "resonance": "Resonance",
     "population": "Population"
   },
-  "placeholders": {
-    "eras": {
-      "title": "Eras",
-      "body": "Era pressure, legacy, and transition history are coming."
-    }
+  "eras": {
+    "current_title": "The Present Age",
+    "triggers_title": "Trigger Pressures",
+    "history_title": "Chronicle of Eras",
+    "no_history": "The first age still unfolds.",
+    "era_line": "Era {number}  ·  {name}",
+    "since": "dawned in year {year}",
+    "pressure": "Era pressure  {pressure}",
+    "breaking": "the age is breaking",
+    "holding": "the age holds",
+    "record_line": "Era {number}: {name}",
+    "record_span": "years {start}-{end}  ·  {trigger}  ·  pressure {pressure}"
   },
   "ui": {
     "footer_hint": "The world advances on its own. {regions} regions watched  |  S save  L load  N new world  Space advance tick",
@@ -183,6 +190,7 @@
     "bet_lost": "Your wager on {target} lapses unfulfilled.",
     "artifact_backlash": "{artifact} shatters, scarring {region}.",
     "magic_known": "{path} passes into common knowledge.",
-    "myth_echo": "{title} echoes across {region}."
+    "myth_echo": "{title} echoes across {region}.",
+    "era_transition": "A new age dawns: {era}, born of {trigger}."
   }
 }

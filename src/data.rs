@@ -11,6 +11,7 @@ mod bet;
 mod champion;
 mod civilization;
 mod config;
+mod era;
 mod hero;
 mod magic;
 mod myth;
@@ -22,13 +23,14 @@ mod weather;
 pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
-    ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance, HeroBalance,
-    MagicBalance, PantheonBalance, PlayerBalance, RegionBalance, WeatherBalance,
+    ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance, EraBalance,
+    HeroBalance, MagicBalance, PantheonBalance, PlayerBalance, RegionBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
 pub use civilization::{Agenda, CivStat};
 pub use config::GameConfig;
+pub use era::{EraNameBank, EraTrigger};
 pub use hero::{HeroRole, HeroSeed};
 pub use magic::{MagicPathSeed, MagicStat};
 pub use myth::{MythStat, MythTheme};
@@ -52,6 +54,7 @@ const MAGIC_PATHS_JSON: &str = include_str!("../assets/data/magic_paths.json");
 const MYTH_THEMES_JSON: &str = include_str!("../assets/data/myth_themes.json");
 const AGENDAS_JSON: &str = include_str!("../assets/data/agendas.json");
 const PANTHEON_JSON: &str = include_str!("../assets/data/pantheon.json");
+const ERA_NAMES_JSON: &str = include_str!("../assets/data/era_names.json");
 const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
 const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
 const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
@@ -72,6 +75,7 @@ pub struct GameData {
     pub myth_themes: Vec<MythTheme>,
     pub agendas: Vec<Agenda>,
     pub pantheon: Vec<DeitySeed>,
+    pub era_names: EraNameBank,
     pub bet_types: Vec<BetType>,
     pub confidence_levels: Vec<ConfidenceLevel>,
     pub timeframes: Vec<TimeframeModifier>,
@@ -93,6 +97,7 @@ impl GameData {
         let myth_themes: Vec<MythTheme> = load_embedded_json(MYTH_THEMES_JSON)?;
         let agendas: Vec<Agenda> = load_embedded_json(AGENDAS_JSON)?;
         let pantheon: Vec<DeitySeed> = load_embedded_json(PANTHEON_JSON)?;
+        let era_names: EraNameBank = load_embedded_json_labeled("era_names", ERA_NAMES_JSON)?;
         let bet_types: Vec<BetType> = load_embedded_json(BET_TYPES_JSON)?;
         let confidence_levels: Vec<ConfidenceLevel> = load_embedded_json(CONFIDENCE_JSON)?;
         let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
@@ -121,6 +126,7 @@ impl GameData {
             myth_themes,
             agendas,
             pantheon,
+            era_names,
             bet_types,
             confidence_levels,
             timeframes,

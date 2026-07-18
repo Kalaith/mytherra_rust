@@ -143,6 +143,12 @@ impl Game {
                 self.run_tick();
             }
         }
+        if scene == "eras" {
+            // Run past a century so at least one era transition is recorded.
+            for _ in 0..110 {
+                self.run_tick();
+            }
+        }
         match self.screen {
             // Demo a couple of champions so the heroes screen shows the roster.
             Screen::Heroes => {

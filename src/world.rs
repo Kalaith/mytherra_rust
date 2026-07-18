@@ -6,6 +6,7 @@ mod bet;
 mod champion;
 mod chronicle;
 mod civilization;
+mod era;
 mod hero;
 mod magic;
 mod myth;
@@ -20,6 +21,7 @@ pub use bet::{quote_event, Bet};
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
 pub use civilization::{agenda_score, RegionAgendas};
+pub use era::{compute_scores, generate_era_name, EraRecord, EraState};
 pub use hero::Hero;
 pub use magic::{MagicPath, MagicState};
 pub use myth::{Myth, MythCandidate};
@@ -51,9 +53,13 @@ pub struct WorldState {
     pub tick_count: u64,
     pub regions: Vec<Region>,
     pub heroes: Vec<Hero>,
+    /// Monotonic counter for unique descendant-hero ids.
+    pub hero_seq: u64,
     pub artifacts: Vec<Artifact>,
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
+    pub era: EraState,
+    pub era_history: Vec<EraRecord>,
     pub weather: Vec<WeatherEvent>,
     pub magic_paths: Vec<MagicPath>,
     pub myths: Vec<Myth>,
@@ -88,13 +94,24 @@ impl WorldState {
             .map(|seed| RegionAgendas::new(seed.id.clone(), data.agendas.len()))
             .collect();
         let pantheon = data.pantheon.iter().map(PantheonDeity::from_seed).collect();
+        let mut rng = SeededRng::new(data.config.world_seed);
+        let era = EraState {
+            number: 1,
+            name: era::generate_era_name(&data.era_names, &mut rng),
+            start_year: data.config.start_year,
+            dominant_trigger: crate::data::EraTrigger::Cataclysm,
+            pressure: 0.0,
+        };
         let mut world = Self {
             year: data.config.start_year,
             tick_count: 0,
             regions,
             heroes,
+            hero_seq: 0,
             artifacts,
             artifact_seq: 0,
+            era,
+            era_history: Vec::new(),
             weather: Vec::new(),
             magic_paths,
             myths: Vec::new(),
@@ -105,7 +122,7 @@ impl WorldState {
             speculations: Vec::new(),
             speculation_seq: 0,
             chronicle: Chronicle::default(),
-            rng: SeededRng::new(data.config.world_seed),
+            rng,
         };
         world.chronicle.push(
             world.year,

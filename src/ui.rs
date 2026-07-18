@@ -7,8 +7,8 @@
 mod betting;
 mod dashboard;
 mod divine_tools;
+mod eras;
 mod heroes;
-mod placeholder;
 mod regions;
 mod shell;
 mod widgets;
@@ -137,14 +137,13 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
     shell::draw_header(ctx);
     shell::draw_nav(ctx, &mut actions);
 
-    let placeholders = &ctx.data.strings.placeholders;
     match ctx.screen {
         Screen::Dashboard => dashboard::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
         Screen::Heroes => heroes::draw(ctx, &mut actions),
         Screen::DivineTools => divine_tools::draw(ctx, &mut actions),
         Screen::Betting => betting::draw(ctx, &mut actions),
-        Screen::Eras => placeholder::draw(ctx, &placeholders.eras),
+        Screen::Eras => eras::draw(ctx),
     }
 
     shell::draw_footer(ctx);

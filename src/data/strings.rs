@@ -12,11 +12,11 @@ use serde::{Deserialize, Serialize};
 pub struct Strings {
     pub panels: Panels,
     pub stats: Stats,
-    pub placeholders: Placeholders,
     pub ui: UiText,
     pub heroes: HeroText,
     pub betting: BettingText,
     pub divine: DivineText,
+    pub eras: EraText,
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
 }
@@ -42,14 +42,18 @@ pub struct Stats {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlaceholderText {
-    pub title: String,
-    pub body: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Placeholders {
-    pub eras: PlaceholderText,
+pub struct EraText {
+    pub current_title: String,
+    pub triggers_title: String,
+    pub history_title: String,
+    pub no_history: String,
+    pub era_line: String,
+    pub since: String,
+    pub pressure: String,
+    pub breaking: String,
+    pub holding: String,
+    pub record_line: String,
+    pub record_span: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -226,6 +230,7 @@ pub struct ChronicleText {
     pub artifact_backlash: String,
     pub magic_known: String,
     pub myth_echo: String,
+    pub era_transition: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.
