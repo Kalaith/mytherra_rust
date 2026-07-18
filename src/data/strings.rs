@@ -117,6 +117,14 @@ pub struct DivineText {
     pub weather_empty: String,
     pub weather_meta: String,
     pub weather_magnitude: String,
+    pub magic_panel: String,
+    pub magic_intro: String,
+    pub research: String,
+    pub magic_progress: String,
+    pub magic_evidence: String,
+    pub magic_dormant: String,
+    pub magic_emerging: String,
+    pub magic_known: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -163,6 +171,7 @@ pub struct Notifications {
     pub artifact_transferred: String,
     pub weather_shaped: String,
     pub weather_max: String,
+    pub magic_researched: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -178,6 +187,7 @@ pub struct ChronicleText {
     pub bet_won: String,
     pub bet_lost: String,
     pub artifact_backlash: String,
+    pub magic_known: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

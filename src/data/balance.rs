@@ -16,6 +16,7 @@ pub struct Balance {
     pub betting: BettingBalance,
     pub artifact: ArtifactBalance,
     pub weather: WeatherBalance,
+    pub magic: MagicBalance,
     pub player: PlayerBalance,
 }
 
@@ -231,6 +232,23 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+}
+
+/// Magic tool tuning (GDD 5.6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MagicBalance {
+    pub progress_per_tick: f32,
+    pub evidence_per_tick: f32,
+    pub magic_affinity_coeff: f32,
+    pub emerging_progress: f32,
+    pub emerging_evidence: f32,
+    pub known_progress: f32,
+    pub known_evidence: f32,
+    pub research_cost: i64,
+    pub research_progress_gain: f32,
+    pub research_evidence_gain: f32,
+    pub emerging_effect_scale: f32,
+    pub stat_cap: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

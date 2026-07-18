@@ -321,6 +321,29 @@ impl Game {
         }
     }
 
+    pub(super) fn research_magic(&mut self, id: &str) {
+        let notes = self.data.strings.notifications.clone();
+        if !self.world.magic_paths.iter().any(|p| p.id == id) {
+            return;
+        }
+        let cost = self.data.balance.magic.research_cost;
+        if !self.player.spend(cost, &self.data.balance.player) {
+            self.notifications.warning(notes.not_enough_favor);
+            return;
+        }
+        let pgain = self.data.balance.magic.research_progress_gain;
+        let egain = self.data.balance.magic.research_evidence_gain;
+        let cap = self.data.balance.magic.stat_cap;
+        if let Some(path) = self.world.magic_paths.iter_mut().find(|p| p.id == id) {
+            path.progress = (path.progress + pgain).min(cap);
+            path.evidence = (path.evidence + egain).min(cap);
+            path.recompute_state(&self.data.balance.magic);
+            let name = path.name.clone();
+            self.notifications
+                .success(fill(&notes.magic_researched, &[("path", name)]));
+        }
+    }
+
     pub(super) fn shape_weather(&mut self) {
         let notes = self.data.strings.notifications.clone();
         if self.world.weather.len() >= self.data.balance.weather.max_active {

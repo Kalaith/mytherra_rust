@@ -6,6 +6,7 @@ mod bet;
 mod champion;
 mod chronicle;
 mod hero;
+mod magic;
 mod player;
 mod region;
 mod speculation;
@@ -16,6 +17,7 @@ pub use bet::{quote_event, Bet};
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
 pub use hero::Hero;
+pub use magic::{MagicPath, MagicState};
 pub use player::PlayerState;
 pub use region::{Region, RegionStatus};
 pub use speculation::SpeculationEvent;
@@ -47,6 +49,7 @@ pub struct WorldState {
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
     pub weather: Vec<WeatherEvent>,
+    pub magic_paths: Vec<MagicPath>,
     pub speculations: Vec<SpeculationEvent>,
     /// Monotonic counter for unique speculation event ids.
     pub speculation_seq: u64,
@@ -66,6 +69,7 @@ impl WorldState {
             .collect();
         let heroes = data.heroes.iter().map(Hero::from_seed).collect();
         let artifacts = data.artifacts.iter().map(Artifact::from_seed).collect();
+        let magic_paths = data.magic_paths.iter().map(MagicPath::from_seed).collect();
         let mut world = Self {
             year: data.config.start_year,
             tick_count: 0,
@@ -74,6 +78,7 @@ impl WorldState {
             artifacts,
             artifact_seq: 0,
             weather: Vec::new(),
+            magic_paths,
             speculations: Vec::new(),
             speculation_seq: 0,
             chronicle: Chronicle::default(),

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "restoration",
+    "name": "Restoration",
+    "description": "Mending the prosperity of the land.",
+    "effect_stat": "prosperity",
+    "effect_per_tick": 0.3
+  },
+  {
+    "id": "warding",
+    "name": "Warding",
+    "description": "Shields that turn danger aside.",
+    "effect_stat": "danger",
+    "effect_per_tick": -0.3
+  },
+  {
+    "id": "abjuration",
+    "name": "Abjuration",
+    "description": "Rites that quiet chaos.",
+    "effect_stat": "chaos",
+    "effect_per_tick": -0.3
+  },
+  {
+    "id": "divination",
+    "name": "Divination",
+    "description": "Deepening the world's arcane affinity.",
+    "effect_stat": "magic",
+    "effect_per_tick": 0.35
+  },
+  {
+    "id": "evocation",
+    "name": "Evocation",
+    "description": "Raw power that spurs growth.",
+    "effect_stat": "prosperity",
+    "effect_per_tick": 0.2
+  }
+]

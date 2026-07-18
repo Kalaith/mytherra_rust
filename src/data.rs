@@ -11,6 +11,7 @@ mod bet;
 mod champion;
 mod config;
 mod hero;
+mod magic;
 mod region;
 pub mod strings;
 mod weather;
@@ -18,13 +19,14 @@ mod weather;
 pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
-    ArtifactBalance, Balance, BettingBalance, ChampionBalance, HeroBalance, PlayerBalance,
-    RegionBalance, WeatherBalance,
+    ArtifactBalance, Balance, BettingBalance, ChampionBalance, HeroBalance, MagicBalance,
+    PlayerBalance, RegionBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
 pub use config::GameConfig;
 pub use hero::{HeroRole, HeroSeed};
+pub use magic::{MagicPathSeed, MagicStat};
 pub use region::{ClimateType, Culture, RegionSeed};
 pub use strings::{fill, Strings};
 pub use weather::{WeatherIntensity, WeatherPattern};
@@ -40,6 +42,7 @@ const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
 const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
 const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
 const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
+const MAGIC_PATHS_JSON: &str = include_str!("../assets/data/magic_paths.json");
 const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
 const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
 const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
@@ -56,6 +59,7 @@ pub struct GameData {
     pub artifacts: Vec<ArtifactSeed>,
     pub weather_patterns: Vec<WeatherPattern>,
     pub weather_intensities: Vec<WeatherIntensity>,
+    pub magic_paths: Vec<MagicPathSeed>,
     pub bet_types: Vec<BetType>,
     pub confidence_levels: Vec<ConfidenceLevel>,
     pub timeframes: Vec<TimeframeModifier>,
@@ -73,6 +77,7 @@ impl GameData {
         let weather_patterns: Vec<WeatherPattern> = load_embedded_json(WEATHER_PATTERNS_JSON)?;
         let weather_intensities: Vec<WeatherIntensity> =
             load_embedded_json(WEATHER_INTENSITIES_JSON)?;
+        let magic_paths: Vec<MagicPathSeed> = load_embedded_json(MAGIC_PATHS_JSON)?;
         let bet_types: Vec<BetType> = load_embedded_json(BET_TYPES_JSON)?;
         let confidence_levels: Vec<ConfidenceLevel> = load_embedded_json(CONFIDENCE_JSON)?;
         let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
@@ -97,6 +102,7 @@ impl GameData {
             artifacts,
             weather_patterns,
             weather_intensities,
+            magic_paths,
             bet_types,
             confidence_levels,
             timeframes,

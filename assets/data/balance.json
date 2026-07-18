@@ -122,6 +122,20 @@
     "min_magnitude": 0.1,
     "max_active": 6
   },
+  "magic": {
+    "progress_per_tick": 2.0,
+    "evidence_per_tick": 1.6,
+    "magic_affinity_coeff": 0.03,
+    "emerging_progress": 35.0,
+    "emerging_evidence": 55.0,
+    "known_progress": 100.0,
+    "known_evidence": 82.0,
+    "research_cost": 16,
+    "research_progress_gain": 12.0,
+    "research_evidence_gain": 9.0,
+    "emerging_effect_scale": 0.5,
+    "stat_cap": 100.0
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

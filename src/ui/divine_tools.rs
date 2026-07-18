@@ -3,6 +3,7 @@
 //! placeholder until their iteration lands.
 
 mod artifacts;
+mod magic;
 mod omens;
 mod weather;
 
@@ -62,6 +63,7 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         DivineTool::Artifacts => artifacts::draw(ctx, body, actions),
         DivineTool::Weather => weather::draw(ctx, body, actions),
         DivineTool::Omens => omens::draw(ctx, body),
+        DivineTool::Magic => magic::draw(ctx, body, actions),
         _ => draw_todo(ctx, body),
     }
 }

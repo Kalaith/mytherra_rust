@@ -79,14 +79,15 @@ impl Game {
         self.screen = match scene {
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,
-            "divine_tools" | "artifacts" | "omens" | "weather" => Screen::DivineTools,
+            "divine_tools" | "artifacts" | "omens" | "weather" | "magic" => Screen::DivineTools,
             "betting" => Screen::Betting,
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
         };
         self.divine_tab = match scene {
-            "omens" => 2,
             "weather" => 1,
+            "omens" => 2,
+            "magic" => 3,
             _ => 0,
         };
         if scene == "weather" {
@@ -98,6 +99,14 @@ impl Game {
             self.selected_region = 0;
             self.weather_pattern = 0;
             self.weather_intensity = 0;
+        }
+        if scene == "magic" {
+            for _ in 0..4 {
+                self.research_magic("restoration");
+            }
+            for _ in 0..45 {
+                self.run_tick();
+            }
         }
         match self.screen {
             // Demo a couple of champions so the heroes screen shows the roster.
@@ -253,6 +262,7 @@ impl Game {
                 self.weather_intensity =
                     (self.weather_intensity + 1) % self.data.weather_intensities.len();
             }
+            UiAction::ResearchMagic(id) => self.research_magic(&id),
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications

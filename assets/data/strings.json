@@ -62,7 +62,15 @@
     "shape": "Shape over {region}  ({cost})",
     "weather_empty": "The skies are still.",
     "weather_meta": "{pattern}  ·  {intensity}  ·  {region}",
-    "weather_magnitude": "strength {magnitude}"
+    "weather_magnitude": "strength {magnitude}",
+    "magic_panel": "Magic",
+    "magic_intro": "Guide the world's arcane research along five paths.",
+    "research": "Research {cost}",
+    "magic_progress": "progress {progress}",
+    "magic_evidence": "evidence {evidence}",
+    "magic_dormant": "Dormant",
+    "magic_emerging": "Emerging",
+    "magic_known": "Known"
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
@@ -88,7 +96,8 @@
     "artifact_stabilized": "You steady {name}.",
     "artifact_transferred": "{name} passes to {region}.",
     "weather_shaped": "You shape {pattern} over {region}.",
-    "weather_max": "Too many storms already rage."
+    "weather_max": "Too many storms already rage.",
+    "magic_researched": "You pour insight into {path}."
   },
   "heroes": {
     "panel": "Heroes & Champions",
@@ -135,6 +144,7 @@
     "champion_escalated": "{hero}'s rivalry in {region} escalates.",
     "bet_won": "Your wager on {target} pays out {payout} favor.",
     "bet_lost": "Your wager on {target} lapses unfulfilled.",
-    "artifact_backlash": "{artifact} shatters, scarring {region}."
+    "artifact_backlash": "{artifact} shatters, scarring {region}.",
+    "magic_known": "{path} passes into common knowledge."
   }
 }

@@ -4,6 +4,7 @@
 mod artifact;
 mod champion;
 mod hero;
+mod magic;
 mod region;
 mod speculation;
 mod weather;
@@ -62,6 +63,16 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.regions,
         &data.balance.weather,
         &data.balance.region,
+    );
+
+    magic::tick_magic(
+        &mut world.magic_paths,
+        &mut world.regions,
+        &data.balance.magic,
+        &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
     );
 
     speculation::tick_speculations(

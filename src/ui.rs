@@ -91,6 +91,8 @@ pub enum UiAction {
     CycleWeatherPattern,
     /// Cycle the selected weather intensity.
     CycleWeatherIntensity,
+    /// Pour favor into researching the given magic path id.
+    ResearchMagic(String),
     AdvanceTick,
     Save,
     Load,
