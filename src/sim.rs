@@ -178,4 +178,19 @@ mod tests {
         assert_eq!(world.tick_count, 1);
         assert_eq!(player.favor, data.config.favor_per_tick);
     }
+
+    #[test]
+    fn prosperity_settles_into_a_dynamic_range() {
+        // With mean-reverting drift, a long unmanaged run should neither pin
+        // every region at the ceiling nor collapse the whole world.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        for _ in 0..250 {
+            tick_world(&mut world, &mut player, &data);
+        }
+        let avg = world.summary().avg_prosperity;
+        assert!(avg < 92.0, "prosperity pinned at the ceiling: {avg}");
+        assert!(avg > 25.0, "world collapsed: {avg}");
+    }
 }

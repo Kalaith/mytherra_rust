@@ -149,6 +149,12 @@ impl Game {
                 self.run_tick();
             }
         }
+        if scene == "longrun" {
+            // A long unmanaged run to inspect the world's settled state.
+            for _ in 0..150 {
+                self.run_tick();
+            }
+        }
         match self.screen {
             // Demo a couple of champions so the heroes screen shows the roster.
             Screen::Heroes => {

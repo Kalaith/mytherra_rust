@@ -55,14 +55,15 @@ pub struct StatusThresholds {
     pub struggling_prosperity: f32,
 }
 
-/// Per-tick region drift parameters (GDD 5.2).
+/// Per-tick region drift parameters (GDD 5.2). Prosperity mean-reverts toward a
+/// chaos/danger-derived equilibrium so the world settles dynamically instead of
+/// climbing to the ceiling as every system stacks positive contributions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DriftParams {
-    pub high_chaos_threshold: f32,
-    pub low_chaos_threshold: f32,
-    pub prosperity_high_chaos: f32,
-    pub prosperity_low_chaos: f32,
-    pub prosperity_mid: f32,
+    pub prosperity_target_base: f32,
+    pub prosperity_chaos_weight: f32,
+    pub prosperity_danger_weight: f32,
+    pub prosperity_reversion_rate: f32,
     pub chaos_target: f32,
     pub chaos_rate: f32,
     pub danger_target: f32,

@@ -12,11 +12,10 @@
       "struggling_prosperity": 30.0
     },
     "drift": {
-      "high_chaos_threshold": 70.0,
-      "low_chaos_threshold": 30.0,
-      "prosperity_high_chaos": -3.0,
-      "prosperity_low_chaos": 2.0,
-      "prosperity_mid": 1.0,
+      "prosperity_target_base": 92.0,
+      "prosperity_chaos_weight": 0.5,
+      "prosperity_danger_weight": 0.4,
+      "prosperity_reversion_rate": 0.1,
       "chaos_target": 35.0,
       "chaos_rate": 1.0,
       "danger_target": 30.0,
