@@ -4,6 +4,7 @@
 mod artifact;
 mod champion;
 mod civilization;
+mod culture;
 mod era;
 mod hero;
 mod magic;
@@ -46,6 +47,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.rng,
         &data.balance.resource,
         &data.balance.region,
+    );
+
+    culture::tick_culture(
+        &mut world.regions,
+        &world.heroes,
+        &world.landmarks,
+        &world.resource_nodes,
+        &world.settlements,
+        &data.balance.culture,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
     );
 
     hero::tick_heroes(

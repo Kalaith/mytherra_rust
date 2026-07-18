@@ -201,6 +201,16 @@
     "prosperity_drift_rate": 0.6,
     "region_contribution": 0.015
   },
+  "culture": {
+    "inertia": 3.0,
+    "hero_weight": 2.0,
+    "landmark_weight": 3.0,
+    "resource_weight": 1.5,
+    "settlement_weight": 1.0,
+    "influence_base": 50.0,
+    "influence_per_landmark": 12.0,
+    "influence_rate": 0.5
+  },
   "resource": {
     "stress_chaos": 0.4,
     "stress_danger": 0.3,

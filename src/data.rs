@@ -13,6 +13,7 @@ mod civilization;
 mod config;
 mod era;
 mod hero;
+mod landmark;
 mod magic;
 mod myth;
 mod pantheon;
@@ -25,9 +26,9 @@ mod weather;
 pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
-    ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance, EraBalance,
-    HeroBalance, MagicBalance, PantheonBalance, PlayerBalance, RegionBalance, ResourceBalance,
-    ResourceOutputs, SettlementBalance, WeatherBalance,
+    ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance, CultureBalance,
+    EraBalance, HeroBalance, MagicBalance, PantheonBalance, PlayerBalance, RegionBalance,
+    ResourceBalance, ResourceOutputs, SettlementBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
@@ -35,6 +36,7 @@ pub use civilization::{Agenda, CivStat};
 pub use config::GameConfig;
 pub use era::{EraNameBank, EraTrigger};
 pub use hero::{HeroRole, HeroSeed};
+pub use landmark::LandmarkSeed;
 pub use magic::{MagicPathSeed, MagicStat};
 pub use myth::{MythStat, MythTheme};
 pub use pantheon::{DeitySeed, PantheonStat};
@@ -54,6 +56,7 @@ const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.js
 const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
 const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
 const RESOURCE_NODES_JSON: &str = include_str!("../assets/data/resource_nodes.json");
+const LANDMARKS_JSON: &str = include_str!("../assets/data/landmarks.json");
 const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
 const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
 const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
@@ -77,6 +80,7 @@ pub struct GameData {
     pub heroes: Vec<HeroSeed>,
     pub settlements: Vec<SettlementSeed>,
     pub resource_nodes: Vec<ResourceNodeSeed>,
+    pub landmarks: Vec<LandmarkSeed>,
     pub artifacts: Vec<ArtifactSeed>,
     pub weather_patterns: Vec<WeatherPattern>,
     pub weather_intensities: Vec<WeatherIntensity>,
@@ -100,6 +104,7 @@ impl GameData {
         let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
         let settlements: Vec<SettlementSeed> = load_embedded_json(SETTLEMENTS_JSON)?;
         let resource_nodes: Vec<ResourceNodeSeed> = load_embedded_json(RESOURCE_NODES_JSON)?;
+        let landmarks: Vec<LandmarkSeed> = load_embedded_json(LANDMARKS_JSON)?;
         let artifacts: Vec<ArtifactSeed> = load_embedded_json(ARTIFACTS_JSON)?;
         let weather_patterns: Vec<WeatherPattern> = load_embedded_json(WEATHER_PATTERNS_JSON)?;
         let weather_intensities: Vec<WeatherIntensity> =
@@ -132,6 +137,7 @@ impl GameData {
             heroes,
             settlements,
             resource_nodes,
+            landmarks,
             artifacts,
             weather_patterns,
             weather_intensities,

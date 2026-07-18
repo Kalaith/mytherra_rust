@@ -27,8 +27,8 @@ impl ClimateType {
     }
 }
 
-/// Dominant regional culture. Scored from heroes/landmarks/resources each tick
-/// once those systems exist (GDD 5.2); for now it is a fixed seed value.
+/// Dominant regional culture, scored each tick from heroes/landmarks/resources/
+/// settlements with an inertia guard (GDD 5.2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Culture {
@@ -40,6 +40,14 @@ pub enum Culture {
 }
 
 impl Culture {
+    pub const ALL: [Culture; 5] = [
+        Culture::Scholarly,
+        Culture::Martial,
+        Culture::Mystical,
+        Culture::Mercantile,
+        Culture::Pastoral,
+    ];
+
     pub fn label(self) -> &'static str {
         match self {
             Culture::Scholarly => "Scholarly",
@@ -47,6 +55,17 @@ impl Culture {
             Culture::Mystical => "Mystical",
             Culture::Mercantile => "Mercantile",
             Culture::Pastoral => "Pastoral",
+        }
+    }
+
+    /// Stable index into `ALL`, for score accumulation.
+    pub fn index(self) -> usize {
+        match self {
+            Culture::Scholarly => 0,
+            Culture::Martial => 1,
+            Culture::Mystical => 2,
+            Culture::Mercantile => 3,
+            Culture::Pastoral => 4,
         }
     }
 }

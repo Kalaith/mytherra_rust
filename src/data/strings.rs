@@ -180,6 +180,7 @@ pub struct UiText {
     pub holdings: String,
     pub settlements_line: String,
     pub resources_line: String,
+    pub landmarks_line: String,
     pub no_holdings: String,
 }
 
@@ -235,6 +236,7 @@ pub struct ChronicleText {
     pub magic_known: String,
     pub myth_echo: String,
     pub era_transition: String,
+    pub culture_shift: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

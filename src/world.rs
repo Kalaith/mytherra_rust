@@ -8,6 +8,7 @@ mod chronicle;
 mod civilization;
 mod era;
 mod hero;
+mod landmark;
 mod magic;
 mod myth;
 mod pantheon;
@@ -25,6 +26,7 @@ pub use chronicle::{Chronicle, EventKind};
 pub use civilization::{agenda_score, RegionAgendas};
 pub use era::{compute_scores, generate_era_name, EraRecord, EraState};
 pub use hero::Hero;
+pub use landmark::Landmark;
 pub use magic::{MagicPath, MagicState};
 pub use myth::{Myth, MythCandidate};
 pub use pantheon::{adjust_pressure, PantheonDeity};
@@ -58,6 +60,7 @@ pub struct WorldState {
     pub regions: Vec<Region>,
     pub settlements: Vec<Settlement>,
     pub resource_nodes: Vec<ResourceNode>,
+    pub landmarks: Vec<Landmark>,
     pub heroes: Vec<Hero>,
     /// Monotonic counter for unique descendant-hero ids.
     pub hero_seq: u64,
@@ -98,6 +101,7 @@ impl WorldState {
             .iter()
             .map(ResourceNode::from_seed)
             .collect();
+        let landmarks = data.landmarks.iter().map(Landmark::from_seed).collect();
         let artifacts = data.artifacts.iter().map(Artifact::from_seed).collect();
         let magic_paths = data.magic_paths.iter().map(MagicPath::from_seed).collect();
         let civilization = data
@@ -120,6 +124,7 @@ impl WorldState {
             regions,
             settlements,
             resource_nodes,
+            landmarks,
             heroes,
             hero_seq: 0,
             artifacts,

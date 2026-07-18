@@ -24,6 +24,7 @@ pub struct Balance {
     pub era: EraBalance,
     pub settlement: SettlementBalance,
     pub resource: ResourceBalance,
+    pub culture: CultureBalance,
     pub player: PlayerBalance,
 }
 
@@ -33,6 +34,21 @@ pub struct RegionBalance {
     pub effect_multiplier: MultiplierCurve,
     pub status: StatusThresholds,
     pub drift: DriftParams,
+}
+
+/// Dynamic culture-scoring tuning (GDD 5.2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CultureBalance {
+    /// A challenger must beat the incumbent by this to flip the dominant culture.
+    pub inertia: f32,
+    pub hero_weight: f32,
+    pub landmark_weight: f32,
+    pub resource_weight: f32,
+    pub settlement_weight: f32,
+    /// Cultural-influence baseline and per-landmark bonus (the reversion target).
+    pub influence_base: f32,
+    pub influence_per_landmark: f32,
+    pub influence_rate: f32,
 }
 
 /// A resonance-scaled multiplier: `clamp(min, max, 1 +/- (resonance-50) * coeff)`.

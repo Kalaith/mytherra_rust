@@ -1,0 +1,8 @@
+[
+  { "id": "grand_library", "name": "The Grand Library", "region_id": "aldermoor", "culture": "scholarly", "influence": 2.0 },
+  { "id": "sunspire", "name": "Sunspire Temple", "region_id": "aldermoor", "culture": "mystical", "influence": 1.5 },
+  { "id": "war_cairns", "name": "The War Cairns", "region_id": "kharzul", "culture": "martial", "influence": 2.0 },
+  { "id": "ironmarket", "name": "Ironmarket", "region_id": "kharzul", "culture": "mercantile", "influence": 1.5 },
+  { "id": "world_tree", "name": "The World Tree", "region_id": "sylvenmar", "culture": "mystical", "influence": 2.5 },
+  { "id": "tide_temple", "name": "Temple of Tides", "region_id": "sylvenmar", "culture": "pastoral", "influence": 1.5 }
+]

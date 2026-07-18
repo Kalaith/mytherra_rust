@@ -46,6 +46,7 @@
     "holdings": "Holdings",
     "settlements_line": "Towns:  {list}",
     "resources_line": "Resources:  {list}",
+    "landmarks_line": "Landmarks:  {list}",
     "no_holdings": "No holdings here."
   },
   "divine": {
@@ -195,6 +196,7 @@
     "artifact_backlash": "{artifact} shatters, scarring {region}.",
     "magic_known": "{path} passes into common knowledge.",
     "myth_echo": "{title} echoes across {region}.",
-    "era_transition": "A new age dawns: {era}, born of {trigger}."
+    "era_transition": "A new age dawns: {era}, born of {trigger}.",
+    "culture_shift": "{region} takes on a {culture} character."
   }
 }

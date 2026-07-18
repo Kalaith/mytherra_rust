@@ -220,8 +220,16 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         .take(3)
         .map(|n| format!("{} ({})", n.name, n.status.label()))
         .collect();
+    let marks: Vec<String> = ctx
+        .world
+        .landmarks
+        .iter()
+        .filter(|l| l.region_id == region.id)
+        .take(3)
+        .map(|l| l.name.clone())
+        .collect();
 
-    if towns.is_empty() && nodes.is_empty() {
+    if towns.is_empty() && nodes.is_empty() && marks.is_empty() {
         draw_ui_text_ex(
             &strings.ui.no_holdings,
             content.x,
@@ -242,6 +250,15 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
     if !nodes.is_empty() {
         draw_ui_text_ex(
             &fill(&strings.ui.resources_line, &[("list", nodes.join(",  "))]),
+            content.x,
+            y + 14.0,
+            TextStyle::new(13.0, dark::TEXT_DIM).params(),
+        );
+        y += 20.0;
+    }
+    if !marks.is_empty() {
+        draw_ui_text_ex(
+            &fill(&strings.ui.landmarks_line, &[("list", marks.join(",  "))]),
             content.x,
             y + 14.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),
