@@ -43,6 +43,17 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
     );
 
+    settlement::tick_construction(
+        &world.settlements,
+        &mut world.buildings,
+        &data.building_types,
+        &data.balance.settlement,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
     resource::tick_resources(
         &mut world.resource_nodes,
         &mut world.regions,

@@ -1,11 +1,16 @@
 //! Per-tick settlement growth (GDD 5.3): population grows on the settlement's
-//! and its region's prosperity; settlement prosperity tracks its region; and a
-//! thriving settlement feeds prosperity back to that region (one of the region
-//! "pressure" terms §5.2 left stubbed until now). Deterministic: no RNG.
+//! and its region's prosperity; settlement prosperity tracks its region (raised
+//! by its buildings); and a thriving settlement feeds prosperity back to that
+//! region (one of the region "pressure" terms §5.2 left stubbed until now).
+//! Prosperous, populous settlements also raise new buildings over time (GDD 6),
+//! the one settlement effect that draws on the world RNG.
 
-use crate::data::{RegionBalance, SettlementBalance};
-use crate::world::{Building, Region, Settlement};
+use crate::data::strings::ChronicleText;
+use crate::data::{fill, BuildingType, RegionBalance, SettlementBalance};
+use crate::world::{Building, Chronicle, EventKind, Region, Settlement};
+use macroquad_toolkit::data_loader::DataRegistry;
 use macroquad_toolkit::math::approach;
+use macroquad_toolkit::rng::SeededRng;
 
 pub fn tick_settlements(
     settlements: &mut [Settlement],
@@ -37,6 +42,68 @@ pub fn tick_settlements(
 
         let contribution = settlement.region_contribution(balance);
         regions[idx].apply_deltas(contribution, 0.0, 0.0, 0.0, region_balance);
+    }
+}
+
+/// Prosperous, populous settlements raise new buildings over time (GDD 6). A
+/// settlement holds at most one of each building type; the chosen type is drawn
+/// deterministically from the world RNG (candidates sorted for determinism, as
+/// the type registry is a hash map).
+#[allow(clippy::too_many_arguments)]
+pub fn tick_construction(
+    settlements: &[Settlement],
+    buildings: &mut Vec<Building>,
+    building_types: &DataRegistry<BuildingType>,
+    balance: &SettlementBalance,
+    rng: &mut SeededRng,
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    year: u32,
+) {
+    for settlement in settlements {
+        if settlement.prosperity < balance.construction_prosperity_min
+            || settlement.population < balance.construction_population_min
+        {
+            continue;
+        }
+        if !rng.chance(balance.construction_chance) {
+            continue;
+        }
+
+        // Building types this settlement doesn't already have, sorted by id so
+        // the RNG draw is reproducible regardless of hash-map iteration order.
+        let mut candidates: Vec<&BuildingType> = building_types
+            .iter()
+            .map(|(_, t)| t)
+            .filter(|t| {
+                !buildings
+                    .iter()
+                    .any(|b| b.settlement_id == settlement.id && b.type_id == t.id)
+            })
+            .collect();
+        candidates.sort_by(|a, b| a.id.cmp(&b.id));
+        let Some(&chosen) = rng.choose(&candidates) else {
+            continue;
+        };
+
+        buildings.push(Building {
+            id: format!("{}_{}", settlement.id, chosen.id),
+            name: format!("{} {}", settlement.name, chosen.name),
+            settlement_id: settlement.id.clone(),
+            type_id: chosen.id.clone(),
+            prosperity_bonus: chosen.prosperity_bonus,
+        });
+        chronicle.push(
+            year,
+            EventKind::Region,
+            fill(
+                &text.settlement_built,
+                &[
+                    ("settlement", settlement.name.clone()),
+                    ("building", chosen.name.clone()),
+                ],
+            ),
+        );
     }
 }
 
@@ -95,5 +162,53 @@ mod tests {
             "buildings should lift prosperity above the region baseline: {}",
             aldervale.prosperity
         );
+    }
+
+    #[test]
+    fn thriving_settlements_construct_new_buildings() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let before = world.buildings.len();
+        // Pin every settlement well above the construction floors, then run long
+        // enough that the per-tick chance fires.
+        for settlement in &mut world.settlements {
+            settlement.prosperity = 90.0;
+            settlement.population = 10_000.0;
+        }
+        for _ in 0..400 {
+            tick_construction(
+                &world.settlements,
+                &mut world.buildings,
+                &data.building_types,
+                &data.balance.settlement,
+                &mut world.rng,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                1,
+            );
+        }
+        assert!(
+            world.buildings.len() > before,
+            "thriving settlements should have raised buildings: {} -> {}",
+            before,
+            world.buildings.len()
+        );
+        // No settlement ends up with two of the same building type.
+        for settlement in &world.settlements {
+            let mut types: Vec<&str> = world
+                .buildings
+                .iter()
+                .filter(|b| b.settlement_id == settlement.id)
+                .map(|b| b.type_id.as_str())
+                .collect();
+            let total = types.len();
+            types.sort_unstable();
+            types.dedup();
+            assert_eq!(
+                total,
+                types.len(),
+                "duplicate building type in a settlement"
+            );
+        }
     }
 }

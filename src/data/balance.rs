@@ -328,6 +328,12 @@ pub struct SettlementBalance {
     pub growth_max: f32,
     pub prosperity_drift_rate: f32,
     pub region_contribution: f32,
+    /// A settlement builds a new building only once its prosperity and
+    /// population clear these floors (GDD 6 — buildings grow with settlements).
+    pub construction_prosperity_min: f32,
+    pub construction_population_min: f32,
+    /// Per-tick chance an eligible settlement raises one new building.
+    pub construction_chance: f32,
 }
 
 /// Era system tuning (GDD 5.7).

@@ -202,6 +202,7 @@
     "magic_known": "{path} passes into common knowledge.",
     "myth_echo": "{title} echoes across {region}.",
     "era_transition": "A new age dawns: {era}, born of {trigger}.",
-    "culture_shift": "{region} takes on a {culture} character."
+    "culture_shift": "{region} takes on a {culture} character.",
+    "settlement_built": "{settlement} raises a {building}."
   }
 }

@@ -242,6 +242,7 @@ pub struct ChronicleText {
     pub myth_echo: String,
     pub era_transition: String,
     pub culture_shift: String,
+    pub settlement_built: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.
