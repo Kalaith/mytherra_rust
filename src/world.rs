@@ -1,6 +1,7 @@
 //! The shared world state: everything the simulation advances that is NOT
 //! private to one player (GDD 6 "shared/global tables").
 
+mod artifact;
 mod bet;
 mod champion;
 mod chronicle;
@@ -9,6 +10,7 @@ mod player;
 mod region;
 mod speculation;
 
+pub use artifact::Artifact;
 pub use bet::{quote_event, Bet};
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
@@ -39,6 +41,9 @@ pub struct WorldState {
     pub tick_count: u64,
     pub regions: Vec<Region>,
     pub heroes: Vec<Hero>,
+    pub artifacts: Vec<Artifact>,
+    /// Monotonic counter for unique created-artifact ids.
+    pub artifact_seq: u64,
     pub speculations: Vec<SpeculationEvent>,
     /// Monotonic counter for unique speculation event ids.
     pub speculation_seq: u64,
@@ -57,11 +62,14 @@ impl WorldState {
             .map(|seed| Region::from_seed(seed, &data.balance.region))
             .collect();
         let heroes = data.heroes.iter().map(Hero::from_seed).collect();
+        let artifacts = data.artifacts.iter().map(Artifact::from_seed).collect();
         let mut world = Self {
             year: data.config.start_year,
             tick_count: 0,
             regions,
             heroes,
+            artifacts,
+            artifact_seq: 0,
             speculations: Vec::new(),
             speculation_seq: 0,
             chronicle: Chronicle::default(),

@@ -1,0 +1,62 @@
+//! Omens: a read-only forecast of the pressure weighing on each region
+//! (GDD 5.6 — omens never mutate world state).
+
+use crate::data::fill;
+use crate::data::strings::DivineText;
+use crate::ui::divine_tools::draw_panel;
+use crate::ui::widgets::bad_stat_color;
+use crate::ui::UiContext;
+use macroquad::prelude::*;
+use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
+
+pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
+    let strings = &ctx.data.strings.divine;
+    draw_panel(rect, &strings.omens_panel);
+    let content = rect.inset(18.0);
+
+    draw_ui_text_ex(
+        &strings.omens_intro,
+        content.x,
+        content.y + 30.0,
+        TextStyle::new(15.0, dark::TEXT_DIM).params(),
+    );
+
+    let mut y = content.y + 52.0;
+    for region in &ctx.world.regions {
+        let pressure = region.pressure();
+        draw_ui_text_ex(
+            &region.name,
+            content.x,
+            y + 20.0,
+            TextStyle::new(17.0, dark::TEXT_BRIGHT).params(),
+        );
+        meter(
+            Rect::new(content.x, y + 30.0, content.w, 20.0),
+            pressure,
+            100.0,
+            bad_stat_color(pressure),
+            Some(&fill(
+                &strings.omen_line,
+                &[
+                    ("pressure", format!("{pressure:.0}")),
+                    ("tier", tier(pressure, strings).to_owned()),
+                ],
+            )),
+        );
+        y += 74.0;
+    }
+}
+
+/// Qualitative omen tier from a region's pressure reading.
+fn tier(pressure: f32, strings: &DivineText) -> &str {
+    if pressure < 30.0 {
+        &strings.omen_calm
+    } else if pressure < 55.0 {
+        &strings.omen_stirring
+    } else if pressure < 75.0 {
+        &strings.omen_turbulent
+    } else {
+        &strings.omen_dire
+    }
+}

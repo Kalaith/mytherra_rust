@@ -6,6 +6,7 @@
 
 mod betting;
 mod dashboard;
+mod divine_tools;
 mod heroes;
 mod placeholder;
 mod regions;
@@ -72,6 +73,18 @@ pub enum UiAction {
     CycleConfidence,
     /// Cycle the selected stake preset for the next bet.
     CycleStake,
+    /// Select a divine-tool sub-tab by index.
+    SelectDivineTab(usize),
+    /// Cycle the focus of the next artifact to be forged.
+    CycleArtifactFocus,
+    /// Forge a new artifact in the selected region.
+    CreateArtifact,
+    /// Empower the artifact with the given id.
+    EmpowerArtifact(String),
+    /// Stabilize the artifact with the given id.
+    StabilizeArtifact(String),
+    /// Move the artifact with the given id to another region.
+    TransferArtifact(String),
     AdvanceTick,
     Save,
     Load,
@@ -91,6 +104,10 @@ pub struct UiContext<'a> {
     pub bet_confidence: usize,
     /// Index into `balance.betting.stake_presets` for the next bet.
     pub bet_stake_index: usize,
+    /// Selected divine-tool sub-tab index.
+    pub divine_tab: usize,
+    /// Focus of the next artifact to be forged.
+    pub create_focus: crate::data::ArtifactFocus,
     pub mouse: Vec2,
 }
 
@@ -106,7 +123,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
         Screen::Dashboard => dashboard::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
         Screen::Heroes => heroes::draw(ctx, &mut actions),
-        Screen::DivineTools => placeholder::draw(ctx, &placeholders.divine_tools),
+        Screen::DivineTools => divine_tools::draw(ctx, &mut actions),
         Screen::Betting => betting::draw(ctx, &mut actions),
         Screen::Eras => placeholder::draw(ctx, &placeholders.eras),
     }

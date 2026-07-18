@@ -85,7 +85,7 @@ fn resolve_rivalry(
             r.escalated_danger,
         )
     };
-    region.apply_deltas(prosperity, chaos, danger, region_balance);
+    region.apply_deltas(prosperity, chaos, danger, 0.0, region_balance);
     chronicle.push(
         year,
         EventKind::Hero,

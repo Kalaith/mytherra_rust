@@ -16,6 +16,7 @@ pub struct Strings {
     pub ui: UiText,
     pub heroes: HeroText,
     pub betting: BettingText,
+    pub divine: DivineText,
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
 }
@@ -48,7 +49,6 @@ pub struct PlaceholderText {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Placeholders {
-    pub divine_tools: PlaceholderText,
     pub eras: PlaceholderText,
 }
 
@@ -91,6 +91,28 @@ pub struct BettingText {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DivineText {
+    pub artifacts_panel: String,
+    pub artifacts_empty: String,
+    pub create_focus: String,
+    pub create: String,
+    pub empower: String,
+    pub stabilize: String,
+    pub transfer: String,
+    pub artifact_meta: String,
+    pub instability: String,
+    pub omens_panel: String,
+    pub omens_intro: String,
+    pub omen_line: String,
+    pub omen_calm: String,
+    pub omen_stirring: String,
+    pub omen_turbulent: String,
+    pub omen_dire: String,
+    pub tool_todo: String,
+    pub new_artifact_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UiText {
     pub footer_hint: String,
     pub empty_chronicle: String,
@@ -127,6 +149,11 @@ pub struct Notifications {
     pub bet_placed: String,
     pub bet_unaffordable: String,
     pub bet_closed: String,
+    pub artifact_created: String,
+    pub artifact_max: String,
+    pub artifact_empowered: String,
+    pub artifact_stabilized: String,
+    pub artifact_transferred: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -141,6 +168,7 @@ pub struct ChronicleText {
     pub champion_escalated: String,
     pub bet_won: String,
     pub bet_lost: String,
+    pub artifact_backlash: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

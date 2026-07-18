@@ -16,10 +16,6 @@
     "population": "Population"
   },
   "placeholders": {
-    "divine_tools": {
-      "title": "Divine Tools",
-      "body": "Artifacts, Weather, Omens, Magic, Myths, Civilization, and the Pantheon are coming."
-    },
     "eras": {
       "title": "Eras",
       "body": "Era pressure, legacy, and transition history are coming."
@@ -41,6 +37,26 @@
     "level_badge": "Lv {level}",
     "tick_badge": "Tick {seconds}s"
   },
+  "divine": {
+    "artifacts_panel": "Artifacts ({count}/{max})",
+    "artifacts_empty": "No artifacts channel your will.",
+    "create_focus": "Focus: {focus}",
+    "create": "Forge {cost}",
+    "empower": "Empower {cost}",
+    "stabilize": "Stabilize {cost}",
+    "transfer": "Move {cost}",
+    "artifact_meta": "{focus}  ·  power {power}  ·  {region}",
+    "instability": "Instability {instability}",
+    "omens_panel": "Omens",
+    "omens_intro": "The pressure weighing on each region, read across the horizons.",
+    "omen_line": "pressure {pressure}  ·  {tier}",
+    "omen_calm": "Calm",
+    "omen_stirring": "Stirring",
+    "omen_turbulent": "Turbulent",
+    "omen_dire": "Dire",
+    "tool_todo": "This divine tool awaits its awakening.",
+    "new_artifact_name": "{focus} Relic {n}"
+  },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
     "not_enough_favor": "Not enough Divine Favor.",
@@ -58,7 +74,12 @@
     "champion_focus_changed": "{hero} now channels {focus}.",
     "bet_placed": "Wager placed on {target} ({stake} favor).",
     "bet_unaffordable": "Not enough favor for that stake.",
-    "bet_closed": "That speculation has already resolved."
+    "bet_closed": "That speculation has already resolved.",
+    "artifact_created": "You forge {name}.",
+    "artifact_max": "You cannot sustain another artifact.",
+    "artifact_empowered": "{name} swells with power.",
+    "artifact_stabilized": "You steady {name}.",
+    "artifact_transferred": "{name} passes to {region}."
   },
   "heroes": {
     "panel": "Heroes & Champions",
@@ -104,6 +125,7 @@
     "champion_resolved": "{hero} quells a rivalry in {region}.",
     "champion_escalated": "{hero}'s rivalry in {region} escalates.",
     "bet_won": "Your wager on {target} pays out {payout} favor.",
-    "bet_lost": "Your wager on {target} lapses unfulfilled."
+    "bet_lost": "Your wager on {target} lapses unfulfilled.",
+    "artifact_backlash": "{artifact} shatters, scarring {region}."
   }
 }

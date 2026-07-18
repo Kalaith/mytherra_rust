@@ -94,6 +94,28 @@
     "payout_max_mult": 12.0,
     "min_odds": 1.1
   },
+  "artifact": {
+    "max_active": 9,
+    "create_cost": 40,
+    "empower_base_cost": 20,
+    "empower_power_mult": 10,
+    "empower_instability_div": 5.0,
+    "transfer_cost": 8,
+    "stabilize_cost": 15,
+    "stabilize_amount": 22.0,
+    "empower_instability_gain": 12.0,
+    "instability_per_tick": 3.0,
+    "instability_power_mult": 0.6,
+    "backlash_threshold": 100.0,
+    "backlash_chaos": 10.0,
+    "backlash_danger": 8.0,
+    "focus_effect": {
+      "protection": -0.5,
+      "prosperity": 0.4,
+      "war": -0.4,
+      "knowledge": 0.5
+    }
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

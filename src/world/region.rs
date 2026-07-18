@@ -112,17 +112,19 @@ impl Region {
     }
 
     /// Apply raw (already-computed) stat deltas, clamp, and refresh status.
-    /// Used by systems other than divine actions (e.g. champion rivalries).
+    /// Used by systems other than divine actions (champion rivalries, artifacts).
     pub fn apply_deltas(
         &mut self,
         prosperity: f32,
         chaos: f32,
         danger: f32,
+        magic: f32,
         balance: &RegionBalance,
     ) {
         self.prosperity = clamp_stat(self.prosperity + prosperity);
         self.chaos = clamp_stat(self.chaos + chaos);
         self.danger = clamp_stat(self.danger + danger);
+        self.magic_affinity = clamp_stat(self.magic_affinity + magic);
         self.refresh_status(balance);
     }
 

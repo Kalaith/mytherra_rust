@@ -4,6 +4,7 @@
 //! than in Rust source, per the data-driven design rule. Rust only names the
 //! shape; designers tune the values in JSON.
 
+use crate::data::artifact::ArtifactFocus;
 use crate::data::champion::ChampionFocus;
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +14,7 @@ pub struct Balance {
     pub hero: HeroBalance,
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
+    pub artifact: ArtifactBalance,
     pub player: PlayerBalance,
 }
 
@@ -179,6 +181,46 @@ pub struct BettingBalance {
     pub payout_max_mult: f32,
     /// Floor on final odds.
     pub min_odds: f32,
+}
+
+/// Artifact tool tuning (GDD 5.6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArtifactBalance {
+    pub max_active: usize,
+    pub create_cost: i64,
+    pub empower_base_cost: i64,
+    pub empower_power_mult: i64,
+    pub empower_instability_div: f32,
+    pub transfer_cost: i64,
+    pub stabilize_cost: i64,
+    pub stabilize_amount: f32,
+    pub empower_instability_gain: f32,
+    pub instability_per_tick: f32,
+    pub instability_power_mult: f32,
+    pub backlash_threshold: f32,
+    pub backlash_chaos: f32,
+    pub backlash_danger: f32,
+    pub focus_effect: ArtifactFocusEffect,
+}
+
+/// Per-power stat magnitude each artifact focus applies to its region.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArtifactFocusEffect {
+    pub protection: f32,
+    pub prosperity: f32,
+    pub war: f32,
+    pub knowledge: f32,
+}
+
+impl ArtifactFocusEffect {
+    pub fn per_power(&self, focus: ArtifactFocus) -> f32 {
+        match focus {
+            ArtifactFocus::Protection => self.protection,
+            ArtifactFocus::Prosperity => self.prosperity,
+            ArtifactFocus::War => self.war,
+            ArtifactFocus::Knowledge => self.knowledge,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

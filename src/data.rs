@@ -5,6 +5,7 @@
 //! disk, but the embedded copies keep WASM builds self-contained.
 
 mod action;
+mod artifact;
 mod balance;
 mod bet;
 mod champion;
@@ -14,8 +15,10 @@ mod region;
 pub mod strings;
 
 pub use action::RegionActionDef;
+pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
-    Balance, BettingBalance, ChampionBalance, HeroBalance, PlayerBalance, RegionBalance,
+    ArtifactBalance, Balance, BettingBalance, ChampionBalance, HeroBalance, PlayerBalance,
+    RegionBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
@@ -32,6 +35,7 @@ const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
 const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
 const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
 const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
+const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
 const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
 const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
 const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
@@ -45,6 +49,7 @@ pub struct GameData {
     pub regions: Vec<RegionSeed>,
     pub region_actions: DataRegistry<RegionActionDef>,
     pub heroes: Vec<HeroSeed>,
+    pub artifacts: Vec<ArtifactSeed>,
     pub bet_types: Vec<BetType>,
     pub confidence_levels: Vec<ConfidenceLevel>,
     pub timeframes: Vec<TimeframeModifier>,
@@ -58,6 +63,7 @@ impl GameData {
         let regions: Vec<RegionSeed> = load_embedded_json(REGIONS_JSON)?;
         let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
         let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
+        let artifacts: Vec<ArtifactSeed> = load_embedded_json(ARTIFACTS_JSON)?;
         let bet_types: Vec<BetType> = load_embedded_json(BET_TYPES_JSON)?;
         let confidence_levels: Vec<ConfidenceLevel> = load_embedded_json(CONFIDENCE_JSON)?;
         let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
@@ -76,6 +82,7 @@ impl GameData {
             regions,
             region_actions,
             heroes,
+            artifacts,
             bet_types,
             confidence_levels,
             timeframes,

@@ -1,11 +1,13 @@
 //! High-level game loop: owns the world, the player, and screen navigation,
 //! runs the tick timer, and interprets UI intents.
 
-use crate::data::{fill, ChampionFocus, GameData};
+mod actions;
+
+use crate::data::{fill, ArtifactFocus, GameData};
 use crate::save::{migrate_save_value, SaveData};
 use crate::sim::tick_world;
 use crate::ui::{self, Screen, UiAction, UiContext};
-use crate::world::{quote_event, Bet, EventKind, PlayerState, WorldState};
+use crate::world::{PlayerState, WorldState};
 use macroquad::prelude::*;
 use macroquad_toolkit::events::EventBus;
 use macroquad_toolkit::notifications::{
@@ -29,6 +31,9 @@ pub struct Game {
     /// Betting selectors (transient UI state, not persisted).
     bet_confidence: usize,
     bet_stake_index: usize,
+    /// Divine-tools UI state.
+    divine_tab: usize,
+    create_focus: ArtifactFocus,
 }
 
 impl Game {
@@ -58,6 +63,8 @@ impl Game {
             tick_accum: 0.0,
             bet_confidence: 1,
             bet_stake_index: 0,
+            divine_tab: 0,
+            create_focus: ArtifactFocus::Protection,
         };
         game.refresh_save_state();
         game
@@ -68,11 +75,12 @@ impl Game {
         self.screen = match scene {
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,
-            "divine_tools" => Screen::DivineTools,
+            "divine_tools" | "artifacts" | "omens" => Screen::DivineTools,
             "betting" => Screen::Betting,
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
         };
+        self.divine_tab = if scene == "omens" { 2 } else { 0 };
         match self.screen {
             // Demo a couple of champions so the heroes screen shows the roster.
             Screen::Heroes => {
@@ -144,6 +152,8 @@ impl Game {
             seconds_to_tick: (self.data.config.seconds_per_tick - self.tick_accum).max(0.0),
             bet_confidence: self.bet_confidence,
             bet_stake_index: self.bet_stake_index,
+            divine_tab: self.divine_tab,
+            create_focus: self.create_focus,
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);
@@ -208,6 +218,12 @@ impl Game {
                 self.bet_stake_index =
                     (self.bet_stake_index + 1) % self.data.balance.betting.stake_presets.len();
             }
+            UiAction::SelectDivineTab(index) => self.divine_tab = index,
+            UiAction::CycleArtifactFocus => self.create_focus = self.create_focus.next(),
+            UiAction::CreateArtifact => self.create_artifact(),
+            UiAction::EmpowerArtifact(id) => self.empower_artifact(&id),
+            UiAction::StabilizeArtifact(id) => self.stabilize_artifact(&id),
+            UiAction::TransferArtifact(id) => self.transfer_artifact(&id),
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications
@@ -217,201 +233,6 @@ impl Game {
             UiAction::Load => self.load_game(),
             UiAction::NewWorld => self.new_world(),
         }
-    }
-
-    fn apply_region_action(&mut self, id: &str) {
-        let notes = &self.data.strings.notifications;
-        let Some(def) = self.data.region_actions.get(id).cloned() else {
-            self.notifications
-                .warning(fill(&notes.unknown_action, &[("id", id.to_owned())]));
-            return;
-        };
-        let index = self
-            .selected_region
-            .min(self.world.regions.len().saturating_sub(1));
-        let Some(region) = self.world.region(index) else {
-            return;
-        };
-        let cost = region.action_cost(&def, &self.data.balance.region);
-        if !self.player.spend(cost, &self.data.balance.player) {
-            self.notifications.warning(notes.not_enough_favor.clone());
-            return;
-        }
-
-        let year = self.world.year;
-        let region_name;
-        {
-            let region = self.world.region_mut(index).expect("index checked above");
-            region.apply_action(&def, &self.data.balance.region);
-            region_name = region.name.clone();
-        }
-        let text = &self.data.strings;
-        self.world.chronicle.push(
-            year,
-            EventKind::Divine,
-            fill(
-                &text.chronicle.divine_action,
-                &[
-                    ("action", def.name.clone()),
-                    ("region", region_name.clone()),
-                ],
-            ),
-        );
-        self.notifications.success(fill(
-            &text.notifications.action_success,
-            &[
-                ("action", def.name.clone()),
-                ("region", region_name),
-                ("cost", cost.to_string()),
-            ],
-        ));
-    }
-
-    fn designate_champion(&mut self, hero_id: &str) {
-        let notes = self.data.strings.notifications.clone();
-        let hero_name = match self
-            .world
-            .heroes
-            .iter()
-            .find(|h| h.id == hero_id && h.is_alive)
-        {
-            Some(hero) => hero.name.clone(),
-            None => return,
-        };
-        let balance = &self.data.balance.champion;
-        if self.player.is_champion(hero_id) || self.player.champions.len() >= balance.max_roster {
-            self.notifications.warning(notes.champion_designate_failed);
-            return;
-        }
-        if !self
-            .player
-            .spend(balance.designate_cost, &self.data.balance.player)
-        {
-            self.notifications.warning(notes.not_enough_favor);
-            return;
-        }
-        self.player
-            .designate_champion(hero_id, ChampionFocus::Valor, &self.data.balance.champion);
-        self.notifications
-            .success(fill(&notes.champion_designated, &[("hero", hero_name)]));
-    }
-
-    fn cultivate_champion(&mut self, hero_id: &str) {
-        let notes = self.data.strings.notifications.clone();
-        let Some(cost) = self
-            .player
-            .champions
-            .iter()
-            .find(|c| c.hero_id == hero_id)
-            .map(|c| c.cultivate_cost(&self.data.balance.champion))
-        else {
-            return;
-        };
-        let alive = self
-            .world
-            .heroes
-            .iter()
-            .any(|h| h.id == hero_id && h.is_alive);
-        if !alive {
-            return;
-        }
-        if !self.player.spend(cost, &self.data.balance.player) {
-            self.notifications.warning(notes.not_enough_favor);
-            return;
-        }
-        let gain = self.data.balance.champion.cultivate_bond_gain;
-        if let Some(champion) = self.player.champion_mut(hero_id) {
-            champion.bond += gain;
-            champion.recompute_rank(&self.data.balance.champion);
-        }
-        let hero_name = self.hero_name(hero_id);
-        self.notifications
-            .success(fill(&notes.champion_cultivated, &[("hero", hero_name)]));
-    }
-
-    fn cycle_champion_focus(&mut self, hero_id: &str) {
-        let Some(champion) = self.player.champion_mut(hero_id) else {
-            return;
-        };
-        champion.focus = champion.focus.next();
-        let focus = champion.focus;
-        let hero_name = self.hero_name(hero_id);
-        self.notifications.info(fill(
-            &self.data.strings.notifications.champion_focus_changed,
-            &[("hero", hero_name), ("focus", focus.label().to_owned())],
-        ));
-    }
-
-    fn place_bet(&mut self, event_id: &str) {
-        let notes = self.data.strings.notifications.clone();
-        let betting = &self.data.balance.betting;
-        let stake =
-            betting.stake_presets[self.bet_stake_index.min(betting.stake_presets.len() - 1)];
-        let confidence = self.data.confidence_levels[self
-            .bet_confidence
-            .min(self.data.confidence_levels.len() - 1)]
-        .clone();
-
-        let Some(idx) = self
-            .world
-            .speculations
-            .iter()
-            .position(|e| e.id == event_id && e.is_active())
-        else {
-            self.notifications.warning(notes.bet_closed);
-            return;
-        };
-
-        let (quote, target_name, bet_type_name, deadline) = {
-            let event = &self.world.speculations[idx];
-            let likelihood = event.likelihood(&self.world.heroes, &self.world.regions);
-            let quote = quote_event(
-                event,
-                likelihood,
-                &confidence,
-                stake,
-                &self.data.balance.betting,
-            );
-            (
-                quote,
-                event.target_name.clone(),
-                event.bet_type_name.clone(),
-                event.deadline_year,
-            )
-        };
-
-        if !self.player.place_stake(stake) {
-            self.notifications.warning(notes.bet_unaffordable);
-            return;
-        }
-        // The player joins the "yes" side, shifting the crowd lean for later bets.
-        self.world.speculations[idx].crowd_yes += stake as f32;
-
-        self.player.bets.push(Bet {
-            event_id: event_id.to_owned(),
-            bet_type_name,
-            target_name: target_name.clone(),
-            confidence_name: confidence.name.clone(),
-            stake,
-            potential_payout: quote.payout,
-            odds: quote.odds,
-            placed_year: self.world.year,
-            deadline_year: deadline,
-            resolved: None,
-        });
-        self.notifications.success(fill(
-            &notes.bet_placed,
-            &[("target", target_name), ("stake", stake.to_string())],
-        ));
-    }
-
-    fn hero_name(&self, hero_id: &str) -> String {
-        self.world
-            .heroes
-            .iter()
-            .find(|h| h.id == hero_id)
-            .map(|h| h.name.clone())
-            .unwrap_or_else(|| hero_id.to_owned())
     }
 
     fn new_world(&mut self) {
