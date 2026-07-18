@@ -105,6 +105,10 @@ pub struct HeroText {
     pub roster_label: String,
     pub filter_all: String,
     pub roster_more: String,
+    pub focus_line: String,
+    pub focus_effect_valor: String,
+    pub focus_effect_wisdom: String,
+    pub focus_effect_devotion: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

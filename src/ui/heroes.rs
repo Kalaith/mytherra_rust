@@ -51,10 +51,22 @@ fn draw_champions_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAct
         draw_champion_card(
             ctx,
             champion,
-            Rect::new(content.x, y, content.w, 116.0),
+            Rect::new(content.x, y, content.w, 128.0),
             actions,
         );
-        y += 128.0;
+        y += 140.0;
+    }
+}
+
+/// Short description of what a champion's focus does on a resolved rivalry,
+/// so the cultivation choice is legible (matches the sim in sim/champion.rs).
+fn focus_effect<'a>(ctx: &'a UiContext<'_>, focus: crate::data::ChampionFocus) -> &'a str {
+    use crate::data::ChampionFocus;
+    let strings = &ctx.data.strings.heroes;
+    match focus {
+        ChampionFocus::Valor => &strings.focus_effect_valor,
+        ChampionFocus::Wisdom => &strings.focus_effect_wisdom,
+        ChampionFocus::Devotion => &strings.focus_effect_devotion,
     }
 }
 
@@ -96,9 +108,23 @@ fn draw_champion_card(
         TextStyle::new(13.0, dark::TEXT_DIM).params(),
     );
 
+    // What this focus does when the champion resolves a rivalry.
+    draw_ui_text_ex(
+        &fill(
+            &strings.focus_line,
+            &[
+                ("focus", champion.focus.label().to_owned()),
+                ("effect", focus_effect(ctx, champion.focus).to_owned()),
+            ],
+        ),
+        rect.x + 14.0,
+        rect.y + 64.0,
+        TextStyle::new(13.0, dark::ACCENT).params(),
+    );
+
     // Quest progress meter.
     meter(
-        Rect::new(rect.x + 14.0, rect.y + 58.0, rect.w - 28.0, 14.0),
+        Rect::new(rect.x + 14.0, rect.y + 76.0, rect.w - 28.0, 14.0),
         champion.quest_progress,
         balance.quest.goal,
         dark::ACCENT,

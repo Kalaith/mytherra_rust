@@ -198,7 +198,11 @@
     "quest": "Quest {progress}/{goal}",
     "roster_label": "Roster",
     "filter_all": "All",
-    "roster_more": "+{count} more heroes — filter by region to see them"
+    "roster_more": "+{count} more heroes — filter by region to see them",
+    "focus_line": "{focus}  ·  on victory, {effect}",
+    "focus_effect_valor": "eases danger",
+    "focus_effect_wisdom": "kindles magic",
+    "focus_effect_devotion": "lifts prosperity"
   },
   "betting": {
     "panel_events": "Speculation Events",
