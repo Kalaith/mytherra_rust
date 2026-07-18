@@ -17,6 +17,7 @@ mod region;
 mod resource;
 mod settlement;
 mod speculation;
+mod trade;
 mod weather;
 
 pub use artifact::Artifact;
@@ -35,6 +36,7 @@ pub use region::{Region, RegionStatus};
 pub use resource::ResourceNode;
 pub use settlement::Settlement;
 pub use speculation::SpeculationEvent;
+pub use trade::TradeRoute;
 pub use weather::{weather_cost, WeatherEvent};
 
 use crate::data::GameData;
@@ -61,6 +63,7 @@ pub struct WorldState {
     pub settlements: Vec<Settlement>,
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
+    pub trade_routes: Vec<TradeRoute>,
     pub heroes: Vec<Hero>,
     /// Monotonic counter for unique descendant-hero ids.
     pub hero_seq: u64,
@@ -102,6 +105,11 @@ impl WorldState {
             .map(ResourceNode::from_seed)
             .collect();
         let landmarks = data.landmarks.iter().map(Landmark::from_seed).collect();
+        let trade_routes = data
+            .trade_routes
+            .iter()
+            .map(TradeRoute::from_seed)
+            .collect();
         let artifacts = data.artifacts.iter().map(Artifact::from_seed).collect();
         let magic_paths = data.magic_paths.iter().map(MagicPath::from_seed).collect();
         let civilization = data
@@ -125,6 +133,7 @@ impl WorldState {
             settlements,
             resource_nodes,
             landmarks,
+            trade_routes,
             heroes,
             hero_seq: 0,
             artifacts,

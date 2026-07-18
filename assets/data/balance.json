@@ -207,9 +207,14 @@
     "landmark_weight": 3.0,
     "resource_weight": 1.5,
     "settlement_weight": 1.0,
+    "trade_weight": 1.5,
     "influence_base": 50.0,
     "influence_per_landmark": 12.0,
     "influence_rate": 0.5
+  },
+  "trade": {
+    "prosperity_bonus": 0.3,
+    "equalize_rate": 0.02
   },
   "resource": {
     "stress_chaos": 0.4,

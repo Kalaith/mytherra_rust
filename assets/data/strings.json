@@ -50,6 +50,7 @@
     "settlements_line": "Towns:  {list}",
     "resources_line": "Resources:  {list}",
     "landmarks_line": "Landmarks:  {list}",
+    "trade_line": "Trade:  {list}",
     "no_holdings": "No holdings here."
   },
   "divine": {

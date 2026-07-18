@@ -6,7 +6,9 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Culture, CultureBalance, HeroRole, ResourceType};
-use crate::world::{Chronicle, EventKind, Hero, Landmark, Region, ResourceNode, Settlement};
+use crate::world::{
+    Chronicle, EventKind, Hero, Landmark, Region, ResourceNode, Settlement, TradeRoute,
+};
 use macroquad_toolkit::math::approach;
 
 #[allow(clippy::too_many_arguments)]
@@ -16,6 +18,7 @@ pub fn tick_culture(
     landmarks: &[Landmark],
     resources: &[ResourceNode],
     settlements: &[Settlement],
+    trade_routes: &[TradeRoute],
     balance: &CultureBalance,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
@@ -42,6 +45,9 @@ pub fn tick_culture(
         for settlement in settlements.iter().filter(|s| s.region_id == region.id) {
             scores[Culture::Mercantile.index()] +=
                 balance.settlement_weight * (settlement.prosperity / 50.0);
+        }
+        for route in trade_routes.iter().filter(|t| t.touches(&region.id)) {
+            scores[Culture::Mercantile.index()] += balance.trade_weight * route.volume;
         }
 
         // Flip the dominant culture only past the inertia margin.
@@ -113,6 +119,7 @@ mod tests {
             &world.landmarks,
             &world.resource_nodes,
             &world.settlements,
+            &world.trade_routes,
             &data.balance.culture,
             &mut world.chronicle,
             &data.strings.chronicle,
@@ -137,6 +144,7 @@ mod tests {
             &world.landmarks,
             &world.resource_nodes,
             &world.settlements,
+            &world.trade_routes,
             &data.balance.culture,
             &mut world.chronicle,
             &data.strings.chronicle,

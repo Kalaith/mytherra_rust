@@ -25,6 +25,7 @@ pub struct Balance {
     pub settlement: SettlementBalance,
     pub resource: ResourceBalance,
     pub culture: CultureBalance,
+    pub trade: TradeBalance,
     pub player: PlayerBalance,
 }
 
@@ -45,10 +46,21 @@ pub struct CultureBalance {
     pub landmark_weight: f32,
     pub resource_weight: f32,
     pub settlement_weight: f32,
+    /// Mercantile score per trade route touching a region (weighted by volume).
+    pub trade_weight: f32,
     /// Cultural-influence baseline and per-landmark bonus (the reversion target).
     pub influence_base: f32,
     pub influence_per_landmark: f32,
     pub influence_rate: f32,
+}
+
+/// Trade-route tuning (GDD 5.2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TradeBalance {
+    /// Prosperity added to each endpoint per tick, per unit of route volume.
+    pub prosperity_bonus: f32,
+    /// Fraction each endpoint drifts toward the pair's average prosperity.
+    pub equalize_rate: f32,
 }
 
 /// A resonance-scaled multiplier: `clamp(min, max, 1 +/- (resonance-50) * coeff)`.

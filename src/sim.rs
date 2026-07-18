@@ -14,6 +14,7 @@ mod region;
 mod resource;
 mod settlement;
 mod speculation;
+mod trade;
 mod weather;
 
 use crate::data::{fill, GameData};
@@ -49,12 +50,20 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
     );
 
+    trade::tick_trade(
+        &world.trade_routes,
+        &mut world.regions,
+        &data.balance.trade,
+        &data.balance.region,
+    );
+
     culture::tick_culture(
         &mut world.regions,
         &world.heroes,
         &world.landmarks,
         &world.resource_nodes,
         &world.settlements,
+        &world.trade_routes,
         &data.balance.culture,
         &mut world.chronicle,
         &data.strings.chronicle,
