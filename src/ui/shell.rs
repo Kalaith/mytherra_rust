@@ -24,7 +24,12 @@ pub fn draw_header(ctx: &UiContext<'_>) {
     let ui = &ctx.data.strings.ui;
     let y = rect.y + 16.0;
     let mut x = rect.right() - 18.0;
-    x = badge_right(x, y, 118.0, &next_tick_label(ctx), TICK_FILL);
+    let (tick_label, tick_fill) = if ctx.paused {
+        (ui.tick_paused.clone(), TICK_PAUSED_FILL)
+    } else {
+        (next_tick_label(ctx), TICK_FILL)
+    };
+    x = badge_right(x, y, 118.0, &tick_label, tick_fill);
     x = badge_right(
         x,
         y,
@@ -95,3 +100,4 @@ const YEAR_FILL: Color = Color::new(0.18, 0.24, 0.32, 1.0);
 const FAVOR_FILL: Color = Color::new(0.20, 0.28, 0.20, 1.0);
 const LEVEL_FILL: Color = Color::new(0.22, 0.19, 0.30, 1.0);
 const TICK_FILL: Color = Color::new(0.24, 0.22, 0.16, 1.0);
+const TICK_PAUSED_FILL: Color = Color::new(0.30, 0.17, 0.15, 1.0);

@@ -206,6 +206,7 @@ pub struct UiText {
     pub favor_badge: String,
     pub level_badge: String,
     pub tick_badge: String,
+    pub tick_paused: String,
     pub save: String,
     pub load: String,
     pub new_world: String,

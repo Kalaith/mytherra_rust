@@ -43,6 +43,7 @@
     "favor_badge": "Favor {favor}",
     "level_badge": "Lv {level}",
     "tick_badge": "Tick {seconds}s",
+    "tick_paused": "Paused",
     "save": "Save",
     "load": "Load",
     "new_world": "New World",

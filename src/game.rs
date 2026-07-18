@@ -175,6 +175,10 @@ impl Game {
                 self.run_tick();
             }
         }
+        if scene == "settings" {
+            // Demonstrate the paused state (Resume control + "Paused" header).
+            self.paused = true;
+        }
         match self.screen {
             // Demo a couple of champions so the heroes screen shows the roster.
             Screen::Heroes => {
