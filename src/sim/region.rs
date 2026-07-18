@@ -24,7 +24,9 @@ pub fn tick_region(region: &mut Region, balance: &RegionBalance) {
 
     region.chaos = approach(region.chaos, d.chaos_target, d.chaos_rate);
     region.danger = approach(region.danger, d.danger_target, d.danger_rate);
-    region.magic_affinity = approach(region.magic_affinity, d.magic_target, d.magic_rate);
+    region.magic_affinity = (region.magic_affinity
+        + (d.magic_target - region.magic_affinity) * d.magic_reversion_rate)
+        .clamp(0.0, 100.0);
 
     region.refresh_status(balance);
 }

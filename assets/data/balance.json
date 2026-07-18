@@ -21,7 +21,7 @@
       "danger_target": 30.0,
       "danger_rate": 1.0,
       "magic_target": 45.0,
-      "magic_rate": 0.5
+      "magic_reversion_rate": 0.1
     }
   },
   "hero": {

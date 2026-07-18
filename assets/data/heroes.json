@@ -46,5 +46,29 @@
     "region_id": "sylvenmar",
     "level": 3,
     "age": 22
+  },
+  {
+    "id": "maeve",
+    "name": "Maeve Thorn",
+    "role": "scholar",
+    "region_id": "aldermoor",
+    "level": 5,
+    "age": 44
+  },
+  {
+    "id": "garruk",
+    "name": "Garruk Ironhide",
+    "role": "warrior",
+    "region_id": "kharzul",
+    "level": 7,
+    "age": 36
+  },
+  {
+    "id": "lyra",
+    "name": "Lyra Wavesong",
+    "role": "mage",
+    "region_id": "sylvenmar",
+    "level": 6,
+    "age": 29
   }
 ]

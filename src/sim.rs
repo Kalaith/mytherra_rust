@@ -202,8 +202,21 @@ mod tests {
         for _ in 0..250 {
             tick_world(&mut world, &mut player, &data);
         }
-        let avg = world.summary().avg_prosperity;
-        assert!(avg < 92.0, "prosperity pinned at the ceiling: {avg}");
-        assert!(avg > 25.0, "world collapsed: {avg}");
+        let summary = world.summary();
+        assert!(
+            summary.avg_prosperity < 92.0,
+            "prosperity pinned: {}",
+            summary.avg_prosperity
+        );
+        assert!(
+            summary.avg_prosperity > 25.0,
+            "world collapsed: {}",
+            summary.avg_prosperity
+        );
+        assert!(
+            summary.avg_magic < 92.0,
+            "magic pinned: {}",
+            summary.avg_magic
+        );
     }
 }

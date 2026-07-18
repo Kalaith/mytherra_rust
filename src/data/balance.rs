@@ -85,7 +85,10 @@ pub struct DriftParams {
     pub danger_target: f32,
     pub danger_rate: f32,
     pub magic_target: f32,
-    pub magic_rate: f32,
+    /// Proportional pull toward `magic_target`, so magic — pushed up by
+    /// knowledge artifacts / divination / the Growth deity — settles rather than
+    /// pinning at the ceiling (mirrors the prosperity mean-reversion).
+    pub magic_reversion_rate: f32,
 }
 
 /// Hero lifecycle tuning (GDD 5.4).
