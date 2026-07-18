@@ -1,0 +1,8 @@
+[
+  { "id": "market", "name": "Market", "prosperity_bonus": 6.0 },
+  { "id": "granary", "name": "Granary", "prosperity_bonus": 4.0 },
+  { "id": "guildhall", "name": "Guildhall", "prosperity_bonus": 8.0 },
+  { "id": "harbor", "name": "Harbor", "prosperity_bonus": 7.0 },
+  { "id": "forge", "name": "Forge", "prosperity_bonus": 5.0 },
+  { "id": "temple", "name": "Temple", "prosperity_bonus": 3.0 }
+]

@@ -37,6 +37,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     settlement::tick_settlements(
         &mut world.settlements,
+        &world.buildings,
         &mut world.regions,
         &data.balance.settlement,
         &data.balance.region,

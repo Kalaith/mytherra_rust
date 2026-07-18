@@ -51,6 +51,7 @@
     "resources_line": "Resources:  {list}",
     "landmarks_line": "Landmarks:  {list}",
     "trade_line": "Trade:  {list}",
+    "buildings_line": "Buildings:  {list}",
     "no_holdings": "No holdings here."
   },
   "divine": {

@@ -188,10 +188,10 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
             ctx,
             region,
             def,
-            Rect::new(content.x, y, content.w, 58.0),
+            Rect::new(content.x, y, content.w, 54.0),
             actions,
         );
-        y += 66.0;
+        y += 60.0;
     }
 
     // Holdings: the region's settlements and resource nodes.
@@ -235,8 +235,26 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         .filter_map(|t| t.other(&region.id))
         .map(|id| ctx.world.region_name(id).unwrap_or(id).to_owned())
         .collect();
+    let builds: Vec<String> = ctx
+        .world
+        .buildings
+        .iter()
+        .filter(|b| {
+            ctx.world
+                .settlements
+                .iter()
+                .any(|s| s.id == b.settlement_id && s.region_id == region.id)
+        })
+        .take(3)
+        .map(|b| b.name.clone())
+        .collect();
 
-    if towns.is_empty() && nodes.is_empty() && marks.is_empty() && trades.is_empty() {
+    if towns.is_empty()
+        && nodes.is_empty()
+        && marks.is_empty()
+        && trades.is_empty()
+        && builds.is_empty()
+    {
         draw_ui_text_ex(
             &strings.ui.no_holdings,
             content.x,
@@ -275,6 +293,15 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
     if !trades.is_empty() {
         draw_ui_text_ex(
             &fill(&strings.ui.trade_line, &[("list", trades.join(",  "))]),
+            content.x,
+            y + 14.0,
+            TextStyle::new(13.0, dark::TEXT_DIM).params(),
+        );
+        y += 20.0;
+    }
+    if !builds.is_empty() {
+        draw_ui_text_ex(
+            &fill(&strings.ui.buildings_line, &[("list", builds.join(",  "))]),
             content.x,
             y + 14.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),

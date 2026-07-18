@@ -185,6 +185,7 @@ pub struct UiText {
     pub resources_line: String,
     pub landmarks_line: String,
     pub trade_line: String,
+    pub buildings_line: String,
     pub no_holdings: String,
 }
 

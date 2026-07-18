@@ -1,0 +1,9 @@
+[
+  { "id": "aldervale_market", "name": "Aldervale Market", "settlement_id": "aldervale", "type_id": "market" },
+  { "id": "aldervale_granary", "name": "Aldervale Granary", "settlement_id": "aldervale", "type_id": "granary" },
+  { "id": "mooredge_forge", "name": "Mooredge Forge", "settlement_id": "mooredge", "type_id": "forge" },
+  { "id": "kharzkeep_guildhall", "name": "Kharzkeep Guildhall", "settlement_id": "kharzkeep", "type_id": "guildhall" },
+  { "id": "tidehaven_harbor", "name": "Tidehaven Harbor", "settlement_id": "tidehaven", "type_id": "harbor" },
+  { "id": "tidehaven_temple", "name": "Tidehaven Temple", "settlement_id": "tidehaven", "type_id": "temple" },
+  { "id": "greenhollow_granary", "name": "Greenhollow Granary", "settlement_id": "greenhollow", "type_id": "granary" }
+]

@@ -8,6 +8,7 @@ mod action;
 mod artifact;
 mod balance;
 mod bet;
+mod building;
 mod champion;
 mod civilization;
 mod config;
@@ -32,6 +33,7 @@ pub use balance::{
     ResourceBalance, ResourceOutputs, SettlementBalance, TradeBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
+pub use building::{BuildingSeed, BuildingType};
 pub use champion::ChampionFocus;
 pub use civilization::{Agenda, CivStat};
 pub use config::GameConfig;
@@ -60,6 +62,8 @@ const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
 const RESOURCE_NODES_JSON: &str = include_str!("../assets/data/resource_nodes.json");
 const LANDMARKS_JSON: &str = include_str!("../assets/data/landmarks.json");
 const TRADE_ROUTES_JSON: &str = include_str!("../assets/data/trade_routes.json");
+const BUILDING_TYPES_JSON: &str = include_str!("../assets/data/building_types.json");
+const BUILDINGS_JSON: &str = include_str!("../assets/data/buildings.json");
 const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
 const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
 const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
@@ -85,6 +89,8 @@ pub struct GameData {
     pub resource_nodes: Vec<ResourceNodeSeed>,
     pub landmarks: Vec<LandmarkSeed>,
     pub trade_routes: Vec<TradeRouteSeed>,
+    pub building_types: DataRegistry<BuildingType>,
+    pub buildings: Vec<BuildingSeed>,
     pub artifacts: Vec<ArtifactSeed>,
     pub weather_patterns: Vec<WeatherPattern>,
     pub weather_intensities: Vec<WeatherIntensity>,
@@ -110,6 +116,8 @@ impl GameData {
         let resource_nodes: Vec<ResourceNodeSeed> = load_embedded_json(RESOURCE_NODES_JSON)?;
         let landmarks: Vec<LandmarkSeed> = load_embedded_json(LANDMARKS_JSON)?;
         let trade_routes: Vec<TradeRouteSeed> = load_embedded_json(TRADE_ROUTES_JSON)?;
+        let building_types = DataRegistry::from_embedded_json(BUILDING_TYPES_JSON, "id")?;
+        let buildings: Vec<BuildingSeed> = load_embedded_json(BUILDINGS_JSON)?;
         let artifacts: Vec<ArtifactSeed> = load_embedded_json(ARTIFACTS_JSON)?;
         let weather_patterns: Vec<WeatherPattern> = load_embedded_json(WEATHER_PATTERNS_JSON)?;
         let weather_intensities: Vec<WeatherIntensity> =
@@ -144,6 +152,8 @@ impl GameData {
             resource_nodes,
             landmarks,
             trade_routes,
+            building_types,
+            buildings,
             artifacts,
             weather_patterns,
             weather_intensities,

@@ -3,6 +3,7 @@
 
 mod artifact;
 mod bet;
+mod building;
 mod champion;
 mod chronicle;
 mod civilization;
@@ -22,6 +23,7 @@ mod weather;
 
 pub use artifact::Artifact;
 pub use bet::{quote_event, Bet};
+pub use building::Building;
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
 pub use civilization::{agenda_score, RegionAgendas};
@@ -64,6 +66,7 @@ pub struct WorldState {
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
     pub trade_routes: Vec<TradeRoute>,
+    pub buildings: Vec<Building>,
     pub heroes: Vec<Hero>,
     /// Monotonic counter for unique descendant-hero ids.
     pub hero_seq: u64,
@@ -110,6 +113,11 @@ impl WorldState {
             .iter()
             .map(TradeRoute::from_seed)
             .collect();
+        let buildings = data
+            .buildings
+            .iter()
+            .map(|seed| Building::from_seed(seed, &data.building_types))
+            .collect();
         let artifacts = data.artifacts.iter().map(Artifact::from_seed).collect();
         let magic_paths = data.magic_paths.iter().map(MagicPath::from_seed).collect();
         let civilization = data
@@ -134,6 +142,7 @@ impl WorldState {
             resource_nodes,
             landmarks,
             trade_routes,
+            buildings,
             heroes,
             hero_seq: 0,
             artifacts,
