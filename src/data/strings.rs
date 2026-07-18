@@ -177,6 +177,9 @@ pub struct UiText {
     pub favor_badge: String,
     pub level_badge: String,
     pub tick_badge: String,
+    pub holdings: String,
+    pub settlement_line: String,
+    pub no_holdings: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

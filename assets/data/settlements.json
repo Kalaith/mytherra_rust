@@ -1,0 +1,7 @@
+[
+  { "id": "aldervale", "name": "Aldervale", "region_id": "aldermoor", "population": 6200.0, "prosperity": 58.0 },
+  { "id": "mooredge", "name": "Mooredge", "region_id": "aldermoor", "population": 3800.0, "prosperity": 52.0 },
+  { "id": "kharzkeep", "name": "Kharzkeep", "region_id": "kharzul", "population": 5100.0, "prosperity": 44.0 },
+  { "id": "tidehaven", "name": "Tidehaven", "region_id": "sylvenmar", "population": 7400.0, "prosperity": 62.0 },
+  { "id": "greenhollow", "name": "Greenhollow", "region_id": "sylvenmar", "population": 2900.0, "prosperity": 55.0 }
+]

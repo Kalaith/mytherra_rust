@@ -10,6 +10,7 @@ mod magic;
 mod myth;
 mod pantheon;
 mod region;
+mod settlement;
 mod speculation;
 mod weather;
 
@@ -30,6 +31,13 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             newly_in_crisis.push(region.name.clone());
         }
     }
+
+    settlement::tick_settlements(
+        &mut world.settlements,
+        &mut world.regions,
+        &data.balance.settlement,
+        &data.balance.region,
+    );
 
     hero::tick_heroes(
         &mut world.heroes,

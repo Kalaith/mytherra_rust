@@ -42,7 +42,10 @@
     "year_badge": "Year {year}",
     "favor_badge": "Favor {favor}",
     "level_badge": "Lv {level}",
-    "tick_badge": "Tick {seconds}s"
+    "tick_badge": "Tick {seconds}s",
+    "holdings": "Settlements",
+    "settlement_line": "{name}  —  {pop}  ·  prosperity {prosperity}",
+    "no_holdings": "No settlements here."
   },
   "divine": {
     "artifacts_panel": "Artifacts ({count}/{max})",

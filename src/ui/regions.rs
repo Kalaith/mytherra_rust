@@ -188,10 +188,52 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
             ctx,
             region,
             def,
-            Rect::new(content.x, y, content.w, 64.0),
+            Rect::new(content.x, y, content.w, 58.0),
             actions,
         );
-        y += 72.0;
+        y += 66.0;
+    }
+
+    // Holdings: the region's settlements.
+    y += 4.0;
+    draw_ui_text_ex(
+        &strings.ui.holdings,
+        content.x,
+        y,
+        TextStyle::new(16.0, dark::TEXT_BRIGHT).params(),
+    );
+    y += 12.0;
+    let mut shown = 0;
+    for settlement in ctx
+        .world
+        .settlements
+        .iter()
+        .filter(|s| s.region_id == region.id)
+        .take(2)
+    {
+        draw_ui_text_ex(
+            &fill(
+                &strings.ui.settlement_line,
+                &[
+                    ("name", settlement.name.clone()),
+                    ("pop", format!("{:.1}k", settlement.population / 1000.0)),
+                    ("prosperity", format!("{:.0}", settlement.prosperity)),
+                ],
+            ),
+            content.x,
+            y + 14.0,
+            TextStyle::new(13.0, dark::TEXT_DIM).params(),
+        );
+        y += 20.0;
+        shown += 1;
+    }
+    if shown == 0 {
+        draw_ui_text_ex(
+            &strings.ui.no_holdings,
+            content.x,
+            y + 14.0,
+            TextStyle::new(13.0, dark::TEXT_DIM).params(),
+        );
     }
 }
 

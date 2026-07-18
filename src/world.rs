@@ -13,6 +13,7 @@ mod myth;
 mod pantheon;
 mod player;
 mod region;
+mod settlement;
 mod speculation;
 mod weather;
 
@@ -28,6 +29,7 @@ pub use myth::{Myth, MythCandidate};
 pub use pantheon::{adjust_pressure, PantheonDeity};
 pub use player::PlayerState;
 pub use region::{Region, RegionStatus};
+pub use settlement::Settlement;
 pub use speculation::SpeculationEvent;
 pub use weather::{weather_cost, WeatherEvent};
 
@@ -52,6 +54,7 @@ pub struct WorldState {
     pub year: u32,
     pub tick_count: u64,
     pub regions: Vec<Region>,
+    pub settlements: Vec<Settlement>,
     pub heroes: Vec<Hero>,
     /// Monotonic counter for unique descendant-hero ids.
     pub hero_seq: u64,
@@ -86,6 +89,7 @@ impl WorldState {
             .map(|seed| Region::from_seed(seed, &data.balance.region))
             .collect();
         let heroes = data.heroes.iter().map(Hero::from_seed).collect();
+        let settlements = data.settlements.iter().map(Settlement::from_seed).collect();
         let artifacts = data.artifacts.iter().map(Artifact::from_seed).collect();
         let magic_paths = data.magic_paths.iter().map(MagicPath::from_seed).collect();
         let civilization = data
@@ -106,6 +110,7 @@ impl WorldState {
             year: data.config.start_year,
             tick_count: 0,
             regions,
+            settlements,
             heroes,
             hero_seq: 0,
             artifacts,

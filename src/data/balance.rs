@@ -21,6 +21,7 @@ pub struct Balance {
     pub civilization: CivilizationBalance,
     pub pantheon: PantheonBalance,
     pub era: EraBalance,
+    pub settlement: SettlementBalance,
     pub player: PlayerBalance,
 }
 
@@ -236,6 +237,19 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+}
+
+/// Settlement growth tuning (GDD 5.3).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettlementBalance {
+    pub base_growth: f32,
+    pub self_prosperity_div: f32,
+    pub region_prosperity_div: f32,
+    pub region_chaos_div: f32,
+    pub growth_min: f32,
+    pub growth_max: f32,
+    pub prosperity_drift_rate: f32,
+    pub region_contribution: f32,
 }
 
 /// Era system tuning (GDD 5.7).

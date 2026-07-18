@@ -17,6 +17,7 @@ mod magic;
 mod myth;
 mod pantheon;
 mod region;
+mod settlement;
 pub mod strings;
 mod weather;
 
@@ -24,7 +25,8 @@ pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
     ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance, EraBalance,
-    HeroBalance, MagicBalance, PantheonBalance, PlayerBalance, RegionBalance, WeatherBalance,
+    HeroBalance, MagicBalance, PantheonBalance, PlayerBalance, RegionBalance, SettlementBalance,
+    WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
@@ -36,6 +38,7 @@ pub use magic::{MagicPathSeed, MagicStat};
 pub use myth::{MythStat, MythTheme};
 pub use pantheon::{DeitySeed, PantheonStat};
 pub use region::{ClimateType, Culture, RegionSeed};
+pub use settlement::SettlementSeed;
 pub use strings::{fill, Strings};
 pub use weather::{WeatherIntensity, WeatherPattern};
 
@@ -47,6 +50,7 @@ const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
 const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
 const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
 const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
+const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
 const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
 const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
 const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
@@ -68,6 +72,7 @@ pub struct GameData {
     pub regions: Vec<RegionSeed>,
     pub region_actions: DataRegistry<RegionActionDef>,
     pub heroes: Vec<HeroSeed>,
+    pub settlements: Vec<SettlementSeed>,
     pub artifacts: Vec<ArtifactSeed>,
     pub weather_patterns: Vec<WeatherPattern>,
     pub weather_intensities: Vec<WeatherIntensity>,
@@ -89,6 +94,7 @@ impl GameData {
         let regions: Vec<RegionSeed> = load_embedded_json(REGIONS_JSON)?;
         let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
         let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
+        let settlements: Vec<SettlementSeed> = load_embedded_json(SETTLEMENTS_JSON)?;
         let artifacts: Vec<ArtifactSeed> = load_embedded_json(ARTIFACTS_JSON)?;
         let weather_patterns: Vec<WeatherPattern> = load_embedded_json(WEATHER_PATTERNS_JSON)?;
         let weather_intensities: Vec<WeatherIntensity> =
@@ -119,6 +125,7 @@ impl GameData {
             regions,
             region_actions,
             heroes,
+            settlements,
             artifacts,
             weather_patterns,
             weather_intensities,
