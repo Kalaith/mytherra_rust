@@ -109,6 +109,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         &stats.prosperity,
         region.prosperity,
         good_stat_color(region.prosperity),
+        region.prosperity - region.prev.prosperity,
     );
     ly = stat(
         left_x,
@@ -117,6 +118,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         &stats.chaos,
         region.chaos,
         bad_stat_color(region.chaos),
+        region.chaos - region.prev.chaos,
     );
     ly = stat(
         left_x,
@@ -125,6 +127,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         &stats.danger,
         region.danger,
         bad_stat_color(region.danger),
+        region.danger - region.prev.danger,
     );
     let mut ry = y;
     ry = stat(
@@ -134,6 +137,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         &stats.magic,
         region.magic_affinity,
         good_stat_color(region.magic_affinity),
+        region.magic_affinity - region.prev.magic_affinity,
     );
     ry = stat(
         right_x,
@@ -142,6 +146,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         &stats.culture,
         region.cultural_influence,
         good_stat_color(region.cultural_influence),
+        0.0,
     );
     ry = stat(
         right_x,
@@ -150,6 +155,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         &stats.resonance,
         region.divine_resonance,
         good_stat_color(region.divine_resonance),
+        0.0,
     );
     y = ly.max(ry) + 8.0;
 
@@ -375,15 +381,27 @@ fn selected_index(ctx: &UiContext<'_>) -> usize {
         .min(ctx.world.regions.len().saturating_sub(1))
 }
 
-fn stat(x: f32, y: f32, w: f32, label: &str, value: f32, color: Color) -> f32 {
+fn stat(x: f32, y: f32, w: f32, label: &str, value: f32, color: Color, trend: f32) -> f32 {
     meter(
         Rect::new(x, y, w, 20.0),
         value,
         100.0,
         color,
-        Some(&format!("{label} {value:.0}")),
+        Some(&format!("{label} {value:.0}{}", trend_arrow(trend))),
     );
     y + 28.0
+}
+
+/// A rising/falling marker for a stat's per-tick change, with a deadzone so
+/// slow mean-reversion drift doesn't flicker an arrow every tick.
+fn trend_arrow(delta: f32) -> &'static str {
+    if delta > 0.4 {
+        "  ^"
+    } else if delta < -0.4 {
+        "  v"
+    } else {
+        ""
+    }
 }
 
 fn badge(x: f32, y: f32, w: f32, label: &str) -> f32 {

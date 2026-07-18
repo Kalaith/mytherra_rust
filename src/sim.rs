@@ -28,6 +28,8 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     let mut newly_in_crisis: Vec<String> = Vec::new();
     for region in &mut world.regions {
+        // Baseline for this tick's trend arrows, before any system moves stats.
+        region.snapshot_trend();
         let was_crisis = region.status.is_crisis();
         region::tick_region(region, &data.balance.region);
         if region.status.is_crisis() && !was_crisis {

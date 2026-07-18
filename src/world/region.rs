@@ -38,6 +38,16 @@ fn clamp_stat(value: f32) -> f32 {
     value.clamp(0.0, 100.0)
 }
 
+/// A region's core stats captured at the start of a tick, so the UI can show
+/// which way each stat is currently moving (GDD 4 — surface cause and effect).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct StatSnapshot {
+    pub prosperity: f32,
+    pub chaos: f32,
+    pub danger: f32,
+    pub magic_affinity: f32,
+}
+
 /// The live, simulated state of one region.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Region {
@@ -53,26 +63,48 @@ pub struct Region {
     pub cultural_influence: f32,
     pub divine_resonance: f32,
     pub status: RegionStatus,
+    /// Stats at the start of the current tick; `stat - prev.stat` is its trend.
+    pub prev: StatSnapshot,
 }
 
 impl Region {
     pub fn from_seed(seed: &RegionSeed, balance: &RegionBalance) -> Self {
+        let prosperity = clamp_stat(seed.prosperity);
+        let chaos = clamp_stat(seed.chaos);
+        let danger = clamp_stat(seed.danger);
+        let magic_affinity = clamp_stat(seed.magic_affinity);
         let mut region = Self {
             id: seed.id.clone(),
             name: seed.name.clone(),
             climate: seed.climate,
             culture: seed.culture,
-            prosperity: clamp_stat(seed.prosperity),
-            chaos: clamp_stat(seed.chaos),
-            danger: clamp_stat(seed.danger),
-            magic_affinity: clamp_stat(seed.magic_affinity),
+            prosperity,
+            chaos,
+            danger,
+            magic_affinity,
             population: seed.population.max(0.0),
             cultural_influence: clamp_stat(seed.cultural_influence),
             divine_resonance: clamp_stat(seed.divine_resonance),
             status: RegionStatus::Peaceful,
+            prev: StatSnapshot {
+                prosperity,
+                chaos,
+                danger,
+                magic_affinity,
+            },
         };
         region.refresh_status(balance);
         region
+    }
+
+    /// Record the current core stats as the trend baseline for this tick.
+    pub fn snapshot_trend(&mut self) {
+        self.prev = StatSnapshot {
+            prosperity: self.prosperity,
+            chaos: self.chaos,
+            danger: self.danger,
+            magic_affinity: self.magic_affinity,
+        };
     }
 
     /// Cost multiplier from divine resonance: high-resonance regions are cheaper
