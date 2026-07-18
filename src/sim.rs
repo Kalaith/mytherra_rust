@@ -3,6 +3,7 @@
 
 mod artifact;
 mod champion;
+mod civilization;
 mod hero;
 mod magic;
 mod myth;
@@ -85,6 +86,14 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.chronicle,
         data,
         world.year,
+    );
+
+    civilization::tick_civilization(
+        &mut world.civilization,
+        &mut world.regions,
+        &data.agendas,
+        &data.balance.civilization,
+        &data.balance.region,
     );
 
     speculation::tick_speculations(

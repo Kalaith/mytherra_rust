@@ -1,0 +1,38 @@
+[
+  {
+    "id": "expansion",
+    "name": "Expansion",
+    "w_prosperity": 0.4, "w_chaos": -0.1, "w_danger": -0.2, "w_magic": 0.0, "w_culture": 0.1,
+    "base": 10.0, "effect_stat": "prosperity", "effect_amount": 0.4
+  },
+  {
+    "id": "defense",
+    "name": "Defense",
+    "w_prosperity": 0.0, "w_chaos": 0.1, "w_danger": 0.5, "w_magic": 0.0, "w_culture": 0.0,
+    "base": 5.0, "effect_stat": "danger", "effect_amount": -0.4
+  },
+  {
+    "id": "trade",
+    "name": "Trade",
+    "w_prosperity": 0.35, "w_chaos": -0.1, "w_danger": -0.1, "w_magic": 0.0, "w_culture": 0.25,
+    "base": 8.0, "effect_stat": "prosperity", "effect_amount": 0.3
+  },
+  {
+    "id": "rivalry",
+    "name": "Rivalry",
+    "w_prosperity": 0.0, "w_chaos": 0.35, "w_danger": 0.3, "w_magic": 0.0, "w_culture": 0.0,
+    "base": 5.0, "effect_stat": "danger", "effect_amount": 0.3
+  },
+  {
+    "id": "research",
+    "name": "Research",
+    "w_prosperity": 0.1, "w_chaos": -0.1, "w_danger": 0.0, "w_magic": 0.5, "w_culture": 0.1,
+    "base": 6.0, "effect_stat": "magic", "effect_amount": 0.4
+  },
+  {
+    "id": "recovery",
+    "name": "Recovery",
+    "w_prosperity": -0.3, "w_chaos": 0.3, "w_danger": 0.2, "w_magic": 0.0, "w_culture": 0.0,
+    "base": 30.0, "effect_stat": "chaos", "effect_amount": -0.3
+  }
+]

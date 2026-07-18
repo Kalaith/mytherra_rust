@@ -147,6 +147,13 @@
     "resonance_spread": 15.0,
     "resonance_scale": 1.4
   },
+  "civilization": {
+    "apply_threshold": 35.0,
+    "advance_cost": 14,
+    "advance_boost": 25.0,
+    "boost_decay": 2.0,
+    "advance_cooldown": 5
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

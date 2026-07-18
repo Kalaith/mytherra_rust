@@ -79,9 +79,8 @@ impl Game {
         self.screen = match scene {
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,
-            "divine_tools" | "artifacts" | "omens" | "weather" | "magic" | "myths" => {
-                Screen::DivineTools
-            }
+            "divine_tools" | "artifacts" | "omens" | "weather" | "magic" | "myths"
+            | "civilization" => Screen::DivineTools,
             "betting" => Screen::Betting,
             "eras" => Screen::Eras,
             _ => Screen::Dashboard,
@@ -91,6 +90,7 @@ impl Game {
             "omens" => 2,
             "magic" => 3,
             "myths" => 4,
+            "civilization" => 5,
             _ => 0,
         };
         if scene == "weather" {
@@ -126,6 +126,12 @@ impl Game {
                 self.promote_myth(&id);
             }
             for _ in 0..6 {
+                self.run_tick();
+            }
+        }
+        if scene == "civilization" {
+            self.advance_agenda(0);
+            for _ in 0..3 {
                 self.run_tick();
             }
         }
@@ -285,6 +291,7 @@ impl Game {
             }
             UiAction::ResearchMagic(id) => self.research_magic(&id),
             UiAction::PromoteMyth(id) => self.promote_myth(&id),
+            UiAction::AdvanceAgenda(index) => self.advance_agenda(index),
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications

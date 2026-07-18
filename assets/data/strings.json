@@ -80,7 +80,16 @@
     "myth_resonance": "resonance {resonance}",
     "myth_echo_in": "echoes in {years}y",
     "myth_faint": "too faint to echo",
-    "new_myth_title": "The {theme} of {region}"
+    "new_myth_title": "The {theme} of {region}",
+    "civ_panel": "Civilization",
+    "civ_region": "Region: {region}",
+    "civ_intro": "Agendas competing within the realm. Advance one to press it.",
+    "advance": "Advance {cost}",
+    "agenda_active": "Active",
+    "agenda_dormant": "Dormant",
+    "agenda_score": "{name}  {score}",
+    "civ_cooldown": "diplomacy rests {years}y",
+    "civ_ready": "diplomacy ready"
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
@@ -109,7 +118,9 @@
     "weather_max": "Too many storms already rage.",
     "magic_researched": "You pour insight into {path}.",
     "myth_promoted": "{title} enters legend.",
-    "myth_cap": "The world can hold no more myths."
+    "myth_cap": "The world can hold no more myths.",
+    "agenda_advanced": "You press the {agenda} agenda in {region}.",
+    "agenda_cooldown": "Diplomacy must rest before another push."
   },
   "heroes": {
     "panel": "Heroes & Champions",

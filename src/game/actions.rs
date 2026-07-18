@@ -321,6 +321,60 @@ impl Game {
         }
     }
 
+    pub(super) fn advance_agenda(&mut self, agenda_index: usize) {
+        let notes = self.data.strings.notifications.clone();
+        if agenda_index >= self.data.agendas.len() {
+            return;
+        }
+        let region_index = self
+            .selected_region
+            .min(self.world.regions.len().saturating_sub(1));
+        let Some((region_id, region_name)) = self
+            .world
+            .regions
+            .get(region_index)
+            .map(|r| (r.id.clone(), r.name.clone()))
+        else {
+            return;
+        };
+
+        let on_cooldown = self
+            .world
+            .civilization
+            .iter()
+            .find(|e| e.region_id == region_id)
+            .map(|e| e.cooldown > 0)
+            .unwrap_or(true);
+        if on_cooldown {
+            self.notifications.warning(notes.agenda_cooldown);
+            return;
+        }
+
+        let cost = self.data.balance.civilization.advance_cost;
+        if !self.player.spend(cost, &self.data.balance.player) {
+            self.notifications.warning(notes.not_enough_favor);
+            return;
+        }
+        let boost = self.data.balance.civilization.advance_boost;
+        let cooldown = self.data.balance.civilization.advance_cooldown;
+        if let Some(entry) = self
+            .world
+            .civilization
+            .iter_mut()
+            .find(|e| e.region_id == region_id)
+        {
+            if let Some(value) = entry.boosts.get_mut(agenda_index) {
+                *value += boost;
+            }
+            entry.cooldown = cooldown;
+        }
+        let agenda_name = self.data.agendas[agenda_index].name.clone();
+        self.notifications.success(fill(
+            &notes.agenda_advanced,
+            &[("agenda", agenda_name), ("region", region_name)],
+        ));
+    }
+
     pub(super) fn promote_myth(&mut self, id: &str) {
         let notes = self.data.strings.notifications.clone();
         if self.world.myths.len() >= self.data.balance.myth.cap {

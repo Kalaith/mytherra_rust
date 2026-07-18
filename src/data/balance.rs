@@ -18,6 +18,7 @@ pub struct Balance {
     pub weather: WeatherBalance,
     pub magic: MagicBalance,
     pub myth: MythBalance,
+    pub civilization: CivilizationBalance,
     pub player: PlayerBalance,
 }
 
@@ -233,6 +234,16 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+}
+
+/// Civilization tool tuning (GDD 5.6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CivilizationBalance {
+    pub apply_threshold: f32,
+    pub advance_cost: i64,
+    pub advance_boost: f32,
+    pub boost_decay: f32,
+    pub advance_cooldown: i32,
 }
 
 /// Myth tool tuning (GDD 5.6).

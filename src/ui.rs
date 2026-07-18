@@ -95,6 +95,8 @@ pub enum UiAction {
     ResearchMagic(String),
     /// Promote the myth candidate with the given id into a living myth.
     PromoteMyth(String),
+    /// Advance the agenda at the given index in the selected region.
+    AdvanceAgenda(usize),
     AdvanceTick,
     Save,
     Load,

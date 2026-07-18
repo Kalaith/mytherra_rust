@@ -135,6 +135,15 @@ pub struct DivineText {
     pub myth_echo_in: String,
     pub myth_faint: String,
     pub new_myth_title: String,
+    pub civ_panel: String,
+    pub civ_region: String,
+    pub civ_intro: String,
+    pub advance: String,
+    pub agenda_active: String,
+    pub agenda_dormant: String,
+    pub agenda_score: String,
+    pub civ_cooldown: String,
+    pub civ_ready: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,6 +193,8 @@ pub struct Notifications {
     pub magic_researched: String,
     pub myth_promoted: String,
     pub myth_cap: String,
+    pub agenda_advanced: String,
+    pub agenda_cooldown: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

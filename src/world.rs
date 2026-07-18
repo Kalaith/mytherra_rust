@@ -5,6 +5,7 @@ mod artifact;
 mod bet;
 mod champion;
 mod chronicle;
+mod civilization;
 mod hero;
 mod magic;
 mod myth;
@@ -17,6 +18,7 @@ pub use artifact::Artifact;
 pub use bet::{quote_event, Bet};
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind};
+pub use civilization::{agenda_score, RegionAgendas};
 pub use hero::Hero;
 pub use magic::{MagicPath, MagicState};
 pub use myth::{Myth, MythCandidate};
@@ -56,6 +58,7 @@ pub struct WorldState {
     pub myth_candidates: Vec<MythCandidate>,
     /// Monotonic counter for unique myth ids.
     pub myth_seq: u64,
+    pub civilization: Vec<RegionAgendas>,
     pub speculations: Vec<SpeculationEvent>,
     /// Monotonic counter for unique speculation event ids.
     pub speculation_seq: u64,
@@ -76,6 +79,11 @@ impl WorldState {
         let heroes = data.heroes.iter().map(Hero::from_seed).collect();
         let artifacts = data.artifacts.iter().map(Artifact::from_seed).collect();
         let magic_paths = data.magic_paths.iter().map(MagicPath::from_seed).collect();
+        let civilization = data
+            .regions
+            .iter()
+            .map(|seed| RegionAgendas::new(seed.id.clone(), data.agendas.len()))
+            .collect();
         let mut world = Self {
             year: data.config.start_year,
             tick_count: 0,
@@ -88,6 +96,7 @@ impl WorldState {
             myths: Vec::new(),
             myth_candidates: Vec::new(),
             myth_seq: 0,
+            civilization,
             speculations: Vec::new(),
             speculation_seq: 0,
             chronicle: Chronicle::default(),

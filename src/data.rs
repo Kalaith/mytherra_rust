@@ -9,6 +9,7 @@ mod artifact;
 mod balance;
 mod bet;
 mod champion;
+mod civilization;
 mod config;
 mod hero;
 mod magic;
@@ -20,11 +21,12 @@ mod weather;
 pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
-    ArtifactBalance, Balance, BettingBalance, ChampionBalance, HeroBalance, MagicBalance,
-    PlayerBalance, RegionBalance, WeatherBalance,
+    ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance, HeroBalance,
+    MagicBalance, PlayerBalance, RegionBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use champion::ChampionFocus;
+pub use civilization::{Agenda, CivStat};
 pub use config::GameConfig;
 pub use hero::{HeroRole, HeroSeed};
 pub use magic::{MagicPathSeed, MagicStat};
@@ -46,6 +48,7 @@ const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_pattern
 const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
 const MAGIC_PATHS_JSON: &str = include_str!("../assets/data/magic_paths.json");
 const MYTH_THEMES_JSON: &str = include_str!("../assets/data/myth_themes.json");
+const AGENDAS_JSON: &str = include_str!("../assets/data/agendas.json");
 const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
 const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
 const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
@@ -64,6 +67,7 @@ pub struct GameData {
     pub weather_intensities: Vec<WeatherIntensity>,
     pub magic_paths: Vec<MagicPathSeed>,
     pub myth_themes: Vec<MythTheme>,
+    pub agendas: Vec<Agenda>,
     pub bet_types: Vec<BetType>,
     pub confidence_levels: Vec<ConfidenceLevel>,
     pub timeframes: Vec<TimeframeModifier>,
@@ -83,6 +87,7 @@ impl GameData {
             load_embedded_json(WEATHER_INTENSITIES_JSON)?;
         let magic_paths: Vec<MagicPathSeed> = load_embedded_json(MAGIC_PATHS_JSON)?;
         let myth_themes: Vec<MythTheme> = load_embedded_json(MYTH_THEMES_JSON)?;
+        let agendas: Vec<Agenda> = load_embedded_json(AGENDAS_JSON)?;
         let bet_types: Vec<BetType> = load_embedded_json(BET_TYPES_JSON)?;
         let confidence_levels: Vec<ConfidenceLevel> = load_embedded_json(CONFIDENCE_JSON)?;
         let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
@@ -109,6 +114,7 @@ impl GameData {
             weather_intensities,
             magic_paths,
             myth_themes,
+            agendas,
             bet_types,
             confidence_levels,
             timeframes,
