@@ -202,6 +202,28 @@
     "prosperity_drift_rate": 0.6,
     "region_contribution": 0.015
   },
+  "resource": {
+    "stress_chaos": 0.4,
+    "stress_danger": 0.3,
+    "degrade_base": 0.1,
+    "degrade_stress": 0.004,
+    "recover_base": 0.14,
+    "improve_base": 0.07,
+    "contest_chaos_threshold": 65.0,
+    "corrupt_base": 0.14,
+    "corrupt_danger": 0.003,
+    "region_output_scale": 0.5,
+    "outputs": {
+      "active": 1.0,
+      "blessed": 1.25,
+      "flourishing": 1.5,
+      "overworked": 0.7,
+      "contested": 0.8,
+      "corrupted": 0.3,
+      "unstable": 0.5,
+      "depleted": 0.0
+    }
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60

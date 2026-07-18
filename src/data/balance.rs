@@ -6,6 +6,7 @@
 
 use crate::data::artifact::ArtifactFocus;
 use crate::data::champion::ChampionFocus;
+use crate::data::resource::ResourceStatus;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +23,7 @@ pub struct Balance {
     pub pantheon: PantheonBalance,
     pub era: EraBalance,
     pub settlement: SettlementBalance,
+    pub resource: ResourceBalance,
     pub player: PlayerBalance,
 }
 
@@ -237,6 +239,50 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+}
+
+/// Resource-node tuning (GDD 5.3).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceBalance {
+    pub stress_chaos: f32,
+    pub stress_danger: f32,
+    pub degrade_base: f32,
+    pub degrade_stress: f32,
+    pub recover_base: f32,
+    pub improve_base: f32,
+    pub contest_chaos_threshold: f32,
+    pub corrupt_base: f32,
+    pub corrupt_danger: f32,
+    pub region_output_scale: f32,
+    pub outputs: ResourceOutputs,
+}
+
+/// Output multiplier per resource status (GDD 5.3).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceOutputs {
+    pub active: f32,
+    pub blessed: f32,
+    pub flourishing: f32,
+    pub overworked: f32,
+    pub contested: f32,
+    pub corrupted: f32,
+    pub unstable: f32,
+    pub depleted: f32,
+}
+
+impl ResourceOutputs {
+    pub fn get(&self, status: ResourceStatus) -> f32 {
+        match status {
+            ResourceStatus::Active => self.active,
+            ResourceStatus::Blessed => self.blessed,
+            ResourceStatus::Flourishing => self.flourishing,
+            ResourceStatus::Overworked => self.overworked,
+            ResourceStatus::Contested => self.contested,
+            ResourceStatus::Corrupted => self.corrupted,
+            ResourceStatus::Unstable => self.unstable,
+            ResourceStatus::Depleted => self.depleted,
+        }
+    }
 }
 
 /// Settlement growth tuning (GDD 5.3).

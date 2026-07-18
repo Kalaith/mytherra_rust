@@ -194,7 +194,7 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         y += 66.0;
     }
 
-    // Holdings: the region's settlements.
+    // Holdings: the region's settlements and resource nodes.
     y += 4.0;
     draw_ui_text_ex(
         &strings.ui.holdings,
@@ -203,33 +203,45 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         TextStyle::new(16.0, dark::TEXT_BRIGHT).params(),
     );
     y += 12.0;
-    let mut shown = 0;
-    for settlement in ctx
+
+    let towns: Vec<String> = ctx
         .world
         .settlements
         .iter()
         .filter(|s| s.region_id == region.id)
-        .take(2)
-    {
+        .take(3)
+        .map(|s| format!("{} {:.1}k", s.name, s.population / 1000.0))
+        .collect();
+    let nodes: Vec<String> = ctx
+        .world
+        .resource_nodes
+        .iter()
+        .filter(|n| n.region_id == region.id)
+        .take(3)
+        .map(|n| format!("{} ({})", n.name, n.status.label()))
+        .collect();
+
+    if towns.is_empty() && nodes.is_empty() {
         draw_ui_text_ex(
-            &fill(
-                &strings.ui.settlement_line,
-                &[
-                    ("name", settlement.name.clone()),
-                    ("pop", format!("{:.1}k", settlement.population / 1000.0)),
-                    ("prosperity", format!("{:.0}", settlement.prosperity)),
-                ],
-            ),
+            &strings.ui.no_holdings,
+            content.x,
+            y + 14.0,
+            TextStyle::new(13.0, dark::TEXT_DIM).params(),
+        );
+        return;
+    }
+    if !towns.is_empty() {
+        draw_ui_text_ex(
+            &fill(&strings.ui.settlements_line, &[("list", towns.join(",  "))]),
             content.x,
             y + 14.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),
         );
         y += 20.0;
-        shown += 1;
     }
-    if shown == 0 {
+    if !nodes.is_empty() {
         draw_ui_text_ex(
-            &strings.ui.no_holdings,
+            &fill(&strings.ui.resources_line, &[("list", nodes.join(",  "))]),
             content.x,
             y + 14.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),

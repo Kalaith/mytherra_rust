@@ -1,0 +1,12 @@
+[
+  { "id": "golden_fields", "name": "Golden Fields", "region_id": "aldermoor", "resource_type": "farmland", "status": "flourishing" },
+  { "id": "aldervein", "name": "Aldermoor Vein", "region_id": "aldermoor", "resource_type": "mine", "status": "active" },
+  { "id": "ironvein", "name": "Ironvein", "region_id": "kharzul", "resource_type": "mine", "status": "active" },
+  { "id": "kharz_quarry", "name": "Kharzul Quarry", "region_id": "kharzul", "resource_type": "quarry", "status": "overworked" },
+  { "id": "redpine", "name": "Redpine Forest", "region_id": "kharzul", "resource_type": "forest", "status": "contested" },
+  { "id": "tidewaters", "name": "Tidewaters", "region_id": "sylvenmar", "resource_type": "fishery", "status": "flourishing" },
+  { "id": "sylvan_grove", "name": "Sylvan Grove", "region_id": "sylvenmar", "resource_type": "forest", "status": "blessed" },
+  { "id": "manaspring", "name": "The Manaspring", "region_id": "sylvenmar", "resource_type": "manaspring", "status": "active" },
+  { "id": "deepwood", "name": "Deepwood", "region_id": "sylvenmar", "resource_type": "forest", "status": "active" },
+  { "id": "coral_shoals", "name": "Coral Shoals", "region_id": "sylvenmar", "resource_type": "fishery", "status": "active" }
+]

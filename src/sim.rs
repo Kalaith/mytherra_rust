@@ -10,6 +10,7 @@ mod magic;
 mod myth;
 mod pantheon;
 mod region;
+mod resource;
 mod settlement;
 mod speculation;
 mod weather;
@@ -36,6 +37,14 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.settlements,
         &mut world.regions,
         &data.balance.settlement,
+        &data.balance.region,
+    );
+
+    resource::tick_resources(
+        &mut world.resource_nodes,
+        &mut world.regions,
+        &mut world.rng,
+        &data.balance.resource,
         &data.balance.region,
     );
 

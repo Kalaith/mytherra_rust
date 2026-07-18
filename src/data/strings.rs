@@ -178,7 +178,8 @@ pub struct UiText {
     pub level_badge: String,
     pub tick_badge: String,
     pub holdings: String,
-    pub settlement_line: String,
+    pub settlements_line: String,
+    pub resources_line: String,
     pub no_holdings: String,
 }
 

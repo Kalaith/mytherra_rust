@@ -43,9 +43,10 @@
     "favor_badge": "Favor {favor}",
     "level_badge": "Lv {level}",
     "tick_badge": "Tick {seconds}s",
-    "holdings": "Settlements",
-    "settlement_line": "{name}  —  {pop}  ·  prosperity {prosperity}",
-    "no_holdings": "No settlements here."
+    "holdings": "Holdings",
+    "settlements_line": "Towns:  {list}",
+    "resources_line": "Resources:  {list}",
+    "no_holdings": "No holdings here."
   },
   "divine": {
     "artifacts_panel": "Artifacts ({count}/{max})",
