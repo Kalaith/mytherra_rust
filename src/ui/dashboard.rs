@@ -125,13 +125,68 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         y,
         TextStyle::new(15.0, dark::TEXT_DIM).params(),
     );
+    y += 36.0;
+
+    // Era panel (GDD 10): the present age and its pressure.
+    let era = &ctx.world.era;
+    let era_balance = &ctx.data.balance.era;
+    draw_ui_text_ex(
+        &strings.eras.current_title,
+        content.x,
+        y,
+        TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+    );
+    y += 22.0;
+    draw_ui_text_ex(
+        &fill(
+            &strings.eras.era_line,
+            &[
+                ("number", era.number.to_string()),
+                ("name", era.name.clone()),
+            ],
+        ),
+        content.x,
+        y,
+        TextStyle::new(15.0, dark::TEXT).params(),
+    );
+    y += 14.0;
+    let breaking = era.pressure >= era_balance.breaking_threshold;
+    meter(
+        Rect::new(content.x, y, content.w, 22.0),
+        era.pressure,
+        era_balance.breaking_threshold,
+        bad_stat_color(era.pressure / era_balance.breaking_threshold * 100.0),
+        Some(&fill(
+            &strings.eras.pressure,
+            &[("pressure", format!("{:.0}", era.pressure))],
+        )),
+    );
+    y += 28.0;
+    draw_ui_text_ex(
+        if breaking {
+            &strings.eras.breaking
+        } else {
+            &strings.eras.holding
+        },
+        content.x,
+        y,
+        TextStyle::new(
+            13.0,
+            if breaking {
+                dark::NEGATIVE
+            } else {
+                dark::TEXT_DIM
+            },
+        )
+        .params(),
+    );
 
     // Save / new-world controls anchored at the bottom of the panel.
     let btn_y = rect.bottom() - 52.0;
     let btn_w = (content.w - 24.0) / 3.0;
     if button(
         Rect::new(content.x, btn_y, btn_w, 36.0),
-        "Save",
+        &strings.ui.save,
         true,
         ButtonTone::Positive,
         ctx.mouse,
@@ -140,7 +195,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
     }
     if button(
         Rect::new(content.x + btn_w + 12.0, btn_y, btn_w, 36.0),
-        "Load",
+        &strings.ui.load,
         ctx.save_exists,
         ButtonTone::Primary,
         ctx.mouse,
@@ -149,7 +204,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
     }
     if button(
         Rect::new(content.x + (btn_w + 12.0) * 2.0, btn_y, btn_w, 36.0),
-        "New World",
+        &strings.ui.new_world,
         true,
         ButtonTone::Secondary,
         ctx.mouse,
