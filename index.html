@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Template | Web Hatchery Games</title>
+    <title>Mytherra | Web Hatchery Games</title>
     <link rel="stylesheet" href="../shared.css">
     <link rel="stylesheet" href="../bug-report.css">
     <style>
@@ -18,7 +18,7 @@
 <body>
     <div class="game-page">
         <header class="game-header">
-            <h1>Game Template</h1>
+            <h1>Mytherra</h1>
             <a href="../" class="back-link">Back to All Games</a>
         </header>
 
@@ -36,7 +36,7 @@
             <button class="btn btn-secondary btn-icon" onclick="toggleFullscreen()" title="Fullscreen">FS</button>
             <button class="btn btn-secondary" onclick="focusGame()">Focus Game</button>
             <span style="flex: 1;"></span>
-            <span style="color: var(--text-muted); font-size: 0.85rem;">Click the game canvas to start</span>
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Click the canvas, then press Space to let the years turn</span>
         </div>
 
         <!-- Info Section -->
@@ -45,20 +45,35 @@
                 <section class="info-section">
                     <h2>About This Game</h2>
                     <p>
-                        A starter Rust + Macroquad game wired to macroquad-toolkit for UI,
-                        save/load, data loading, notifications, grid helpers, and camera controls.
+                        You are a minor deity watching one living world &mdash; a world many
+                        other deities watch too. You don't command mortals. You nudge regions
+                        toward prosperity or ruin, cultivate champions from the hero roster,
+                        forge artifacts, shape weather and myth, sway the pantheon, and wager
+                        at the Divine Observatory on what the world will do next.
+                    </p>
+                    <p style="margin-top: 0.75rem;">
+                        Everything unfolds on its own: regions fracture, conquer, and found new
+                        frontiers; heroes migrate, earn renown, and pass into legend; gods
+                        stir as their domains rise; and every hundred-year age ends in a
+                        cataclysm, collapse, conquest, magical rupture, or divine war that
+                        remakes the map. Your favor is limited &mdash; spend it where it counts,
+                        and read the portents before the age turns.
                     </p>
                 </section>
 
                 <section class="info-section" style="margin-top: 1rem;">
                     <h2>Controls</h2>
                     <ul class="controls-list">
-                        <li><kbd>Arrow Keys</kbd><span>Move selected tile</span></li>
-                        <li><kbd>Right Mouse</kbd><span>Drag camera</span></li>
-                        <li><kbd>+ / -</kbd><span>Zoom camera</span></li>
-                        <li><kbd>Space</kbd><span>Run first data action</span></li>
-                        <li><kbd>S / L</kbd><span>Save / load toolkit slot</span></li>
+                        <li><kbd>Mouse</kbd><span>Switch tabs, select regions/heroes, take divine actions</span></li>
+                        <li><kbd>Space</kbd><span>Advance the world one year</span></li>
+                        <li><kbd>S</kbd><span>Save the world</span></li>
+                        <li><kbd>L</kbd><span>Load the saved world</span></li>
+                        <li><kbd>N</kbd><span>Begin a new world</span></li>
                     </ul>
+                    <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+                        The Settings screen also offers auto-tick pacing, so the years can turn
+                        on their own while you watch and intervene.
+                    </p>
                 </section>
             </div>
 
@@ -71,7 +86,7 @@
                 <div class="sidebar-section">
                     <h3>Details</h3>
                     <ul class="meta-list">
-                        <li><span class="label">Genre</span><span class="value">Template</span></li>
+                        <li><span class="label">Genre</span><span class="value">God-game / World Sim</span></li>
                         <li><span class="label">Engine</span><span class="value">Macroquad + Toolkit</span></li>
                         <li><span class="label">Platform</span><span class="value">Browser, Windows</span></li>
                     </ul>
@@ -120,8 +135,7 @@
             })();
         })();
         
-        // Rename this when you rename the Cargo package.
-        load("game_template.wasm");
+        load("mytherra.wasm");
 
         function toggleFullscreen() {
             const container = document.getElementById('game-container');
@@ -137,9 +151,8 @@
         }
     </script>
 
-    <!-- Player bug reporting -> Project Roost Fix Queue. Rename data-roost-slug to
-         rust_<your_game_dir> when you copy this template. -->
-    <div id="roost-bug-report" data-roost-slug="rust_game_template"></div>
+    <!-- Player bug reporting -> Project Roost Fix Queue. -->
+    <div id="roost-bug-report" data-roost-slug="rust_mytherra"></div>
     <script src="../bug-report.js"></script>
     <!-- Ko-fi support widget (https://ko-fi.com/webhatchery) -->
     <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
