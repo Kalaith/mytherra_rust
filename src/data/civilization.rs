@@ -13,6 +13,17 @@ pub enum CivStat {
     Magic,
 }
 
+impl CivStat {
+    pub fn label(self) -> &'static str {
+        match self {
+            CivStat::Prosperity => "Prosperity",
+            CivStat::Chaos => "Chaos",
+            CivStat::Danger => "Danger",
+            CivStat::Magic => "Magic",
+        }
+    }
+}
+
 /// Which *other* region an outward-facing agenda presses upon (GDD 5.6): a
 /// rivalrous civilization resents the most prosperous of its peers, an
 /// expansionist one leans on the weakest. `None` keeps the agenda introverted.

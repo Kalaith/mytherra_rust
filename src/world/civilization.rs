@@ -2,7 +2,7 @@
 //! diplomacy cooldown. Agenda scores are computed live from region stats rather
 //! than stored, so they always reflect the current world.
 
-use crate::data::Agenda;
+use crate::data::{Agenda, SpilloverTarget};
 use crate::world::Region;
 use serde::{Deserialize, Serialize};
 
@@ -62,4 +62,24 @@ pub fn dominant_agenda(
     }
     best.filter(|&(_, score)| score >= threshold)
         .map(|(i, _)| i)
+}
+
+/// The peer region an outward-facing agenda presses upon, chosen by prosperity
+/// (GDD 5.6). Always excludes the acting region and is deterministic given a
+/// fixed region order, so the sim and the UI name the same target.
+pub fn spillover_target(
+    regions: &[Region],
+    self_idx: usize,
+    rule: SpilloverTarget,
+) -> Option<usize> {
+    let others = regions.iter().enumerate().filter(|(i, _)| *i != self_idx);
+    match rule {
+        SpilloverTarget::None => None,
+        SpilloverTarget::MostProsperous => others
+            .max_by(|(_, a), (_, b)| a.prosperity.total_cmp(&b.prosperity))
+            .map(|(i, _)| i),
+        SpilloverTarget::LeastProsperous => others
+            .min_by(|(_, a), (_, b)| a.prosperity.total_cmp(&b.prosperity))
+            .map(|(i, _)| i),
+    }
 }

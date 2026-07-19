@@ -243,6 +243,7 @@ pub struct DivineText {
     pub agenda_active: String,
     pub agenda_dormant: String,
     pub agenda_score: String,
+    pub agenda_spillover: String,
     pub civ_cooldown: String,
     pub civ_ready: String,
     pub pantheon_panel: String,

@@ -5,7 +5,7 @@ use crate::data::fill;
 use crate::ui::divine_tools::draw_panel;
 use crate::ui::widgets::button;
 use crate::ui::{UiAction, UiContext};
-use crate::world::{agenda_score, dominant_agenda, RegionAgendas};
+use crate::world::{agenda_score, dominant_agenda, spillover_target, RegionAgendas};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
@@ -65,6 +65,20 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
     for (index, agenda) in ctx.data.agendas.iter().enumerate() {
         let score = agenda_score(agenda, region, entry.boost(index));
         let active = dominant == Some(index);
+        // Name the peer this agenda would press upon if pursued, so the outward
+        // cost of advancing it is visible before the player commits (GDD 5.6).
+        let spillover = (agenda.spillover_amount != 0.0)
+            .then(|| spillover_target(&ctx.world.regions, region_index, agenda.spillover_target))
+            .flatten()
+            .map(|t| {
+                fill(
+                    &strings.agenda_spillover,
+                    &[
+                        ("stat", agenda.spillover_stat.label().to_owned()),
+                        ("target", ctx.world.regions[t].name.clone()),
+                    ],
+                )
+            });
         draw_agenda(
             ctx,
             &agenda.name,
@@ -73,6 +87,7 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
             cost,
             can_advance,
             index,
+            spillover.as_deref(),
             Rect::new(content.x, y, content.w, 50.0),
             actions,
         );
@@ -89,6 +104,7 @@ fn draw_agenda(
     cost: i64,
     can_advance: bool,
     index: usize,
+    spillover: Option<&str>,
     rect: Rect,
     actions: &mut Vec<UiAction>,
 ) {
@@ -116,6 +132,16 @@ fn draw_agenda(
             &[("name", name.to_owned()), ("score", format!("{score:.0}"))],
         )),
     );
+
+    // An outward-facing agenda's reach, named beneath its meter.
+    if let Some(note) = spillover {
+        draw_ui_text_ex(
+            note,
+            rect.x + 14.0,
+            rect.y + 46.0,
+            TextStyle::new(12.0, dark::WARNING).params(),
+        );
+    }
 
     let status = if active {
         &strings.agenda_active

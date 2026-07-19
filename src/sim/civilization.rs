@@ -2,8 +2,8 @@
 //! dominant agenda — the highest-scoring one that clears the threshold — which
 //! nudges the region. Player boosts decay over time. Deterministic: no RNG.
 
-use crate::data::{Agenda, CivStat, CivilizationBalance, RegionBalance, SpilloverTarget};
-use crate::world::{dominant_agenda, Region, RegionAgendas};
+use crate::data::{Agenda, CivStat, CivilizationBalance, RegionBalance};
+use crate::world::{dominant_agenda, spillover_target, Region, RegionAgendas};
 
 /// Advance every region's agendas by one tick.
 pub fn tick_civilization(
@@ -42,21 +42,6 @@ pub fn tick_civilization(
     }
 }
 
-/// The peer region an outward-facing agenda presses upon, by prosperity. Excludes
-/// the acting region; deterministic given a fixed region order.
-fn spillover_target(regions: &[Region], self_idx: usize, rule: SpilloverTarget) -> Option<usize> {
-    let others = regions.iter().enumerate().filter(|(i, _)| *i != self_idx);
-    match rule {
-        SpilloverTarget::None => None,
-        SpilloverTarget::MostProsperous => others
-            .max_by(|(_, a), (_, b)| a.prosperity.total_cmp(&b.prosperity))
-            .map(|(i, _)| i),
-        SpilloverTarget::LeastProsperous => others
-            .min_by(|(_, a), (_, b)| a.prosperity.total_cmp(&b.prosperity))
-            .map(|(i, _)| i),
-    }
-}
-
 /// Map an agenda stat + amount onto (prosperity, chaos, danger, magic) deltas.
 fn stat_deltas(stat: CivStat, amount: f32) -> (f32, f32, f32, f32) {
     match stat {
@@ -70,7 +55,7 @@ fn stat_deltas(stat: CivStat, amount: f32) -> (f32, f32, f32, f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::GameData;
+    use crate::data::{GameData, SpilloverTarget};
     use crate::world::WorldState;
 
     #[test]

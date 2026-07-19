@@ -121,6 +121,7 @@
     "advance": "Advance {cost}",
     "agenda_active": "Active",
     "agenda_dormant": "Dormant",
+    "agenda_spillover": "presses {stat} on {target}",
     "agenda_score": "{name}  {score}",
     "civ_cooldown": "diplomacy rests {years}y",
     "civ_ready": "diplomacy ready",
