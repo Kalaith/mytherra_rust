@@ -21,6 +21,20 @@ pub struct Strings {
     pub settings: SettingsText,
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
+    pub genesis: GenesisText,
+}
+
+/// Copy for region genesis — breakaway naming and the region-detail strife line.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GenesisText {
+    /// Name templates for a breakaway region; `{parent}` is the origin's name.
+    pub breakaway_names: Vec<String>,
+    /// Region-detail line shown while secession pressure is brewing.
+    pub strife_line: String,
+    /// Word shown after `strife_line` describing how close a fracture is.
+    pub strife_simmering: String,
+    pub strife_seething: String,
+    pub strife_breaking: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -283,6 +297,7 @@ pub struct ChronicleText {
     pub era_transition: String,
     pub culture_shift: String,
     pub settlement_built: String,
+    pub region_fracture: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

@@ -24,6 +24,26 @@
       "magic_reversion_rate": 0.1
     }
   },
+  "genesis": {
+    "strife_pressure_threshold": 55.0,
+    "strife_gain": 1.5,
+    "strife_over_scale": 0.15,
+    "strife_decay": 2.0,
+    "strife_cap": 120.0,
+    "fracture_threshold": 100.0,
+    "min_population": 2500.0,
+    "founder_min_level": 5,
+    "population_split": 0.35,
+    "settlement_defect_chance": 0.5,
+    "child_chaos": 70.0,
+    "child_prosperity": 30.0,
+    "child_danger_carry": 0.9,
+    "child_resonance": 40.0,
+    "child_cultural_influence": 35.0,
+    "parent_chaos_relief": 18.0,
+    "parent_danger_relief": 12.0,
+    "parent_prosperity_hit": 8.0
+  },
   "hero": {
     "life_expectancy_base": 70.0,
     "life_expectancy_per_level": 2.0,

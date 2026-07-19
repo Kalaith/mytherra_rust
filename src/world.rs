@@ -67,6 +67,10 @@ pub struct WorldState {
     pub year: u32,
     pub tick_count: u64,
     pub regions: Vec<Region>,
+    /// Monotonic counter for unique ids of regions born mid-run (breakaways,
+    /// GDD 5.2), so no two fractured regions ever collide.
+    #[serde(default)]
+    pub region_seq: u64,
     pub settlements: Vec<Settlement>,
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
@@ -143,6 +147,7 @@ impl WorldState {
             year: data.config.start_year,
             tick_count: 0,
             regions,
+            region_seq: 0,
             settlements,
             resource_nodes,
             landmarks,

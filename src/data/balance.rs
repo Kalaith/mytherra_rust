@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Balance {
     pub region: RegionBalance,
+    pub genesis: GenesisBalance,
     pub hero: HeroBalance,
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
@@ -37,6 +38,48 @@ pub struct RegionBalance {
     pub effect_multiplier: MultiplierCurve,
     pub status: StatusThresholds,
     pub drift: DriftParams,
+}
+
+/// Region-fracture tuning (GDD 5.2): when a region is torn by sustained chaos
+/// and danger, secession pressure ("strife") builds until a hero leads part of
+/// it to break away as a wholly new region. See `sim/genesis.rs`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GenesisBalance {
+    /// A region only accrues strife while its `pressure()` exceeds this.
+    pub strife_pressure_threshold: f32,
+    /// Base strife gained per tick while over the threshold.
+    pub strife_gain: f32,
+    /// Extra strife per point of pressure above the threshold.
+    pub strife_over_scale: f32,
+    /// Strife shed per tick while calm — larger than the gain, so only
+    /// *sustained* turmoil fractures a region.
+    pub strife_decay: f32,
+    /// Upper bound on accumulated strife.
+    pub strife_cap: f32,
+    /// Strife at which the region fractures (given a founder and the population).
+    pub fracture_threshold: f32,
+    /// The parent must hold at least this population to split.
+    pub min_population: f32,
+    /// A living hero of at least this level in the region leads the breakaway;
+    /// with no such catalyst, strife keeps building but no region is born.
+    pub founder_min_level: u32,
+    /// Fraction of the parent's population that leaves with the breakaway.
+    pub population_split: f32,
+    /// Per-settlement chance that a town in the parent defects to the breakaway.
+    pub settlement_defect_chance: f32,
+    /// Breakaway starting chaos — it is born in revolt.
+    pub child_chaos: f32,
+    /// Breakaway starting prosperity — a frontier starts poor.
+    pub child_prosperity: f32,
+    /// Fraction of the parent's danger the breakaway carries over.
+    pub child_danger_carry: f32,
+    /// Breakaway starting divine resonance and cultural influence.
+    pub child_resonance: f32,
+    pub child_cultural_influence: f32,
+    /// Relief the parent feels once the pressure vents into a new region.
+    pub parent_chaos_relief: f32,
+    pub parent_danger_relief: f32,
+    pub parent_prosperity_hit: f32,
 }
 
 /// Dynamic culture-scoring tuning (GDD 5.2).

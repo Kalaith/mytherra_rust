@@ -181,6 +181,30 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
     );
     y += 22.0;
 
+    // Secession pressure, shown only once strife is genuinely brewing so calm
+    // regions stay uncluttered (GDD 5.2 — surface cause and effect).
+    let genesis = &ctx.data.balance.genesis;
+    if region.strife >= 1.0 {
+        let gtext = &strings.genesis;
+        let pct = (region.strife / genesis.fracture_threshold * 100.0).round() as i32;
+        draw_ui_text_ex(
+            &fill(
+                &gtext.strife_line,
+                &[
+                    (
+                        "stage",
+                        strife_stage(region.strife, genesis, gtext).to_owned(),
+                    ),
+                    ("pct", pct.to_string()),
+                ],
+            ),
+            content.x,
+            y,
+            TextStyle::new(14.0, bad_stat_color(region.strife.min(100.0))).params(),
+        );
+        y += 22.0;
+    }
+
     // Divine action buttons.
     draw_ui_text_ex(
         &strings.panels.divine_actions,
@@ -373,6 +397,22 @@ fn action_tone(id: &str) -> ButtonTone {
         "bless" => ButtonTone::Positive,
         "corrupt" => ButtonTone::Danger,
         _ => ButtonTone::Primary,
+    }
+}
+
+/// How close a region is to fracturing, as an escalating descriptor (view-only).
+fn strife_stage<'a>(
+    strife: f32,
+    balance: &crate::data::GenesisBalance,
+    text: &'a crate::data::strings::GenesisText,
+) -> &'a str {
+    let ratio = strife / balance.fracture_threshold;
+    if ratio >= 0.8 {
+        &text.strife_breaking
+    } else if ratio >= 0.4 {
+        &text.strife_seething
+    } else {
+        &text.strife_simmering
     }
 }
 

@@ -63,6 +63,11 @@ pub struct Region {
     pub cultural_influence: f32,
     pub divine_resonance: f32,
     pub status: RegionStatus,
+    /// Secession pressure (GDD 5.2): accumulates while the region is racked by
+    /// chaos and danger, bleeds off when calm, and — given a hero to lead the
+    /// revolt — eventually fractures the region in two (`sim/genesis.rs`).
+    #[serde(default)]
+    pub strife: f32,
     /// Stats at the start of the current tick; `stat - prev.stat` is its trend.
     pub prev: StatSnapshot,
 }
@@ -86,6 +91,7 @@ impl Region {
             cultural_influence: clamp_stat(seed.cultural_influence),
             divine_resonance: clamp_stat(seed.divine_resonance),
             status: RegionStatus::Peaceful,
+            strife: 0.0,
             prev: StatSnapshot {
                 prosperity,
                 chaos,

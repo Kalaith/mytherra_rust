@@ -6,6 +6,7 @@ mod champion;
 mod civilization;
 mod culture;
 mod era;
+mod genesis;
 mod hero;
 mod magic;
 mod myth;
@@ -151,6 +152,24 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
     );
 
+    // With every stat-mover settled for this tick, let regions that have been
+    // pushed past their breaking point fracture into new ones (GDD 5.2).
+    genesis::tick_genesis(
+        &mut world.regions,
+        &mut world.settlements,
+        &mut world.heroes,
+        &mut world.civilization,
+        &mut world.region_seq,
+        data.agendas.len(),
+        &mut world.rng,
+        &data.balance.genesis,
+        &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.genesis,
+        &data.strings.chronicle,
+        world.year,
+    );
+
     pantheon::tick_pantheon(
         &mut world.pantheon,
         &mut world.regions,
@@ -213,6 +232,44 @@ mod tests {
         assert_eq!(world.year, start_year + 1);
         assert_eq!(world.tick_count, 1);
         assert_eq!(player.favor, data.config.favor_per_tick);
+    }
+
+    #[test]
+    fn a_region_ground_down_by_turmoil_fractures_through_the_full_tick() {
+        // End-to-end: a region kept in crisis (as sustained divine corruption or
+        // a long war-torn era would) should eventually split into a new region,
+        // and the schism should reach the chronicle — all via `tick_world`.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        // Plant a capable would-be founder in the doomed region.
+        let doomed = world.regions[0].id.clone();
+        world.heroes[0].region_id = doomed.clone();
+        world.heroes[0].level = 20;
+
+        let start = world.regions.len();
+        let mut fractured = false;
+        for _ in 0..400 {
+            // Keep the region violently unstable, the way relentless corruption
+            // or a divine-war era would; drift alone would otherwise calm it.
+            if let Some(r) = world.regions.iter_mut().find(|r| r.id == doomed) {
+                r.chaos = 95.0;
+                r.danger = 95.0;
+            }
+            tick_world(&mut world, &mut player, &data);
+            if world.regions.len() > start {
+                fractured = true;
+                break;
+            }
+        }
+        assert!(fractured, "sustained turmoil never fractured the region");
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains("revolt")),
+            "the fracture was not chronicled"
+        );
     }
 
     #[test]

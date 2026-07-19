@@ -237,6 +237,21 @@
     "myth_echo": "{title} echoes across {region}.",
     "era_transition": "A new age dawns: {era}, born of {trigger}.",
     "culture_shift": "{region} takes on a {culture} character.",
-    "settlement_built": "{settlement} raises a {building}."
+    "settlement_built": "{settlement} raises a {building}.",
+    "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}."
+  },
+  "genesis": {
+    "breakaway_names": [
+      "Free {parent}",
+      "New {parent}",
+      "the {parent} Secession",
+      "the {parent} Remnant",
+      "Old {parent}",
+      "the {parent} Reach"
+    ],
+    "strife_line": "Secession pressure: {stage} ({pct}%)",
+    "strife_simmering": "simmering",
+    "strife_seething": "seething",
+    "strife_breaking": "at the breaking point"
   }
 }
