@@ -260,6 +260,7 @@
     "hero_death": "{hero} has fallen in {region}.",
     "hero_legend": "{hero} passes into legend, their name for the ages.",
     "hero_legend_death": "{hero} of {region} has fallen — but the legend endures.",
+    "deity_ascendant": "{deity} rises to the height of wrath, and the world feels the gaze.",
     "champion_resolved": "{hero} quells a rivalry in {region}.",
     "champion_escalated": "{hero}'s rivalry in {region} escalates.",
     "bet_won": "Your wager on {target} pays out {payout} favor.",

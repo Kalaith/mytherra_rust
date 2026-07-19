@@ -183,12 +183,26 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     // collapsed, undefended neighbours (GDD 5.2).
     genesis::tick_genesis(world, data);
 
+    // Snapshot deity tiers so we can chronicle any god that crests into wrath
+    // this tick — the pantheon's autonomous stirring is otherwise silent.
+    let deity_tiers: Vec<usize> = world
+        .pantheon
+        .iter()
+        .map(|d| d.tier(&data.balance.pantheon))
+        .collect();
     pantheon::tick_pantheon(
         &mut world.pantheon,
         &mut world.regions,
         &data.balance.pantheon,
         &data.balance.region,
     );
+    for name in pantheon::deities_cresting(&deity_tiers, &world.pantheon, &data.balance.pantheon) {
+        world.chronicle.push(
+            world.year,
+            EventKind::Divine,
+            fill(&data.strings.chronicle.deity_ascendant, &[("deity", name)]),
+        );
+    }
 
     let era_progress = world.era.pressure / data.balance.era.breaking_threshold.max(1.0);
     speculation::tick_speculations(

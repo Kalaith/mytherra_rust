@@ -339,6 +339,8 @@ pub struct ChronicleText {
     pub hero_legend: String,
     /// The death of a hero who had already passed into legend.
     pub hero_legend_death: String,
+    /// A pantheon deity cresting into the height of its wrath.
+    pub deity_ascendant: String,
     pub champion_resolved: String,
     pub champion_escalated: String,
     pub bet_won: String,

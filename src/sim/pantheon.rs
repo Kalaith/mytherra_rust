@@ -45,6 +45,23 @@ pub fn tick_pantheon(
     }
 }
 
+/// Names of deities that have crested into the top pressure tier this tick but
+/// hadn't before — a god roused to the height of its wrath, worth chronicling.
+/// `before` is each deity's tier at tick start (index-aligned with `deities`).
+pub fn deities_cresting(
+    before: &[usize],
+    deities: &[PantheonDeity],
+    balance: &PantheonBalance,
+) -> Vec<String> {
+    let top = balance.tiers.len();
+    deities
+        .iter()
+        .enumerate()
+        .filter(|(i, d)| d.tier(balance) >= top && before.get(*i).copied().unwrap_or(0) < top)
+        .map(|(_, d)| d.name.clone())
+        .collect()
+}
+
 /// The world's average value of the stat a deity holds domain over.
 fn domain_average(regions: &[Region], stat: PantheonStat) -> f32 {
     if regions.is_empty() {
@@ -77,6 +94,34 @@ mod tests {
     use super::*;
     use crate::data::GameData;
     use crate::world::WorldState;
+
+    #[test]
+    fn only_a_fresh_crest_into_wrath_is_reported() {
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.pantheon;
+        let top = balance.tiers.len();
+        let mut world = WorldState::new(&data);
+
+        // Two deities now sit at the apex; the rest stay calm.
+        let apex_pressure = *balance.tiers.last().unwrap() + 5.0;
+        world.pantheon[0].pressure = apex_pressure;
+        world.pantheon[1].pressure = apex_pressure;
+
+        // But only the first was below the apex last tick.
+        let mut before: Vec<usize> = world.pantheon.iter().map(|d| d.tier(balance)).collect();
+        before[0] = top - 1;
+        before[1] = top;
+
+        let cresting = deities_cresting(&before, &world.pantheon, balance);
+        assert!(
+            cresting.contains(&world.pantheon[0].name),
+            "a fresh crest is reported"
+        );
+        assert!(
+            !cresting.contains(&world.pantheon[1].name),
+            "a deity already at the apex isn't re-reported"
+        );
+    }
 
     #[test]
     fn pressure_drifts_toward_baseline() {
