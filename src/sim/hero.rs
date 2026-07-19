@@ -24,6 +24,7 @@ pub fn tick_heroes(
 
         if rng.chance(hero.level_up_chance(balance)) {
             hero.level += 1;
+            hero.renown += balance.renown.per_level;
             chronicle.push(
                 year,
                 EventKind::Hero,
@@ -79,9 +80,18 @@ fn rolls_death(
         return rng.chance(death.elder_roll);
     }
     let danger = region_danger(regions, &hero.region_id);
-    let chance = (danger / death.danger_divisor - hero.level as f32 / death.level_divisor)
-        .max(death.min_chance);
-    rng.chance(chance)
+    rng.chance(danger_death_chance(hero, danger, balance))
+}
+
+/// A young hero's per-tick chance of a violent death. Level and hard-won renown
+/// both stave it off — a legend clings to life against the odds — but never
+/// below the floor.
+fn danger_death_chance(hero: &Hero, danger: f32, balance: &HeroBalance) -> f32 {
+    let death = &balance.death;
+    (danger / death.danger_divisor
+        - hero.level as f32 / death.level_divisor
+        - hero.renown * balance.renown.survival_coeff)
+        .max(death.min_chance)
 }
 
 fn region_danger(regions: &[Region], region_id: &str) -> f32 {
@@ -260,6 +270,42 @@ mod tests {
         assert!(
             warriors_in_war > scholars_in_war,
             "warriors ({warriors_in_war}) should out-gather scholars ({scholars_in_war}) in the war region"
+        );
+    }
+
+    #[test]
+    fn renown_lowers_a_heros_danger_death() {
+        let data = GameData::load().unwrap();
+        let world = WorldState::new(&data);
+        let mut famed = world.heroes[0].clone();
+        famed.renown = 200.0;
+        let mut unknown = famed.clone();
+        unknown.renown = 0.0;
+        assert!(
+            danger_death_chance(&famed, 80.0, &data.balance.hero)
+                < danger_death_chance(&unknown, 80.0, &data.balance.hero),
+            "a renowned hero should be harder for danger to kill"
+        );
+    }
+
+    #[test]
+    fn renown_accrues_as_heroes_level() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        for _ in 0..100 {
+            tick_heroes(
+                &mut world.heroes,
+                &world.regions,
+                &mut world.rng,
+                &data.balance.hero,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        }
+        assert!(
+            world.heroes.iter().any(|h| h.renown > 0.0),
+            "some hero should have earned renown by levelling"
         );
     }
 

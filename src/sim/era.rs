@@ -78,6 +78,8 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
                 balance.reincarnate_age_max,
             );
             hero.level = ((hero.level as f32 * balance.hero_level_scale) as u32).max(1);
+            // Surviving an age is the stuff of legend.
+            hero.renown += data.balance.hero.renown.per_era;
         }
     }
 
@@ -125,6 +127,7 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
                 balance.reincarnate_age_max,
             ),
             is_alive: true,
+            renown: 0.0,
         });
     }
 

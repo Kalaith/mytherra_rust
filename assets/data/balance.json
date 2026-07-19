@@ -136,6 +136,17 @@
           "culture": -0.2
         }
       }
+    },
+    "renown": {
+      "per_level": 6.0,
+      "per_era": 15.0,
+      "survival_coeff": 0.0006,
+      "thresholds": [
+        20.0,
+        50.0,
+        100.0,
+        180.0
+      ]
     }
   },
   "champion": {

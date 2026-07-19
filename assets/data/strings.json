@@ -205,7 +205,10 @@
     "focus_line": "{focus}  ·  on victory, {effect}",
     "focus_effect_valor": "eases danger",
     "focus_effect_wisdom": "kindles magic",
-    "focus_effect_devotion": "lifts prosperity"
+    "focus_effect_devotion": "lifts prosperity",
+    "renown_titles": ["the Renowned", "the Storied", "the Legendary", "the Mythic"],
+    "titled_meta": "{title}  ·  {role}  ·  {region}  ·  {level}",
+    "untitled_meta": "{role}  ·  {region}  ·  {level}"
   },
   "betting": {
     "panel_events": "Speculation Events",

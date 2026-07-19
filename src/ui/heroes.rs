@@ -295,13 +295,33 @@ fn draw_hero_card(
         .world
         .region_name(&hero.region_id)
         .unwrap_or(&hero.region_id);
+    let title = hero.title(
+        &strings.renown_titles,
+        &ctx.data.balance.hero.renown.thresholds,
+    );
+    let level_text = fill(&strings.level, &[("level", hero.level.to_string())]);
+    let meta = if title.is_empty() {
+        fill(
+            &strings.untitled_meta,
+            &[
+                ("role", hero.role.label().to_owned()),
+                ("region", region.to_owned()),
+                ("level", level_text),
+            ],
+        )
+    } else {
+        fill(
+            &strings.titled_meta,
+            &[
+                ("title", title.to_owned()),
+                ("role", hero.role.label().to_owned()),
+                ("region", region.to_owned()),
+                ("level", level_text),
+            ],
+        )
+    };
     draw_ui_text_ex(
-        &format!(
-            "{}  ·  {}  ·  {}",
-            hero.role.label(),
-            region,
-            fill(&strings.level, &[("level", hero.level.to_string())])
-        ),
+        &meta,
         rect.x + 14.0,
         rect.y + 47.0,
         TextStyle::new(13.0, dark::TEXT_DIM).params(),

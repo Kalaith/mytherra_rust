@@ -12,6 +12,23 @@ pub struct HeroBalance {
     pub death: DeathParams,
     pub move_chance: f32,
     pub migration: MigrationBalance,
+    pub renown: RenownParams,
+}
+
+/// Hero fame tuning (GDD 5.4): how renown accrues, the danger-death it staves
+/// off, and the ascending renown thresholds at which each title in
+/// `strings.heroes.renown_titles` is earned.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RenownParams {
+    /// Renown gained each time the hero gains a level.
+    pub per_level: f32,
+    /// Renown gained for surviving an era transition.
+    pub per_era: f32,
+    /// Danger-death chance shaved off per point of renown — a legend clings to
+    /// life against the odds (never below the death floor).
+    pub survival_coeff: f32,
+    /// Ascending renown needed for each title (index-aligned with the titles).
+    pub thresholds: Vec<f32>,
 }
 
 /// Hero migration tuning: where a hero that decides to move goes is no longer

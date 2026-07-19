@@ -14,6 +14,10 @@ pub struct Hero {
     pub level: u32,
     pub age: u32,
     pub is_alive: bool,
+    /// Accrued fame (GDD 5.4): rises with each level gained and each era
+    /// survived, earning a title and helping a legend cheat death.
+    #[serde(default)]
+    pub renown: f32,
 }
 
 impl Hero {
@@ -26,7 +30,20 @@ impl Hero {
             level: seed.level.max(1),
             age: seed.age,
             is_alive: true,
+            renown: 0.0,
         }
+    }
+
+    /// The hero's earned title: the highest-threshold tier its renown clears, or
+    /// "" if still unknown. `titles[i]` is earned at `thresholds[i]` (ascending).
+    pub fn title<'a>(&self, titles: &'a [String], thresholds: &[f32]) -> &'a str {
+        let mut earned = "";
+        for (title, threshold) in titles.iter().zip(thresholds) {
+            if self.renown >= *threshold {
+                earned = title;
+            }
+        }
+        earned
     }
 
     /// Expected lifespan in years: grows with level (GDD 5.4).
@@ -80,5 +97,28 @@ mod tests {
         let b = balance();
         assert!(hero(1).level_up_chance(&b) > hero(20).level_up_chance(&b));
         assert!(hero(20).level_up_chance(&b) > hero(60).level_up_chance(&b));
+    }
+
+    #[test]
+    fn renown_earns_titles_in_ascending_tiers() {
+        let data = crate::data::GameData::load().unwrap();
+        let titles = &data.strings.heroes.renown_titles;
+        let thresholds = &data.balance.hero.renown.thresholds;
+        let mut h = hero(1);
+
+        h.renown = 0.0;
+        assert_eq!(
+            h.title(titles, thresholds),
+            "",
+            "an unknown hero has no title"
+        );
+        h.renown = thresholds[0];
+        assert_eq!(h.title(titles, thresholds), titles[0].as_str());
+        h.renown = *thresholds.last().unwrap() + 1_000.0;
+        assert_eq!(
+            h.title(titles, thresholds),
+            titles.last().unwrap().as_str(),
+            "a hero past the top threshold earns the highest title"
+        );
     }
 }

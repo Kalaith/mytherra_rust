@@ -134,6 +134,11 @@ pub struct HeroText {
     pub focus_effect_valor: String,
     pub focus_effect_wisdom: String,
     pub focus_effect_devotion: String,
+    /// Earned renown titles, ascending (index-aligned with hero.renown.thresholds).
+    pub renown_titles: Vec<String>,
+    /// Roster meta line for a titled hero.
+    pub titled_meta: String,
+    pub untitled_meta: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
