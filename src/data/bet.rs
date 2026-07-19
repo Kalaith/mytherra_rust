@@ -11,6 +11,9 @@ pub enum BetPredicate {
     HeroDies,
     /// The target hero reaches at least `threshold` level.
     HeroLevelAtLeast,
+    /// The target hero (still living) accrues at least `threshold` renown —
+    /// a legend in the making (GDD 5.4).
+    HeroRenownAtLeast,
     /// The target region's prosperity reaches at least `threshold`.
     RegionProsperityAtLeast,
     /// The target region's chaos reaches at least `threshold`.
@@ -41,7 +44,9 @@ pub enum TargetKind {
 impl BetPredicate {
     pub fn target_kind(self) -> TargetKind {
         match self {
-            BetPredicate::HeroDies | BetPredicate::HeroLevelAtLeast => TargetKind::Hero,
+            BetPredicate::HeroDies
+            | BetPredicate::HeroLevelAtLeast
+            | BetPredicate::HeroRenownAtLeast => TargetKind::Hero,
             BetPredicate::RegionProsperityAtLeast
             | BetPredicate::RegionChaosAtLeast
             | BetPredicate::RegionDangerAtLeast

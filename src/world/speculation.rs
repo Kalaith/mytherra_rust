@@ -52,6 +52,10 @@ impl SpeculationEvent {
                 .hero(heroes)
                 .map(|h| h.is_alive && h.level as f32 >= self.threshold)
                 .unwrap_or(false),
+            BetPredicate::HeroRenownAtLeast => self
+                .hero(heroes)
+                .map(|h| h.is_alive && h.renown >= self.threshold)
+                .unwrap_or(false),
             BetPredicate::RegionProsperityAtLeast => self
                 .region(regions)
                 .map(|r| r.prosperity >= self.threshold)
@@ -108,6 +112,18 @@ impl SpeculationEvent {
             BetPredicate::HeroLevelAtLeast => self
                 .hero(heroes)
                 .map(|h| clamp01(h.level as f32 / self.threshold.max(1.0)))
+                .unwrap_or(0.5),
+            // A hero already alive with rising fame trends toward the bar; a dead
+            // one can never reach it.
+            BetPredicate::HeroRenownAtLeast => self
+                .hero(heroes)
+                .map(|h| {
+                    if h.is_alive {
+                        clamp01(h.renown / self.threshold.max(1.0))
+                    } else {
+                        0.0
+                    }
+                })
                 .unwrap_or(0.5),
             BetPredicate::RegionProsperityAtLeast => self
                 .region(regions)
@@ -221,6 +237,49 @@ mod tests {
         assert!(!event.is_satisfied(&[], &standing, &[]));
         // Once conquest removes it from the map, the proposition is satisfied.
         assert!(event.is_satisfied(&[], &[], &[]));
+    }
+
+    fn hero(id: &str, renown: f32, alive: bool) -> Hero {
+        Hero {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            role: crate::data::HeroRole::Warrior,
+            region_id: "kharzul".to_owned(),
+            level: 10,
+            age: 40,
+            is_alive: alive,
+            renown,
+        }
+    }
+
+    fn legend_event(target_id: &str, threshold: f32) -> SpeculationEvent {
+        let mut e = usurpation_event(target_id);
+        e.predicate = BetPredicate::HeroRenownAtLeast;
+        e.target_kind = TargetKind::Hero;
+        e.threshold = threshold;
+        e
+    }
+
+    #[test]
+    fn legend_resolves_only_for_a_living_hero_past_the_renown_bar() {
+        let event = legend_event("brogan", 100.0);
+        // Below the bar: unfulfilled.
+        assert!(!event.is_satisfied(&[hero("brogan", 60.0, true)], &[], &[]));
+        // At/over the bar while alive: a legend.
+        assert!(event.is_satisfied(&[hero("brogan", 120.0, true)], &[], &[]));
+        // A fallen hero can never win the wager, however renowned.
+        assert!(!event.is_satisfied(&[hero("brogan", 200.0, false)], &[], &[]));
+    }
+
+    #[test]
+    fn legend_likelihood_scales_with_renown_and_zeroes_on_death() {
+        let event = legend_event("brogan", 100.0);
+        let rising = event.likelihood(&[hero("brogan", 50.0, true)], &[], &[]);
+        assert!((rising - 0.5).abs() < 0.01, "halfway to the bar reads ~0.5");
+        assert_eq!(
+            event.likelihood(&[hero("brogan", 40.0, false)], &[], &[]),
+            0.0
+        );
     }
 
     #[test]

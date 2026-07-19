@@ -16,6 +16,14 @@
     "description": "{target} will rise to level {threshold}."
   },
   {
+    "id": "legend",
+    "name": "A Legend Rises",
+    "base_odds": 2.6,
+    "predicate": "hero_renown_at_least",
+    "threshold": 100.0,
+    "description": "{target} will win renown {threshold} and pass into legend."
+  },
+  {
     "id": "golden_age",
     "name": "Golden Age",
     "base_odds": 2.6,
