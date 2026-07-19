@@ -103,6 +103,10 @@ pub struct FrontierBalance {
     /// Per-eligible-hero, per-tick chance of founding — kept low so expansion is
     /// occasional rather than explosive.
     pub found_chance: f32,
+    /// Founding chance each point of Prosperity-artifact power adds to a region
+    /// (GDD 5.6 ↔ 5.2) — the player's lever to encourage expansion, the peaceful
+    /// counterpart to War artifacts driving conquest.
+    pub artifact_prosperity_chance: f32,
     /// Fraction of the home region's population that leaves to settle.
     pub settler_fraction: f32,
     /// The world will never grow past this many regions by founding.

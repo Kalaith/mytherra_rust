@@ -6,9 +6,19 @@
 //! driven by success — so a well-tended world grows new regions of its own.
 
 use crate::data::strings::{ChronicleText, GenesisText};
-use crate::data::{fill, FrontierBalance, RegionBalance, RegionSeed};
-use crate::world::{Chronicle, EventKind, Hero, Region, RegionAgendas, RegionStatus};
+use crate::data::{fill, ArtifactFocus, FrontierBalance, RegionBalance, RegionSeed};
+use crate::world::{Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, RegionStatus};
 use macroquad_toolkit::rng::SeededRng;
+
+/// Founding-chance bonus a region draws from Prosperity artifacts bound to it —
+/// the player's expansion lever (GDD 5.6 ↔ 5.2).
+fn prosperity_bonus(region_id: &str, artifacts: &[Artifact], balance: &FrontierBalance) -> f32 {
+    artifacts
+        .iter()
+        .filter(|a| a.focus == ArtifactFocus::Prosperity && a.region_id == region_id)
+        .map(|a| a.power as f32 * balance.artifact_prosperity_chance)
+        .sum()
+}
 
 /// A founding hero: a veteran living in a thriving, populous region. Scanned in
 /// index order; each eligible hero rolls the founding chance, so selection is
@@ -16,6 +26,7 @@ use macroquad_toolkit::rng::SeededRng;
 fn pick(
     regions: &[Region],
     heroes: &[Hero],
+    artifacts: &[Artifact],
     rng: &mut SeededRng,
     balance: &FrontierBalance,
 ) -> Option<(usize, usize)> {
@@ -32,7 +43,8 @@ fn pick(
         {
             continue;
         }
-        if rng.chance(balance.found_chance) {
+        let chance = balance.found_chance + prosperity_bonus(&region.id, artifacts, balance);
+        if rng.chance(chance) {
             return Some((hi, ri));
         }
     }
@@ -45,6 +57,7 @@ fn pick(
 pub(super) fn run(
     regions: &mut Vec<Region>,
     heroes: &mut [Hero],
+    artifacts: &[Artifact],
     civ: &mut Vec<RegionAgendas>,
     region_seq: &mut u64,
     agenda_count: usize,
@@ -59,7 +72,7 @@ pub(super) fn run(
     if regions.len() >= balance.max_regions {
         return;
     }
-    let Some((hero_idx, parent_idx)) = pick(regions, heroes, rng, balance) else {
+    let Some((hero_idx, parent_idx)) = pick(regions, heroes, artifacts, rng, balance) else {
         return;
     };
 

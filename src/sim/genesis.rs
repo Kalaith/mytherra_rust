@@ -76,6 +76,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
     frontier::run(
         regions,
         heroes,
+        artifacts,
         civilization,
         region_seq,
         agenda_count,
@@ -470,6 +471,47 @@ mod tests {
             .chronicle
             .iter_newest()
             .any(|e| e.message.contains("found the frontier")));
+    }
+
+    #[test]
+    fn a_prosperity_relic_hastens_frontier_founding() {
+        use crate::data::{ArtifactFocus, ArtifactSeed};
+        use crate::world::Artifact;
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.artifacts.clear();
+        let start = world.regions.len();
+
+        // A thriving, populous home with a veteran founder.
+        world.heroes[0].region_id = world.regions[0].id.clone();
+        world.heroes[0].level = 20;
+        world.heroes[0].is_alive = true;
+        {
+            let home = &mut world.regions[0];
+            home.prosperity = 90.0;
+            home.chaos = 10.0;
+            home.danger = 10.0;
+            home.population = 20000.0;
+            home.refresh_status(&data.balance.region);
+        }
+
+        // A powerful Prosperity relic drives the founding chance to certainty, so
+        // a single tick suffices where the base rate would need many.
+        world.artifacts.push(Artifact::from_seed(&ArtifactSeed {
+            id: "horn".to_owned(),
+            name: "Cornucopia".to_owned(),
+            focus: ArtifactFocus::Prosperity,
+            power: 100,
+            instability: 0.0,
+            region_id: world.regions[0].id.clone(),
+        }));
+
+        tick_genesis(&mut world, &data);
+        assert!(
+            world.regions.len() > start,
+            "a prosperity relic did not hasten founding"
+        );
+        assert!(world.regions.iter().any(|r| r.id.contains("-frontier-")));
     }
 
     #[test]
