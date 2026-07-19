@@ -529,17 +529,27 @@ impl Game {
             self.notifications.warning(notes.not_enough_favor);
             return;
         }
-        // A harmful weather-working leaves a delayed scar — flood or famine
-        // follows the storm, unfolding via the consequence queue (GDD 5.6).
-        if pattern.prosperity < 0.0 {
-            let wb = &self.data.balance.weather;
+        // Shaped weather leaves a delayed mark: a harmful working (net loss of
+        // prosperity) scars with flood or famine, a fair one ripens into a later
+        // harvest — both unfolding via the consequence queue (GDD 5.6).
+        let wb = &self.data.balance.weather;
+        let aftermath = if pattern.prosperity < 0.0 {
+            Some(ConsequenceEffect::SettlementBlight(
+                wb.aftermath_blight * intensity.magnitude,
+            ))
+        } else if pattern.prosperity > 0.0 {
+            Some(ConsequenceEffect::SettlementBloom(
+                wb.aftermath_bloom * intensity.magnitude,
+            ))
+        } else {
+            None
+        };
+        if let Some(effect) = aftermath {
             self.world.pending_consequences.push(DelayedConsequence {
                 region_id: region_id.clone(),
                 source: pattern.name.clone(),
                 delay: wb.aftermath_delay,
-                effect: ConsequenceEffect::SettlementBlight(
-                    wb.aftermath_blight * intensity.magnitude,
-                ),
+                effect,
             });
         }
         self.world

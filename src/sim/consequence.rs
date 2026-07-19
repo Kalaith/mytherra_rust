@@ -51,27 +51,27 @@ fn fire(
     year: u32,
 ) {
     match c.effect {
+        // The region's largest settlement bears the blight (or reaps the bloom).
         ConsequenceEffect::SettlementBlight(prosperity) => {
-            // The region's largest settlement bears the blight.
-            let target = settlements
-                .iter_mut()
-                .filter(|s| s.region_id == c.region_id)
-                .max_by(|a, b| {
-                    a.population
-                        .partial_cmp(&b.population)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                });
-            if let Some(settlement) = target {
-                settlement.prosperity = (settlement.prosperity + prosperity).clamp(0.0, 100.0);
+            if let Some(name) = shift_largest_settlement(settlements, &c.region_id, prosperity) {
                 chronicle.push(
                     year,
                     EventKind::Region,
                     fill(
                         &text.aftermath_blight,
-                        &[
-                            ("source", c.source.clone()),
-                            ("settlement", settlement.name.clone()),
-                        ],
+                        &[("source", c.source.clone()), ("settlement", name)],
+                    ),
+                );
+            }
+        }
+        ConsequenceEffect::SettlementBloom(prosperity) => {
+            if let Some(name) = shift_largest_settlement(settlements, &c.region_id, prosperity) {
+                chronicle.push(
+                    year,
+                    EventKind::Region,
+                    fill(
+                        &text.aftermath_bloom,
+                        &[("source", c.source.clone()), ("settlement", name)],
                     ),
                 );
             }
@@ -93,6 +93,27 @@ fn fire(
             }
         }
     }
+}
+
+/// Shift the prosperity of the region's largest settlement by `delta` (clamped),
+/// returning its name if one exists.
+fn shift_largest_settlement(
+    settlements: &mut [Settlement],
+    region_id: &str,
+    delta: f32,
+) -> Option<String> {
+    let target = settlements
+        .iter_mut()
+        .filter(|s| s.region_id == region_id)
+        .max_by(|a, b| {
+            a.population
+                .partial_cmp(&b.population)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+    target.map(|s| {
+        s.prosperity = (s.prosperity + delta).clamp(0.0, 100.0);
+        s.name.clone()
+    })
 }
 
 #[cfg(test)]
@@ -144,6 +165,42 @@ mod tests {
             world.year,
         );
         assert!(world.settlements[settlement_idx].prosperity < before);
+        assert!(world.pending_consequences.is_empty());
+    }
+
+    #[test]
+    fn a_bloom_raises_the_largest_settlements_prosperity() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let region_id = world.regions[0].id.clone();
+        // Target the region's largest settlement, and leave it room to grow.
+        let idx = world
+            .settlements
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.region_id == region_id)
+            .max_by(|(_, a), (_, b)| a.population.total_cmp(&b.population))
+            .map(|(i, _)| i)
+            .expect("region has a settlement");
+        world.settlements[idx].prosperity = 50.0;
+        let before = world.settlements[idx].prosperity;
+
+        world.pending_consequences.push(DelayedConsequence {
+            region_id,
+            source: "Bloomtide".to_owned(),
+            delay: 1,
+            effect: ConsequenceEffect::SettlementBloom(10.0),
+        });
+        tick_consequences(
+            &mut world.pending_consequences,
+            &mut world.regions,
+            &mut world.settlements,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+        assert!(world.settlements[idx].prosperity > before);
         assert!(world.pending_consequences.is_empty());
     }
 }

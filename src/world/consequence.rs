@@ -23,4 +23,7 @@ pub enum ConsequenceEffect {
     SettlementBlight(f32),
     /// A lingering pulse of unrest on the region itself.
     RegionUnrest { chaos: f32, danger: f32 },
+    /// Bless the region's largest settlement with a delayed harvest (a positive
+    /// prosperity delta) — the bounty that follows fair weather.
+    SettlementBloom(f32),
 }

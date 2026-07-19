@@ -116,6 +116,9 @@ pub struct WeatherBalance {
     /// shaped intensity's magnitude.
     pub aftermath_delay: i32,
     pub aftermath_blight: f32,
+    /// Beneficial weather (net gain of prosperity) instead leaves a delayed
+    /// bounty — a bountiful harvest per unit of the shaped intensity's magnitude.
+    pub aftermath_bloom: f32,
 }
 
 /// Pantheon tool tuning (GDD 5.6).

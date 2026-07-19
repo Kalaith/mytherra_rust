@@ -357,6 +357,8 @@ pub struct ChronicleText {
     /// Delayed backlash aftermath: a blighted settlement, then regional unrest.
     pub aftermath_blight: String,
     pub aftermath_unrest: String,
+    /// The delayed bounty that follows fair weather.
+    pub aftermath_bloom: String,
     pub magic_known: String,
     pub myth_echo: String,
     pub era_transition: String,

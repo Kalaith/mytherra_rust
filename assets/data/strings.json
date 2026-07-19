@@ -272,6 +272,7 @@
     "artifact_backlash": "{artifact} shatters, scarring {region}.",
     "aftermath_blight": "In the wake of {source}, blight withers {settlement}.",
     "aftermath_unrest": "The shattering of {source} still festers — unrest grips {region}.",
+    "aftermath_bloom": "The fair weather {source} brought ripens into a bountiful harvest in {settlement}.",
     "magic_known": "{path} passes into common knowledge.",
     "myth_echo": "{title} echoes across {region}.",
     "era_transition": "A new age dawns: {era}, born of {trigger}. {lost} fell, {risen} rose to meet it.",
