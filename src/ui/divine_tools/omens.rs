@@ -1,5 +1,6 @@
-//! Omens: a read-only forecast of the pressure weighing on each region
-//! (GDD 5.6 — omens never mutate world state).
+//! Omens: a read-only forecast across three horizons (GDD 5.6) — the far
+//! horizon of the coming age, and each region's near pressure and its
+//! generational drift. Omens never mutate world state.
 
 use crate::data::fill;
 use crate::data::strings::DivineText;
@@ -15,8 +16,17 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
     draw_panel(rect, &strings.omens_panel);
     let content = rect.inset(18.0);
 
+    // Far horizon (GDD 5.6): which age the world is building toward. The near and
+    // generational horizons follow, region by region.
+    let era = &ctx.world.era;
     draw_ui_text_ex(
-        &strings.omens_intro,
+        &fill(
+            &strings.omens_intro,
+            &[
+                ("trigger", era.dominant_trigger.label().to_owned()),
+                ("pressure", format!("{:.0}", era.pressure)),
+            ],
+        ),
         content.x,
         content.y + 30.0,
         TextStyle::new(15.0, dark::TEXT_DIM).params(),

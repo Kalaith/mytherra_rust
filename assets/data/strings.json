@@ -73,7 +73,7 @@
     "artifact_meta": "{focus}  ·  power {power}  ·  {region}",
     "instability": "Instability {instability}",
     "omens_panel": "Omens",
-    "omens_intro": "The pressure weighing on each region, read across the horizons.",
+    "omens_intro": "Far horizon: the age leans toward {trigger} (pressure {pressure}). Near and next, region by region:",
     "omen_line": "pressure {pressure}  ·  {tier}",
     "omen_calm": "Calm",
     "omen_stirring": "Stirring",
