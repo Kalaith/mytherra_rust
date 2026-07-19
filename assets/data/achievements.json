@@ -5,5 +5,8 @@
   { "id": "kingmaker", "name": "Kingmaker", "description": "Cultivate a full roster of champions." },
   { "id": "legend_maker", "name": "Maker of Legends", "description": "See a hero pass into legend." },
   { "id": "age_witness", "name": "Witness to Ages", "description": "Watch an age end and a new one dawn." },
-  { "id": "prophet", "name": "The Prophet", "description": "Win ten wagers at the Divine Observatory." }
+  { "id": "prophet", "name": "The Prophet", "description": "Win ten wagers at the Divine Observatory." },
+  { "id": "meddler", "name": "The Meddler", "description": "Nudge the world twenty-five times." },
+  { "id": "mythwright", "name": "Mythwright", "description": "Raise a candidate tale into a living myth." },
+  { "id": "free_spender", "name": "Open-Handed", "description": "Pour a thousand favor into the world." }
 ]

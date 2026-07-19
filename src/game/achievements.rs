@@ -24,6 +24,10 @@ fn earned(id: &str, world: &WorldState, player: &PlayerState, data: &GameData) -
         "legend_maker" => world.heroes.iter().any(|h| h.renown >= legend_bar),
         "age_witness" => world.era.number >= 2,
         "prophet" => bet_record(&player.bets).won >= 10,
+        "meddler" => player.nudges >= 25,
+        // A living myth only exists once the player has promoted a candidate.
+        "mythwright" => !world.myths.is_empty(),
+        "free_spender" => player.favor_spent >= 1000,
         _ => false,
     }
 }
@@ -72,5 +76,21 @@ mod tests {
         // ...and never again, even though the condition still holds.
         let second = check(&world, &mut player, &data);
         assert!(!second.iter().any(|n| n == "First Intervention"));
+    }
+
+    #[test]
+    fn standing_thresholds_unlock_their_goals() {
+        let data = GameData::load().unwrap();
+        let world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        player
+            .achievements
+            .sync_definitions(data.achievements.clone());
+
+        player.nudges = 25;
+        player.favor_spent = 1000;
+        let unlocked = check(&world, &mut player, &data);
+        assert!(unlocked.iter().any(|n| n == "The Meddler"));
+        assert!(unlocked.iter().any(|n| n == "Open-Handed"));
     }
 }
