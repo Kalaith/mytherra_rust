@@ -128,6 +128,9 @@ pub struct MythBalance {
     pub resonance_max: f32,
     pub resonance_spread: f32,
     pub resonance_scale: f32,
+    /// Baseline weight every region carries when a themed myth looks for a home,
+    /// so a legend can still arise where its subject is faint — just less often.
+    pub region_floor: f32,
 }
 
 /// Magic tool tuning (GDD 5.6).

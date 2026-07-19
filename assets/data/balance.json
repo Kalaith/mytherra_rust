@@ -268,7 +268,8 @@
     "resonance_min": 30.0,
     "resonance_max": 92.0,
     "resonance_spread": 15.0,
-    "resonance_scale": 1.4
+    "resonance_scale": 1.4,
+    "region_floor": 15.0
   },
   "civilization": {
     "apply_threshold": 35.0,

@@ -3,7 +3,7 @@
 //! always has tales to promote. Echoes are deterministic; candidate scoring uses
 //! the world RNG for spread.
 
-use crate::data::{fill, GameData, MythStat};
+use crate::data::{fill, GameData, MythBalance, MythStat};
 use crate::world::{Chronicle, EventKind, Myth, MythCandidate, Region};
 use macroquad_toolkit::rng::SeededRng;
 
@@ -62,12 +62,16 @@ fn generate_candidate(
     rng: &mut SeededRng,
     data: &GameData,
 ) -> Option<MythCandidate> {
-    let region = rng.choose(regions)?;
-    let theme = rng.choose(&data.myth_themes)?.clone();
     let balance = &data.balance.myth;
+    // A legend is born where its subject runs vivid: pick the theme first, then
+    // a region weighted by how strongly it embodies that theme's stat.
+    let theme = rng.choose(&data.myth_themes)?.clone();
+    let region = pick_region_by_theme(regions, theme.stat, balance, rng)?;
 
-    let metric = (region.prosperity + region.chaos + region.danger + region.magic_affinity) / 4.0;
-    let resonance = (metric * balance.resonance_scale
+    // Resonance tracks that thematic fit, so a myth that truly belongs to its
+    // land echoes stronger than one that barely fits.
+    let fit = region_stat(region, theme.stat);
+    let resonance = (fit * balance.resonance_scale
         + rng.range_f32(-balance.resonance_spread, balance.resonance_spread))
     .clamp(balance.resonance_min, balance.resonance_max);
 
@@ -89,6 +93,39 @@ fn generate_candidate(
         region_name: region.name.clone(),
         resonance,
     })
+}
+
+/// A region's value of the stat a myth theme is about.
+fn region_stat(region: &Region, stat: MythStat) -> f32 {
+    match stat {
+        MythStat::Prosperity => region.prosperity,
+        MythStat::Chaos => region.chaos,
+        MythStat::Danger => region.danger,
+        MythStat::Magic => region.magic_affinity,
+    }
+}
+
+/// Pick a region weighted by how strongly it embodies the theme's stat, plus a
+/// baseline floor so any region remains possible. Deterministic given the RNG.
+fn pick_region_by_theme<'a>(
+    regions: &'a [Region],
+    stat: MythStat,
+    balance: &MythBalance,
+    rng: &mut SeededRng,
+) -> Option<&'a Region> {
+    if regions.is_empty() {
+        return None;
+    }
+    let weight = |r: &Region| region_stat(r, stat) + balance.region_floor;
+    let total: f32 = regions.iter().map(weight).sum();
+    let mut roll = rng.next_f32() * total;
+    for region in regions {
+        roll -= weight(region);
+        if roll <= 0.0 {
+            return Some(region);
+        }
+    }
+    regions.last()
 }
 
 /// Map a myth stat + amount onto (prosperity, chaos, danger, magic) deltas.
@@ -123,6 +160,37 @@ mod tests {
         assert_eq!(
             world.myth_candidates.len(),
             data.balance.myth.candidate_count
+        );
+    }
+
+    #[test]
+    fn myths_favour_regions_that_embody_the_theme() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        // Two regions: one drenched in magic, one barren of it.
+        world.regions.truncate(2);
+        world.regions[0].magic_affinity = 100.0;
+        world.regions[1].magic_affinity = 0.0;
+        let magical_id = world.regions[0].id.clone();
+
+        let mut rng = SeededRng::new(7);
+        let mut in_magical = 0;
+        for _ in 0..300 {
+            let region = pick_region_by_theme(
+                &world.regions,
+                MythStat::Magic,
+                &data.balance.myth,
+                &mut rng,
+            )
+            .unwrap();
+            if region.id == magical_id {
+                in_magical += 1;
+            }
+        }
+        // Floor 15 vs stat 100 → ~115/130 ≈ 88% land in the magical region.
+        assert!(
+            in_magical > 220,
+            "magic myths should overwhelmingly favour the magical region ({in_magical}/300)"
         );
     }
 
