@@ -210,7 +210,6 @@
     "quest": "Quest {progress}/{goal}",
     "roster_label": "Roster",
     "filter_all": "All",
-    "roster_more": "+{count} more heroes — filter by region to see them",
     "focus_line": "{focus}  ·  on victory, {effect}",
     "focus_effect_valor": "eases danger",
     "focus_effect_wisdom": "kindles magic",
@@ -224,7 +223,10 @@
     "titled_meta": "{title}  ·  {role}  ·  {region}  ·  {level}",
     "untitled_meta": "{role}  ·  {region}  ·  {level}",
     "renown_meter": "Renown {renown} / {next}",
-    "renown_meter_max": "Renown {renown} - Legend"
+    "renown_meter_max": "Renown {renown} - Legend",
+    "page_label": "Page {page} / {pages}",
+    "prev_page": "< Prev",
+    "next_page": "Next >"
   },
   "betting": {
     "panel_events": "Speculation Events",

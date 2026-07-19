@@ -87,6 +87,8 @@ pub enum UiAction {
     SetChroniclePage(usize),
     /// Set the hero roster's region filter (0 = all, else `regions[n-1]`).
     SetHeroFilter(usize),
+    /// Jump the hero roster to the given (already-clamped) page.
+    SetHeroPage(usize),
     /// Select the auto-tick cadence by preset index (Settings, GDD 10).
     SetTickSpeed(usize),
     /// Toggle automatic world ticking on/off (Settings, GDD 10).
@@ -151,6 +153,8 @@ pub struct UiContext<'a> {
     pub chronicle_page: usize,
     /// Hero roster region filter (0 = all, else `regions[n-1]`).
     pub hero_filter: usize,
+    /// Hero roster page (0-based); the view clamps it to the current page count.
+    pub hero_page: usize,
     /// Selected auto-tick cadence (index into `balance.settings.tick_speed_presets`).
     pub tick_speed_index: usize,
     /// Whether automatic world ticking is paused.

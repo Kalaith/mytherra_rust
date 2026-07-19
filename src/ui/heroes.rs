@@ -2,7 +2,7 @@
 //! designation on the right (GDD 10 "Heroes & Champions").
 
 use crate::data::fill;
-use crate::ui::widgets::{button, draw_titled, good_stat_color};
+use crate::ui::widgets::{button, draw_titled, good_stat_color, page_controls, paginate};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::{Champion, Hero};
 use macroquad::prelude::*;
@@ -208,13 +208,15 @@ fn draw_roster_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction
     });
 
     let roster_full = ctx.player.champions.len() >= ctx.data.balance.champion.max_roster;
-    let mut y = content.y + 74.0;
-    let mut shown = 0;
-    for hero in &heroes {
-        // Leave a row's worth of space for the "+N more" note if truncating.
-        if y + 66.0 > content.bottom() - 22.0 {
-            break;
-        }
+    // Page the roster so every hero is reachable rather than truncated at the fold.
+    let list_start = content.y + 74.0;
+    let pager_row = Rect::new(content.x, content.bottom() - 28.0, content.w, 26.0);
+    let stride = 74.0;
+    let page_size = (((pager_row.y - 6.0 - list_start) / stride).floor() as usize).max(1);
+    let (page, start, end, total_pages) = paginate(heroes.len(), page_size, ctx.hero_page);
+
+    let mut y = list_start;
+    for hero in &heroes[start..end] {
         draw_hero_card(
             ctx,
             hero,
@@ -222,19 +224,28 @@ fn draw_roster_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction
             roster_full,
             actions,
         );
-        y += 74.0;
-        shown += 1;
+        y += stride;
     }
-    if shown < heroes.len() {
-        draw_ui_text_ex(
-            &fill(
-                &strings.roster_more,
-                &[("count", (heroes.len() - shown).to_string())],
-            ),
-            content.x,
-            y + 16.0,
-            TextStyle::new(14.0, dark::TEXT_DIM).params(),
+
+    if total_pages > 1 {
+        let label = fill(
+            &strings.page_label,
+            &[
+                ("page", (page + 1).to_string()),
+                ("pages", total_pages.to_string()),
+            ],
         );
+        if let Some(target) = page_controls(
+            pager_row,
+            page,
+            total_pages,
+            &strings.prev_page,
+            &strings.next_page,
+            &label,
+            ctx.mouse,
+        ) {
+            actions.push(UiAction::SetHeroPage(target));
+        }
     }
 }
 

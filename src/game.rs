@@ -43,6 +43,8 @@ pub struct Game {
     chronicle_page: usize,
     /// Hero roster region filter (0 = all, else `regions[n-1]`).
     hero_filter: usize,
+    /// Hero roster page (0-based), reset when the region filter changes.
+    hero_page: usize,
     /// Auto-tick cadence (index into `balance.settings.tick_speed_presets`).
     tick_speed_index: usize,
     /// Whether automatic world ticking is paused (Settings, GDD 10).
@@ -93,6 +95,7 @@ impl Game {
             weather_intensity: 0,
             chronicle_filter: 0,
             chronicle_page: 0,
+            hero_page: 0,
             hero_filter: 0,
             tick_speed_index,
             paused: false,
@@ -135,6 +138,7 @@ impl Game {
             weather_intensity: self.weather_intensity,
             chronicle_filter: self.chronicle_filter,
             chronicle_page: self.chronicle_page,
+            hero_page: self.hero_page,
             hero_filter: self.hero_filter,
             tick_speed_index: self.tick_speed_index,
             paused: self.paused,
@@ -223,7 +227,11 @@ impl Game {
                 self.chronicle_page = 0; // jump back to the newest page
             }
             UiAction::SetChroniclePage(page) => self.chronicle_page = page,
-            UiAction::SetHeroFilter(index) => self.hero_filter = index,
+            UiAction::SetHeroFilter(index) => {
+                self.hero_filter = index;
+                self.hero_page = 0; // a new filter starts at the first page
+            }
+            UiAction::SetHeroPage(page) => self.hero_page = page,
             UiAction::SetTickSpeed(index) => {
                 if index < self.data.balance.settings.tick_speed_presets.len() {
                     self.tick_speed_index = index;

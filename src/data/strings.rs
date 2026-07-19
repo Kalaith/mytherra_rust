@@ -135,7 +135,6 @@ pub struct HeroText {
     pub quest: String,
     pub roster_label: String,
     pub filter_all: String,
-    pub roster_more: String,
     pub focus_line: String,
     pub focus_effect_valor: String,
     pub focus_effect_wisdom: String,
@@ -148,6 +147,10 @@ pub struct HeroText {
     /// Renown meter labels: climbing toward the next title, or already a legend.
     pub renown_meter: String,
     pub renown_meter_max: String,
+    /// Roster pager: "Page {page} / {pages}" and the two nav buttons.
+    pub page_label: String,
+    pub prev_page: String,
+    pub next_page: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

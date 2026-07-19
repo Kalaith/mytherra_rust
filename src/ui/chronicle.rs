@@ -3,7 +3,7 @@
 //! `SetChronicleFilter` intents rather than mutating any state.
 
 use crate::data::fill;
-use crate::ui::widgets::{button, draw_titled};
+use crate::ui::widgets::{button, draw_titled, page_controls, paginate};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::{EventKind, WorldEvent};
 use macroquad::prelude::*;
@@ -69,7 +69,25 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     }
 
     if total_pages > 1 {
-        draw_pager(ctx, content, list_top - 34.0, page, total_pages, actions);
+        let row = Rect::new(content.x, list_top - 34.0, content.w, 26.0);
+        let label = fill(
+            &strings.page_label,
+            &[
+                ("page", (page + 1).to_string()),
+                ("pages", total_pages.to_string()),
+            ],
+        );
+        if let Some(target) = page_controls(
+            row,
+            page,
+            total_pages,
+            &strings.prev_page,
+            &strings.next_page,
+            &label,
+            ctx.mouse,
+        ) {
+            actions.push(UiAction::SetChroniclePage(target));
+        }
     }
 
     let mut y = list_start;
@@ -94,69 +112,6 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
             TextStyle::new(15.0, dark::TEXT).params(),
         );
         y += row_h;
-    }
-}
-
-/// Clamp `requested` to a valid page over `count` items and return
-/// `(page, start, end, total_pages)`. `page_size` is floored at 1; an empty list
-/// still yields one (empty) page so callers never divide by zero.
-fn paginate(count: usize, page_size: usize, requested: usize) -> (usize, usize, usize, usize) {
-    let page_size = page_size.max(1);
-    let total_pages = count.div_ceil(page_size).max(1);
-    let page = requested.min(total_pages - 1);
-    let start = page * page_size;
-    let end = (start + page_size).min(count);
-    (page, start, end, total_pages)
-}
-
-/// Newer/Older page controls, right-aligned on the header row. The view passes
-/// the exact clamped target page, so a stale stored page can never strand the
-/// player (the buttons always step from what's actually shown).
-fn draw_pager(
-    ctx: &UiContext<'_>,
-    content: Rect,
-    y: f32,
-    page: usize,
-    total_pages: usize,
-    actions: &mut Vec<UiAction>,
-) {
-    let strings = &ctx.data.strings.event_log;
-    let bw = 84.0;
-    let h = 26.0;
-    let label_w = 116.0;
-    let next = Rect::new(content.right() - bw, y, bw, h);
-    let label_x = next.x - 10.0 - label_w;
-    let prev = Rect::new(label_x - 10.0 - bw, y, bw, h);
-
-    if button(
-        prev,
-        &strings.prev_page,
-        page > 0,
-        ButtonTone::Secondary,
-        ctx.mouse,
-    ) {
-        actions.push(UiAction::SetChroniclePage(page - 1));
-    }
-    draw_ui_text_ex(
-        &fill(
-            &strings.page_label,
-            &[
-                ("page", (page + 1).to_string()),
-                ("pages", total_pages.to_string()),
-            ],
-        ),
-        label_x,
-        y + 18.0,
-        TextStyle::new(14.0, dark::TEXT_DIM).params(),
-    );
-    if button(
-        next,
-        &strings.next_page,
-        page + 1 < total_pages,
-        ButtonTone::Secondary,
-        ctx.mouse,
-    ) {
-        actions.push(UiAction::SetChroniclePage(page + 1));
     }
 }
 
@@ -207,40 +162,5 @@ fn kind_color(kind: EventKind) -> Color {
         EventKind::Region => dark::WARNING,
         EventKind::Hero => Color::new(0.7, 0.55, 0.9, 1.0),
         EventKind::System => dark::POSITIVE,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::paginate;
-
-    #[test]
-    fn first_page_starts_at_the_newest() {
-        // 30 events, 14 per page -> 3 pages; page 0 shows the first 14.
-        assert_eq!(paginate(30, 14, 0), (0, 0, 14, 3));
-    }
-
-    #[test]
-    fn a_middle_and_last_page_slice_correctly() {
-        assert_eq!(paginate(30, 14, 1), (1, 14, 28, 3));
-        // The short final page stops at the count, not a full page_size.
-        assert_eq!(paginate(30, 14, 2), (2, 28, 30, 3));
-    }
-
-    #[test]
-    fn an_overshot_request_clamps_to_the_last_page() {
-        // A stale page index (e.g. after a filter narrowed the list) can't strand
-        // the reader on a blank page.
-        assert_eq!(paginate(30, 14, 99), (2, 28, 30, 3));
-    }
-
-    #[test]
-    fn an_empty_list_is_one_empty_page() {
-        assert_eq!(paginate(0, 14, 3), (0, 0, 0, 1));
-    }
-
-    #[test]
-    fn a_zero_page_size_never_divides_by_zero() {
-        assert_eq!(paginate(5, 0, 0), (0, 0, 1, 5));
     }
 }
