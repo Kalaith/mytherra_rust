@@ -13,13 +13,26 @@ pub fn tick_pantheon(
     balance: &PantheonBalance,
     region_balance: &RegionBalance,
 ) {
+    // Snapshot every deity's pressure at tick start so the ally/rival coupling is
+    // order-independent: each deity reacts to the others as they stood this tick,
+    // not to whichever neighbours the loop happened to update first.
+    let snapshot: Vec<(String, f32)> = deities.iter().map(|d| (d.id.clone(), d.pressure)).collect();
+    let pressure_of = |id: &str| snapshot.iter().find(|(sid, _)| sid == id).map(|(_, p)| *p);
+
     for deity in deities.iter_mut() {
         deity.cooldown = (deity.cooldown - 1).max(0);
         // A deity stirs toward a baseline shifted by how ascendant its domain is
         // across the world, so the state of the world rouses the gods.
         let domain = domain_average(regions, deity.effect_stat);
-        let target =
-            (balance.drift_target + (domain - 50.0) * balance.domain_response).clamp(0.0, 100.0);
+        // The diamond pulls too: a rival's agitation above the resting baseline
+        // provokes, an ally's pressure draws toward solidarity.
+        let rival = pressure_of(&deity.rival_id).unwrap_or(balance.drift_target);
+        let ally = pressure_of(&deity.ally_id).unwrap_or(deity.pressure);
+        let target = (balance.drift_target
+            + (domain - 50.0) * balance.domain_response
+            + (rival - balance.drift_target) * balance.rival_coupling
+            + (ally - deity.pressure) * balance.ally_coupling)
+            .clamp(0.0, 100.0);
         deity.pressure = approach(deity.pressure, target, balance.drift_rate);
 
         let scale = deity.tier_multiplier(balance);
@@ -94,6 +107,41 @@ mod tests {
             &data.balance.region,
         );
         assert!(world.regions[0].prosperity >= before);
+    }
+
+    #[test]
+    fn an_agitated_rival_provokes_its_nemesis() {
+        let data = GameData::load().unwrap();
+        let baseline = data.balance.pantheon.drift_target;
+
+        // Tick the first deity with its rival calm vs. inflamed, holding every
+        // region neutral so only the rivalry coupling differs between the runs.
+        let run = |rival_pressure: f32| {
+            let mut w = WorldState::new(&data);
+            for r in &mut w.regions {
+                r.prosperity = 50.0;
+                r.chaos = 50.0;
+                r.danger = 50.0;
+                r.magic_affinity = 50.0;
+            }
+            w.pantheon[0].pressure = baseline;
+            let rival_id = w.pantheon[0].rival_id.clone();
+            if let Some(rival) = w.pantheon.iter_mut().find(|d| d.id == rival_id) {
+                rival.pressure = rival_pressure;
+            }
+            tick_pantheon(
+                &mut w.pantheon,
+                &mut w.regions,
+                &data.balance.pantheon,
+                &data.balance.region,
+            );
+            w.pantheon[0].pressure
+        };
+
+        assert!(
+            run(90.0) > run(40.0),
+            "an agitated rival should provoke its nemesis"
+        );
     }
 
     #[test]

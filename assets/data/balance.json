@@ -305,6 +305,8 @@
     "cooldown": 3,
     "drift_target": 40.0,
     "drift_rate": 1.0,
+    "rival_coupling": 0.15,
+    "ally_coupling": 0.1,
     "tiers": [
       25.0,
       35.0,

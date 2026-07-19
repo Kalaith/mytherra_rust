@@ -117,6 +117,12 @@ pub struct PantheonBalance {
     pub cooldown: i32,
     pub drift_target: f32,
     pub drift_rate: f32,
+    /// Autonomous diamond coupling per tick (GDD 5.6): a rival's agitation above
+    /// the resting baseline provokes a deity (`rival_coupling`), while an ally's
+    /// pressure pulls it into solidarity (`ally_coupling`). Both read every
+    /// deity's pressure as it stood at tick start, so the web stays deterministic.
+    pub rival_coupling: f32,
+    pub ally_coupling: f32,
     /// How strongly the world's average of a deity's domain stat shifts its
     /// pressure target away from the baseline (GDD 5.6): a deity whose domain is
     /// ascendant across the world stirs on its own, so a dangerous age rouses the
