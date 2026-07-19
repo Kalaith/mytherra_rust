@@ -78,5 +78,13 @@
     "predicate": "region_magic_at_least",
     "threshold": 75.0,
     "description": "{target}'s magic will awaken to {threshold}."
+  },
+  {
+    "id": "usurpation",
+    "name": "Usurpation",
+    "base_odds": 4.0,
+    "predicate": "region_conquered",
+    "threshold": 0.0,
+    "description": "{target} will be conquered and absorbed by a rival."
   }
 ]

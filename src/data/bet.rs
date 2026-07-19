@@ -21,6 +21,9 @@ pub enum BetPredicate {
     RegionMagicAtLeast,
     /// The target region falls into a crisis status.
     RegionCrisis,
+    /// The target region is conquered and absorbed by another (GDD 5.2) —
+    /// satisfied when it no longer exists on the map.
+    RegionConquered,
     /// The target settlement's population reaches at least `threshold`.
     SettlementPopulationAtLeast,
     /// The target settlement's prosperity reaches at least `threshold`.
@@ -43,7 +46,8 @@ impl BetPredicate {
             | BetPredicate::RegionChaosAtLeast
             | BetPredicate::RegionDangerAtLeast
             | BetPredicate::RegionMagicAtLeast
-            | BetPredicate::RegionCrisis => TargetKind::Region,
+            | BetPredicate::RegionCrisis
+            | BetPredicate::RegionConquered => TargetKind::Region,
             BetPredicate::SettlementPopulationAtLeast
             | BetPredicate::SettlementProsperityAtLeast => TargetKind::Settlement,
         }
