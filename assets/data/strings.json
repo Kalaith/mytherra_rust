@@ -109,6 +109,7 @@
     "myth_echo_in": "echoes in {years}y",
     "myth_faint": "too faint to echo",
     "new_myth_title": "The {theme} of {region}",
+    "legend_myth_title": "The Legend of {hero}",
     "civ_panel": "Civilization",
     "civ_region": "Region: {region}",
     "civ_intro": "Agendas competing within the realm. Advance one to press it.",

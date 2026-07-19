@@ -225,22 +225,44 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             fill(&text.crisis, &[("region", name)]),
         );
     }
-    for name in newly_legendary(&already_legend, &world.heroes, legend_bar) {
+    // A hero crossing into legend is both chronicled and — since a legend needs
+    // no promotion to be told — seeded as a myth candidate about them.
+    let new_legends: Vec<(String, String, String)> =
+        newly_legendary(&already_legend, &world.heroes, legend_bar)
+            .into_iter()
+            .map(|h| {
+                let region_name = world
+                    .regions
+                    .iter()
+                    .find(|r| r.id == h.region_id)
+                    .map(|r| r.name.clone())
+                    .unwrap_or_default();
+                (h.name.clone(), h.region_id.clone(), region_name)
+            })
+            .collect();
+    for (name, region_id, region_name) in new_legends {
         world.chronicle.push(
             world.year,
             EventKind::Hero,
-            fill(&text.hero_legend, &[("hero", name)]),
+            fill(&text.hero_legend, &[("hero", name.clone())]),
+        );
+        myth::seed_hero_legend(
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            &name,
+            &region_id,
+            &region_name,
+            data,
         );
     }
 }
 
-/// Names of living heroes who have reached `bar` renown this tick but hadn't
-/// before, so the crossing into legend is chronicled exactly once.
-fn newly_legendary(before: &[String], heroes: &[Hero], bar: f32) -> Vec<String> {
+/// Living heroes who have reached `bar` renown this tick but hadn't before, so
+/// the crossing into legend is handled exactly once.
+fn newly_legendary<'a>(before: &[String], heroes: &'a [Hero], bar: f32) -> Vec<&'a Hero> {
     heroes
         .iter()
         .filter(|h| h.is_alive && h.renown >= bar && !before.iter().any(|id| id == &h.id))
-        .map(|h| h.name.clone())
         .collect()
 }
 
@@ -268,10 +290,9 @@ mod tests {
             h("mortal", 50.0, true), // below the bar
         ];
         let before = vec!["old".to_owned()];
-        assert_eq!(
-            newly_legendary(&before, &heroes, 180.0),
-            vec!["new-name".to_owned()]
-        );
+        let crossed = newly_legendary(&before, &heroes, 180.0);
+        let names: Vec<&str> = crossed.iter().map(|h| h.name.as_str()).collect();
+        assert_eq!(names, vec!["new-name"]);
     }
 
     #[test]

@@ -158,6 +158,9 @@ pub struct MythBalance {
     /// Baseline weight every region carries when a themed myth looks for a home,
     /// so a legend can still arise where its subject is faint — just less often.
     pub region_floor: f32,
+    /// Theme (by id) a myth takes when it commemorates a hero's passage into
+    /// legend (GDD 5.4 <-> 5.6). Falls back to the first theme if unmatched.
+    pub legend_theme_id: String,
 }
 
 /// Magic tool tuning (GDD 5.6).

@@ -1,5 +1,6 @@
 //! Per-tick myth behaviour (GDD 5.6): living myths echo across their region on
-//! a cooldown, and fresh candidates are scored from region state so the player
+//! a cooldown, and fresh candidates are scored from region state — or seeded
+//! directly when a hero passes into legend (`seed_hero_legend`) — so the player
 //! always has tales to promote. Echoes are deterministic; candidate scoring uses
 //! the world RNG for spread.
 
@@ -93,6 +94,48 @@ fn generate_candidate(
         region_name: region.name.clone(),
         resonance,
     })
+}
+
+/// Seed a myth candidate commemorating a hero who has just passed into legend
+/// (GDD 5.4 <-> 5.6): a Valor-tale rooted in the hero's own region at full
+/// resonance, since a legend needs no embellishment. The player still chooses
+/// whether to promote it. Skipped once the candidate pool is saturated, so a run
+/// of legends can't flood the board.
+pub fn seed_hero_legend(
+    candidates: &mut Vec<MythCandidate>,
+    seq: &mut u64,
+    hero_name: &str,
+    region_id: &str,
+    region_name: &str,
+    data: &GameData,
+) {
+    let balance = &data.balance.myth;
+    if candidates.len() >= balance.candidate_count * 2 {
+        return;
+    }
+    let Some(theme) = data
+        .myth_themes
+        .iter()
+        .find(|t| t.id == balance.legend_theme_id)
+        .or_else(|| data.myth_themes.first())
+    else {
+        return;
+    };
+    *seq += 1;
+    candidates.push(MythCandidate {
+        id: format!("myth-{seq}"),
+        title: fill(
+            &data.strings.divine.legend_myth_title,
+            &[("hero", hero_name.to_owned())],
+        ),
+        theme_name: theme.name.clone(),
+        stat: theme.stat,
+        cultural_effect: theme.cultural_effect,
+        stat_effect: theme.stat_effect,
+        region_id: region_id.to_owned(),
+        region_name: region_name.to_owned(),
+        resonance: balance.resonance_max,
+    });
 }
 
 /// A region's value of the stat a myth theme is about.
@@ -228,5 +271,64 @@ mod tests {
             world.myths[0].echo_cooldown,
             data.balance.myth.echo_cooldown
         );
+    }
+
+    #[test]
+    fn a_legend_seeds_a_full_resonance_myth_in_its_own_land() {
+        let data = GameData::load().unwrap();
+        let mut candidates: Vec<MythCandidate> = Vec::new();
+        let mut seq = 0;
+        seed_hero_legend(
+            &mut candidates,
+            &mut seq,
+            "Brogan",
+            "kharzul",
+            "Kharzul",
+            &data,
+        );
+        assert_eq!(candidates.len(), 1);
+        let m = &candidates[0];
+        assert!(
+            m.title.contains("Brogan"),
+            "the tale names its hero: {}",
+            m.title
+        );
+        assert_eq!(
+            m.region_id, "kharzul",
+            "the myth belongs to the hero's land"
+        );
+        assert_eq!(
+            m.resonance, data.balance.myth.resonance_max,
+            "a legend's tale rings at full resonance"
+        );
+    }
+
+    #[test]
+    fn a_saturated_board_refuses_more_legend_myths() {
+        let data = GameData::load().unwrap();
+        let ceiling = data.balance.myth.candidate_count * 2;
+        let mut candidates: Vec<MythCandidate> = Vec::new();
+        let mut seq = 0;
+        // Fill past the ceiling, then confirm no further legend tale is added.
+        for _ in 0..ceiling {
+            seed_hero_legend(
+                &mut candidates,
+                &mut seq,
+                "Hero",
+                "kharzul",
+                "Kharzul",
+                &data,
+            );
+        }
+        let saturated = candidates.len();
+        seed_hero_legend(
+            &mut candidates,
+            &mut seq,
+            "Late",
+            "kharzul",
+            "Kharzul",
+            &data,
+        );
+        assert_eq!(candidates.len(), saturated, "the board can't be flooded");
     }
 }

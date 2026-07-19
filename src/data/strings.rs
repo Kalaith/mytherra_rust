@@ -214,6 +214,8 @@ pub struct DivineText {
     pub myth_echo_in: String,
     pub myth_faint: String,
     pub new_myth_title: String,
+    /// Title of a myth born from a hero's passage into legend; slot `{hero}`.
+    pub legend_myth_title: String,
     pub civ_panel: String,
     pub civ_region: String,
     pub civ_intro: String,
