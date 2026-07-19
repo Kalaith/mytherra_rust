@@ -25,6 +25,7 @@
     "pressure": "Era pressure  {pressure}",
     "breaking": "the age is breaking",
     "holding": "the age holds",
+    "trending": "Portents point toward {trigger}.",
     "record_line": "Era {number}: {name}",
     "record_span": "years {start}-{end}  ·  {trigger}  ·  pressure {pressure}"
   },
@@ -48,6 +49,8 @@
     "load": "Load",
     "new_world": "New World",
     "holdings": "Holdings",
+    "heavens_roused": "The heavens: {deity} grows {mood}.",
+    "heavens_calm": "The heavens lie still.",
     "settlements_line": "Towns:  {list}",
     "resources_line": "Resources:  {list}",
     "landmarks_line": "Landmarks:  {list}",

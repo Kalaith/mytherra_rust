@@ -104,6 +104,8 @@ pub struct EraText {
     pub pressure: String,
     pub breaking: String,
     pub holding: String,
+    /// Dashboard portent: which trigger the era pressure is building toward.
+    pub trending: String,
     pub record_line: String,
     pub record_span: String,
 }
@@ -243,6 +245,9 @@ pub struct UiText {
     pub load: String,
     pub new_world: String,
     pub holdings: String,
+    /// Dashboard portent lines surfacing the reactive pantheon.
+    pub heavens_roused: String,
+    pub heavens_calm: String,
     pub settlements_line: String,
     pub resources_line: String,
     pub landmarks_line: String,

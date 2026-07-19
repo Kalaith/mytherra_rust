@@ -184,6 +184,26 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         )
         .params(),
     );
+    y += 22.0;
+
+    // Portents: which age the pressure is building toward, and how the reactive
+    // pantheon is stirring — surfacing two systems that were dashboard-invisible.
+    draw_ui_text_ex(
+        &fill(
+            &strings.eras.trending,
+            &[("trigger", era.dominant_trigger.label().to_owned())],
+        ),
+        content.x,
+        y,
+        TextStyle::new(14.0, dark::TEXT_DIM).params(),
+    );
+    y += 20.0;
+    draw_ui_text_ex(
+        &heavens_line(ctx),
+        content.x,
+        y,
+        TextStyle::new(14.0, dark::TEXT_DIM).params(),
+    );
 
     // Save / new-world controls anchored at the bottom of the panel.
     let btn_y = rect.bottom() - 52.0;
@@ -251,6 +271,37 @@ fn draw_chronicle_panel(ctx: &UiContext<'_>, rect: Rect) {
             break;
         }
     }
+}
+
+/// The dashboard's "heavens" portent: the most-roused deity and its mood, or a
+/// calm line when the pantheon is dormant. Reads the same tiers the pantheon
+/// panel uses, so the two agree.
+fn heavens_line(ctx: &UiContext<'_>) -> String {
+    let strings = &ctx.data.strings;
+    let balance = &ctx.data.balance.pantheon;
+    let Some(deity) = ctx
+        .world
+        .pantheon
+        .iter()
+        .max_by(|a, b| a.pressure.total_cmp(&b.pressure))
+    else {
+        return strings.ui.heavens_calm.clone();
+    };
+    let tier = deity.tier(balance);
+    if tier == 0 {
+        return strings.ui.heavens_calm.clone();
+    }
+    let d = &strings.divine;
+    let mood = match tier {
+        1 => &d.mood_stirring,
+        2 => &d.mood_roused,
+        3 => &d.mood_wrathful,
+        _ => &d.mood_ascendant,
+    };
+    fill(
+        &strings.ui.heavens_roused,
+        &[("deity", deity.name.clone()), ("mood", mood.clone())],
+    )
 }
 
 fn stat_row(content: Rect, y: f32, label: &str, value: f32, color: Color, trend: f32) -> f32 {
