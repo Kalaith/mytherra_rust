@@ -1,6 +1,7 @@
 //! Runtime weather state (GDD 5.6): a shaped weather front over a region that
 //! applies its pattern each tick and decays until it dissipates.
 
+use crate::data::{WeatherIntensity, WeatherPattern};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,6 +17,28 @@ pub struct WeatherEvent {
     pub chaos: f32,
     pub danger: f32,
     pub magic: f32,
+}
+
+impl WeatherEvent {
+    /// Build a front over a region from a pattern and intensity — shared by the
+    /// player's shape action and natural weather emergence.
+    pub fn from_parts(
+        region_id: String,
+        pattern: &WeatherPattern,
+        intensity: &WeatherIntensity,
+    ) -> Self {
+        Self {
+            region_id,
+            pattern_id: pattern.id.clone(),
+            pattern_name: pattern.name.clone(),
+            intensity_name: intensity.name.clone(),
+            magnitude: intensity.magnitude,
+            prosperity: pattern.prosperity,
+            chaos: pattern.chaos,
+            danger: pattern.danger,
+            magic: pattern.magic,
+        }
+    }
 }
 
 /// Favor cost to shape weather: base scaled by intensity and (inversely) by the

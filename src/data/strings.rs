@@ -309,6 +309,7 @@ pub struct ChronicleText {
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_founded: String,
+    pub weather_natural: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

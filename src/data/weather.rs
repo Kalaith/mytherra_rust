@@ -1,5 +1,6 @@
 //! Weather content types: patterns and intensities (GDD 5.6).
 
+use crate::data::ClimateType;
 use serde::{Deserialize, Serialize};
 
 /// A weather pattern's per-magnitude-unit effect on a region's stats.
@@ -11,6 +12,11 @@ pub struct WeatherPattern {
     pub chaos: f32,
     pub danger: f32,
     pub magic: f32,
+    /// Climates that naturally give rise to this pattern (GDD 5.6). Natural
+    /// weather over a region is drawn from the patterns matching its climate;
+    /// the player can still shape any pattern anywhere.
+    #[serde(default)]
+    pub climates: Vec<ClimateType>,
 }
 
 /// A weather intensity: how strong (and how costly) a shaped pattern is.

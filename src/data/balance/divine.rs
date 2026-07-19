@@ -78,6 +78,15 @@ pub struct WeatherBalance {
     pub decay_per_tick: f32,
     pub min_magnitude: f32,
     pub max_active: usize,
+    /// Per-tick chance a natural weather front arises somewhere, biased by the
+    /// region's climate — the skies live without the player shaping them.
+    pub natural_chance: f32,
+    /// Chance a natural front is Strong rather than Gentle.
+    pub natural_strong_chance: f32,
+    /// Intensity ids a natural front uses (never Cataclysmic — that's the
+    /// player's alone).
+    pub natural_gentle_id: String,
+    pub natural_strong_id: String,
 }
 
 /// Pantheon tool tuning (GDD 5.6).

@@ -119,8 +119,14 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     weather::tick_weather(
         &mut world.weather,
         &mut world.regions,
+        &data.weather_patterns,
+        &data.weather_intensities,
+        &mut world.rng,
         &data.balance.weather,
         &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
     );
 
     magic::tick_magic(

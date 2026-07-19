@@ -240,7 +240,8 @@
     "settlement_built": "{settlement} raises a {building}.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
-    "region_founded": "{founder} leads settlers out of {parent} to found the frontier of {frontier}."
+    "region_founded": "{founder} leads settlers out of {parent} to found the frontier of {frontier}.",
+    "weather_natural": "{intensity} {pattern} sweep across {region}."
   },
   "genesis": {
     "breakaway_names": [

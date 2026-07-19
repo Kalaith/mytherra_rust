@@ -523,17 +523,9 @@ impl Game {
             self.notifications.warning(notes.not_enough_favor);
             return;
         }
-        self.world.weather.push(WeatherEvent {
-            region_id,
-            pattern_id: pattern.id.clone(),
-            pattern_name: pattern.name.clone(),
-            intensity_name: intensity.name.clone(),
-            magnitude: intensity.magnitude,
-            prosperity: pattern.prosperity,
-            chaos: pattern.chaos,
-            danger: pattern.danger,
-            magic: pattern.magic,
-        });
+        self.world
+            .weather
+            .push(WeatherEvent::from_parts(region_id, &pattern, &intensity));
         self.notifications.success(fill(
             &notes.weather_shaped,
             &[("pattern", pattern.name), ("region", region_name)],
