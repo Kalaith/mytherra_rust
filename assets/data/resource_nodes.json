@@ -1,14 +1,170 @@
 [
-  { "id": "golden_fields", "name": "Golden Fields", "region_id": "aldermoor", "resource_type": "farmland", "status": "flourishing" },
-  { "id": "aldervein", "name": "Aldermoor Vein", "region_id": "aldermoor", "resource_type": "mine", "status": "active" },
-  { "id": "ironvein", "name": "Ironvein", "region_id": "kharzul", "resource_type": "mine", "status": "active" },
-  { "id": "kharz_quarry", "name": "Kharzul Quarry", "region_id": "kharzul", "resource_type": "quarry", "status": "overworked" },
-  { "id": "redpine", "name": "Redpine Forest", "region_id": "kharzul", "resource_type": "forest", "status": "contested" },
-  { "id": "tidewaters", "name": "Tidewaters", "region_id": "sylvenmar", "resource_type": "fishery", "status": "flourishing" },
-  { "id": "sylvan_grove", "name": "Sylvan Grove", "region_id": "sylvenmar", "resource_type": "forest", "status": "blessed" },
-  { "id": "manaspring", "name": "The Manaspring", "region_id": "sylvenmar", "resource_type": "manaspring", "status": "active" },
-  { "id": "deepwood", "name": "Deepwood", "region_id": "sylvenmar", "resource_type": "forest", "status": "active" },
-  { "id": "coral_shoals", "name": "Coral Shoals", "region_id": "sylvenmar", "resource_type": "fishery", "status": "active" },
-  { "id": "wheatvale", "name": "Wheatvale", "region_id": "hearthmoor", "resource_type": "farmland", "status": "flourishing" },
-  { "id": "thornwood", "name": "Thornwood", "region_id": "hearthmoor", "resource_type": "forest", "status": "active" }
+  {
+    "id": "golden_fields",
+    "name": "Golden Fields",
+    "region_id": "aldermoor",
+    "resource_type": "farmland",
+    "status": "flourishing"
+  },
+  {
+    "id": "aldervein",
+    "name": "Aldermoor Vein",
+    "region_id": "aldermoor",
+    "resource_type": "mine",
+    "status": "active"
+  },
+  {
+    "id": "ironvein",
+    "name": "Ironvein",
+    "region_id": "kharzul",
+    "resource_type": "mine",
+    "status": "active"
+  },
+  {
+    "id": "kharz_quarry",
+    "name": "Kharzul Quarry",
+    "region_id": "kharzul",
+    "resource_type": "quarry",
+    "status": "overworked"
+  },
+  {
+    "id": "redpine",
+    "name": "Redpine Forest",
+    "region_id": "kharzul",
+    "resource_type": "forest",
+    "status": "contested"
+  },
+  {
+    "id": "tidewaters",
+    "name": "Tidewaters",
+    "region_id": "sylvenmar",
+    "resource_type": "fishery",
+    "status": "flourishing"
+  },
+  {
+    "id": "sylvan_grove",
+    "name": "Sylvan Grove",
+    "region_id": "sylvenmar",
+    "resource_type": "forest",
+    "status": "blessed"
+  },
+  {
+    "id": "manaspring",
+    "name": "The Manaspring",
+    "region_id": "sylvenmar",
+    "resource_type": "manaspring",
+    "status": "active"
+  },
+  {
+    "id": "deepwood",
+    "name": "Deepwood",
+    "region_id": "sylvenmar",
+    "resource_type": "forest",
+    "status": "active"
+  },
+  {
+    "id": "coral_shoals",
+    "name": "Coral Shoals",
+    "region_id": "sylvenmar",
+    "resource_type": "fishery",
+    "status": "active"
+  },
+  {
+    "id": "wheatvale",
+    "name": "Wheatvale",
+    "region_id": "hearthmoor",
+    "resource_type": "farmland",
+    "status": "flourishing"
+  },
+  {
+    "id": "thornwood",
+    "name": "Thornwood",
+    "region_id": "hearthmoor",
+    "resource_type": "forest",
+    "status": "active"
+  },
+  {
+    "id": "elder_wood",
+    "name": "Elderwood Stand",
+    "region_id": "aldermoor",
+    "resource_type": "forest",
+    "status": "active"
+  },
+  {
+    "id": "scholars_delve",
+    "name": "Scholar's Delve",
+    "region_id": "aldermoor",
+    "resource_type": "mine",
+    "status": "active"
+  },
+  {
+    "id": "quiet_spring",
+    "name": "The Quiet Spring",
+    "region_id": "aldermoor",
+    "resource_type": "manaspring",
+    "status": "blessed"
+  },
+  {
+    "id": "black_pits",
+    "name": "The Black Pits",
+    "region_id": "kharzul",
+    "resource_type": "mine",
+    "status": "overworked"
+  },
+  {
+    "id": "grey_quarry",
+    "name": "Greystone Quarry",
+    "region_id": "kharzul",
+    "resource_type": "quarry",
+    "status": "active"
+  },
+  {
+    "id": "emberlode",
+    "name": "Emberlode",
+    "region_id": "kharzul",
+    "resource_type": "mine",
+    "status": "contested"
+  },
+  {
+    "id": "moonwell_spring",
+    "name": "Moonwell Spring",
+    "region_id": "sylvenmar",
+    "resource_type": "manaspring",
+    "status": "flourishing"
+  },
+  {
+    "id": "starfall_spring",
+    "name": "Starfall Spring",
+    "region_id": "sylvenmar",
+    "resource_type": "manaspring",
+    "status": "active"
+  },
+  {
+    "id": "silver_wood",
+    "name": "Silverleaf Wood",
+    "region_id": "sylvenmar",
+    "resource_type": "forest",
+    "status": "blessed"
+  },
+  {
+    "id": "barley_flats",
+    "name": "Barley Flats",
+    "region_id": "hearthmoor",
+    "resource_type": "farmland",
+    "status": "flourishing"
+  },
+  {
+    "id": "greenfen",
+    "name": "Greenfen Fields",
+    "region_id": "hearthmoor",
+    "resource_type": "farmland",
+    "status": "active"
+  },
+  {
+    "id": "oxen_wood",
+    "name": "Oxenwood",
+    "region_id": "hearthmoor",
+    "resource_type": "forest",
+    "status": "active"
+  }
 ]
