@@ -43,11 +43,17 @@ pub fn tick_heroes(
 
         if rolls_death(hero, regions, rng, balance) {
             hero.is_alive = false;
+            let legend_bar = balance
+                .renown
+                .thresholds
+                .last()
+                .copied()
+                .unwrap_or(f32::INFINITY);
             chronicle.push(
                 year,
                 EventKind::Hero,
                 fill(
-                    &text.hero_death,
+                    death_line(hero.renown, legend_bar, text),
                     &[
                         ("hero", hero.name.clone()),
                         ("region", region_name(regions, &hero.region_id)),
@@ -81,6 +87,16 @@ fn rolls_death(
     }
     let danger = region_danger(regions, &hero.region_id);
     rng.chance(danger_death_chance(hero, danger, balance))
+}
+
+/// Which death line a fallen hero earns: one who had already crossed into legend
+/// (top renown title) gets the commemorative variant, everyone else the plain one.
+fn death_line(renown: f32, legend_bar: f32, text: &ChronicleText) -> &str {
+    if renown >= legend_bar {
+        &text.hero_legend_death
+    } else {
+        &text.hero_death
+    }
 }
 
 /// A young hero's per-tick chance of a violent death. Level and hard-won renown
@@ -159,6 +175,15 @@ mod tests {
     use super::*;
     use crate::data::{ClimateType, Culture, GameData, HeroSeed, RegionSeed};
     use crate::world::WorldState;
+
+    #[test]
+    fn a_legend_earns_a_commemorative_death_line() {
+        let data = GameData::load().unwrap();
+        let text = &data.strings.chronicle;
+        let bar = *data.balance.hero.renown.thresholds.last().unwrap();
+        assert_eq!(death_line(bar + 1.0, bar, text), text.hero_legend_death);
+        assert_eq!(death_line(bar - 1.0, bar, text), text.hero_death);
+    }
 
     fn region(id: &str, prosperity: f32, danger: f32, magic: f32, culture: f32) -> Region {
         let balance = GameData::load().unwrap().balance.region;
