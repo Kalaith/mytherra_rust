@@ -72,6 +72,10 @@ impl SpeculationEvent {
                 .region(regions)
                 .map(|r| r.magic_affinity >= self.threshold)
                 .unwrap_or(false),
+            BetPredicate::RegionCultureAtLeast => self
+                .region(regions)
+                .map(|r| r.cultural_influence >= self.threshold)
+                .unwrap_or(false),
             BetPredicate::RegionCrisis => self
                 .region(regions)
                 .map(|r| r.status.is_crisis())
@@ -140,6 +144,10 @@ impl SpeculationEvent {
             BetPredicate::RegionMagicAtLeast => self
                 .region(regions)
                 .map(|r| clamp01(r.magic_affinity / self.threshold.max(1.0)))
+                .unwrap_or(0.5),
+            BetPredicate::RegionCultureAtLeast => self
+                .region(regions)
+                .map(|r| clamp01(r.cultural_influence / self.threshold.max(1.0)))
                 .unwrap_or(0.5),
             BetPredicate::RegionCrisis => self
                 .region(regions)
@@ -291,5 +299,26 @@ mod tests {
         let vulnerable = event.likelihood(&[], &weak, &[]);
         assert!(vulnerable > 0.0 && vulnerable < 1.0);
         assert_eq!(event.likelihood(&[], &[], &[]), 1.0);
+    }
+
+    #[test]
+    fn a_renaissance_resolves_when_culture_clears_the_bar() {
+        // `region()` seeds cultural_influence at 40.
+        let mut event = usurpation_event("kharzul");
+        event.predicate = BetPredicate::RegionCultureAtLeast;
+        let regions = vec![region("kharzul")];
+
+        event.threshold = 30.0;
+        assert!(
+            event.is_satisfied(&[], &regions, &[]),
+            "40 clears a bar of 30"
+        );
+        event.threshold = 60.0;
+        assert!(
+            !event.is_satisfied(&[], &regions, &[]),
+            "40 falls short of 60"
+        );
+        // Likelihood tracks the ratio to the bar.
+        assert!((event.likelihood(&[], &regions, &[]) - 40.0 / 60.0).abs() < 0.01);
     }
 }

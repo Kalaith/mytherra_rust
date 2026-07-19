@@ -88,6 +88,14 @@
     "description": "{target}'s magic will awaken to {threshold}."
   },
   {
+    "id": "renaissance",
+    "name": "Renaissance",
+    "base_odds": 2.3,
+    "predicate": "region_culture_at_least",
+    "threshold": 75.0,
+    "description": "{target} will flower into a cultural centre, its influence reaching {threshold}."
+  },
+  {
     "id": "usurpation",
     "name": "Usurpation",
     "base_odds": 4.0,

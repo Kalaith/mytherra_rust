@@ -22,6 +22,9 @@ pub enum BetPredicate {
     RegionDangerAtLeast,
     /// The target region's magic reaches at least `threshold`.
     RegionMagicAtLeast,
+    /// The target region's cultural influence reaches at least `threshold` —
+    /// a rising cultural centre (fed by trade and myth, GDD 5.2).
+    RegionCultureAtLeast,
     /// The target region falls into a crisis status.
     RegionCrisis,
     /// The target region is conquered and absorbed by another (GDD 5.2) —
@@ -51,6 +54,7 @@ impl BetPredicate {
             | BetPredicate::RegionChaosAtLeast
             | BetPredicate::RegionDangerAtLeast
             | BetPredicate::RegionMagicAtLeast
+            | BetPredicate::RegionCultureAtLeast
             | BetPredicate::RegionCrisis
             | BetPredicate::RegionConquered => TargetKind::Region,
             BetPredicate::SettlementPopulationAtLeast
