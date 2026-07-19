@@ -122,20 +122,26 @@ pub fn seed_hero_legend(
         return;
     };
     *seq += 1;
-    candidates.push(MythCandidate {
-        id: format!("myth-{seq}"),
-        title: fill(
-            &data.strings.divine.legend_myth_title,
-            &[("hero", hero_name.to_owned())],
-        ),
-        theme_name: theme.name.clone(),
-        stat: theme.stat,
-        cultural_effect: theme.cultural_effect,
-        stat_effect: theme.stat_effect,
-        region_id: region_id.to_owned(),
-        region_name: region_name.to_owned(),
-        resonance: balance.resonance_max,
-    });
+    // Insert at the front so the fresh legend leads the board — the candidate
+    // list is shown top-down and truncated, and a legend's tale shouldn't be the
+    // one hidden below the fold.
+    candidates.insert(
+        0,
+        MythCandidate {
+            id: format!("myth-{seq}"),
+            title: fill(
+                &data.strings.divine.legend_myth_title,
+                &[("hero", hero_name.to_owned())],
+            ),
+            theme_name: theme.name.clone(),
+            stat: theme.stat,
+            cultural_effect: theme.cultural_effect,
+            stat_effect: theme.stat_effect,
+            region_id: region_id.to_owned(),
+            region_name: region_name.to_owned(),
+            resonance: balance.resonance_max,
+        },
+    );
 }
 
 /// A region's value of the stat a myth theme is about.
