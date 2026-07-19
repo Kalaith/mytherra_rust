@@ -196,12 +196,19 @@ fn draw_bets_panel(ctx: &UiContext<'_>, rect: Rect) {
         std::cmp::Ordering::Less => dark::NEGATIVE,
         std::cmp::Ordering::Equal => dark::TEXT_DIM,
     };
+    let settled = record.won + record.lost;
+    let win_rate = if settled > 0 {
+        (record.won as f32 / settled as f32 * 100.0).round() as i64
+    } else {
+        0
+    };
     draw_ui_text_ex(
         &fill(
             &strings.record,
             &[
                 ("won", record.won.to_string()),
                 ("lost", record.lost.to_string()),
+                ("rate", win_rate.to_string()),
                 ("net", format!("{:+}", record.net)),
                 ("pending", record.pending.to_string()),
             ],
