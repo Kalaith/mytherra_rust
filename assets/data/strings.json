@@ -244,7 +244,7 @@
     "confidence_btn": "{confidence}",
     "stake_btn": "Stake {stake}",
     "place": "Bet {stake} -> {payout}",
-    "odds": "Odds {odds}x  ·  crowd {crowd}% yes",
+    "odds": "Odds {odds}x  ·  world {chance}%  ·  crowd {crowd}% yes",
     "deadline": "by year {deadline}",
     "pending": "Pending",
     "won": "Won",

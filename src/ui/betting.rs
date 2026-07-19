@@ -138,11 +138,15 @@ fn draw_event_card(
         stake,
         &ctx.data.balance.betting,
     );
+    // Show the world's own read (likelihood) beside the crowd's lean, so betting
+    // well means spotting where they diverge — back a proposition the world
+    // favours but the crowd underrates (GDD 5.5).
     draw_ui_text_ex(
         &fill(
             &strings.odds,
             &[
                 ("odds", format!("{:.2}", quote.odds)),
+                ("chance", format!("{:.0}", likelihood * 100.0)),
                 ("crowd", format!("{:.0}", quote.crowd_pct)),
             ],
         ),
