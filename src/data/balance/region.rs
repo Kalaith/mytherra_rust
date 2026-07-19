@@ -74,4 +74,9 @@ pub struct TradeBalance {
     pub prosperity_bonus: f32,
     /// Fraction each endpoint drifts toward the pair's average prosperity.
     pub equalize_rate: f32,
+    /// Cultural influence added to each endpoint per tick, per unit of volume:
+    /// ideas travel the trade network alongside wealth (GDD 5.2).
+    pub culture_bonus: f32,
+    /// Fraction each endpoint drifts toward the pair's average cultural influence.
+    pub culture_equalize: f32,
 }

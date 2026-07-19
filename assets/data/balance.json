@@ -420,7 +420,9 @@
   },
   "trade": {
     "prosperity_bonus": 0.3,
-    "equalize_rate": 0.02
+    "equalize_rate": 0.02,
+    "culture_bonus": 0.15,
+    "culture_equalize": 0.02
   },
   "resource": {
     "stress_chaos": 0.4,
