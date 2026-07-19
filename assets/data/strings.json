@@ -219,7 +219,9 @@
       "the Mythic"
     ],
     "titled_meta": "{title}  ·  {role}  ·  {region}  ·  {level}",
-    "untitled_meta": "{role}  ·  {region}  ·  {level}"
+    "untitled_meta": "{role}  ·  {region}  ·  {level}",
+    "renown_meter": "Renown {renown} / {next}",
+    "renown_meter_max": "Renown {renown} - Legend"
   },
   "betting": {
     "panel_events": "Speculation Events",

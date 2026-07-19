@@ -141,6 +141,9 @@ pub struct HeroText {
     /// Roster meta line for a titled hero.
     pub titled_meta: String,
     pub untitled_meta: String,
+    /// Renown meter labels: climbing toward the next title, or already a legend.
+    pub renown_meter: String,
+    pub renown_meter_max: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

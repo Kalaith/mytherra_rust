@@ -343,6 +343,36 @@ fn draw_hero_card(
         )),
     );
 
+    // Renown meter (middle, below lifespan): climb toward the next title, or a
+    // full bar once the hero has passed into legend.
+    let thresholds = &ctx.data.balance.hero.renown.thresholds;
+    let (bar, label) = match thresholds.iter().copied().find(|t| *t > hero.renown) {
+        Some(next) => (
+            next,
+            fill(
+                &strings.renown_meter,
+                &[
+                    ("renown", format!("{:.0}", hero.renown)),
+                    ("next", format!("{next:.0}")),
+                ],
+            ),
+        ),
+        None => (
+            hero.renown.max(1.0),
+            fill(
+                &strings.renown_meter_max,
+                &[("renown", format!("{:.0}", hero.renown))],
+            ),
+        ),
+    };
+    meter(
+        Rect::new(rect.x + 360.0, rect.y + 38.0, 220.0, 16.0),
+        hero.renown,
+        bar,
+        dark::ACCENT,
+        Some(&label),
+    );
+
     // Champion tag or Designate button (right).
     let action_rect = Rect::new(rect.right() - 128.0, rect.y + 16.0, 114.0, 34.0);
     if is_champion {
