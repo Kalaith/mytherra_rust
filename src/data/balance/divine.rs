@@ -101,6 +101,11 @@ pub struct PantheonBalance {
     pub cooldown: i32,
     pub drift_target: f32,
     pub drift_rate: f32,
+    /// How strongly the world's average of a deity's domain stat shifts its
+    /// pressure target away from the baseline (GDD 5.6): a deity whose domain is
+    /// ascendant across the world stirs on its own, so a dangerous age rouses the
+    /// war god and a prosperous one both its patron and its nemesis.
+    pub domain_response: f32,
     /// Ascending pressure tier thresholds and their effect multipliers.
     pub tiers: Vec<f32>,
     pub tier_mults: Vec<f32>,

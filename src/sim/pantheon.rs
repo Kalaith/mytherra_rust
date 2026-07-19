@@ -15,7 +15,12 @@ pub fn tick_pantheon(
 ) {
     for deity in deities.iter_mut() {
         deity.cooldown = (deity.cooldown - 1).max(0);
-        deity.pressure = approach(deity.pressure, balance.drift_target, balance.drift_rate);
+        // A deity stirs toward a baseline shifted by how ascendant its domain is
+        // across the world, so the state of the world rouses the gods.
+        let domain = domain_average(regions, deity.effect_stat);
+        let target =
+            (balance.drift_target + (domain - 50.0) * balance.domain_response).clamp(0.0, 100.0);
+        deity.pressure = approach(deity.pressure, target, balance.drift_rate);
 
         let scale = deity.tier_multiplier(balance);
         if scale > 0.0 {
@@ -25,6 +30,23 @@ pub fn tick_pantheon(
             }
         }
     }
+}
+
+/// The world's average value of the stat a deity holds domain over.
+fn domain_average(regions: &[Region], stat: PantheonStat) -> f32 {
+    if regions.is_empty() {
+        return 50.0;
+    }
+    let sum: f32 = regions
+        .iter()
+        .map(|r| match stat {
+            PantheonStat::Prosperity => r.prosperity,
+            PantheonStat::Chaos => r.chaos,
+            PantheonStat::Danger => r.danger,
+            PantheonStat::Magic => r.magic_affinity,
+        })
+        .sum();
+    sum / regions.len() as f32
 }
 
 /// Map a pantheon stat + amount onto (prosperity, chaos, danger, magic) deltas.
@@ -72,6 +94,48 @@ mod tests {
             &data.balance.region,
         );
         assert!(world.regions[0].prosperity >= before);
+    }
+
+    #[test]
+    fn an_ascendant_domain_rouses_its_deity() {
+        let data = GameData::load().unwrap();
+        let baseline = data.balance.pantheon.drift_target;
+
+        // Mordath holds domain over danger. A world steeped in danger should pull
+        // its pressure above the calm baseline...
+        let mut dangerous = WorldState::new(&data);
+        let idx = dangerous
+            .pantheon
+            .iter()
+            .position(|d| d.effect_stat == PantheonStat::Danger)
+            .unwrap();
+        for r in &mut dangerous.regions {
+            r.danger = 95.0;
+        }
+        dangerous.pantheon[idx].pressure = baseline;
+        tick_pantheon(
+            &mut dangerous.pantheon,
+            &mut dangerous.regions,
+            &data.balance.pantheon,
+            &data.balance.region,
+        );
+
+        // ...while a placid world lets it settle back down.
+        let mut calm = WorldState::new(&data);
+        for r in &mut calm.regions {
+            r.danger = 5.0;
+        }
+        calm.pantheon[idx].pressure = baseline;
+        tick_pantheon(
+            &mut calm.pantheon,
+            &mut calm.regions,
+            &data.balance.pantheon,
+            &data.balance.region,
+        );
+
+        assert!(dangerous.pantheon[idx].pressure > baseline);
+        assert!(calm.pantheon[idx].pressure < baseline);
+        assert!(dangerous.pantheon[idx].pressure > calm.pantheon[idx].pressure);
     }
 
     #[test]
