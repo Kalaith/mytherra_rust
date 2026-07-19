@@ -36,6 +36,14 @@ pub fn tick_speculations(
         year,
         era_number,
     );
+    drift_crowds(
+        events,
+        heroes,
+        regions,
+        settlements,
+        era_progress,
+        data.balance.betting.crowd_drift,
+    );
     replenish(
         events,
         seq,
@@ -230,6 +238,24 @@ fn seed_crowd(likelihood: f32, rng: &mut SeededRng, balance: &BettingBalance) ->
     (total * lean, total * (1.0 - lean))
 }
 
+/// Let the watching deities keep betting: each active event gains `drift` stake
+/// split by its *current* likelihood, so the crowd's lean tracks the shifting
+/// world rather than staying frozen at its opening seed (GDD 5.5). Deterministic.
+fn drift_crowds(
+    events: &mut [SpeculationEvent],
+    heroes: &[Hero],
+    regions: &[Region],
+    settlements: &[Settlement],
+    era_progress: f32,
+    drift: f32,
+) {
+    for event in events.iter_mut().filter(|e| e.is_active()) {
+        let likelihood = event.likelihood(heroes, regions, settlements, era_progress);
+        event.crowd_yes += drift * likelihood;
+        event.crowd_no += drift * (1.0 - likelihood);
+    }
+}
+
 /// Drop the oldest resolved events once the store exceeds its cap.
 fn prune(events: &mut Vec<SpeculationEvent>, cap: usize) {
     let mut i = 0;
@@ -263,7 +289,57 @@ fn prune_bets(bets: &mut Vec<Bet>, cap: usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data::BetPredicate;
     use crate::world::WorldState;
+
+    #[test]
+    fn the_crowd_drifts_toward_the_current_likelihood() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.regions[0].prosperity = 90.0;
+        let region_id = world.regions[0].id.clone();
+
+        // A "prosperity >= 50" bet on a 90-prosperity region reads near-certain,
+        // but its crowd opens evenly split. Drift should pull the lean toward yes.
+        world.speculations.push(SpeculationEvent {
+            id: "spec-drift".to_owned(),
+            bet_type_name: "Test".to_owned(),
+            description: String::new(),
+            predicate: BetPredicate::RegionProsperityAtLeast,
+            threshold: 50.0,
+            target_kind: TargetKind::Region,
+            target_id: region_id,
+            target_name: String::new(),
+            base_odds: 2.0,
+            timeframe_name: String::new(),
+            timeframe_modifier: 1.0,
+            created_year: 1,
+            deadline_year: 100,
+            created_era: 1,
+            created_region_count: world.regions.len() as u32,
+            crowd_yes: 50.0,
+            crowd_no: 50.0,
+            resolved: None,
+        });
+
+        let lean = |e: &SpeculationEvent| e.crowd_yes / e.crowd_total();
+        let before = lean(&world.speculations[0]);
+        for _ in 0..20 {
+            drift_crowds(
+                &mut world.speculations,
+                &world.heroes,
+                &world.regions,
+                &world.settlements,
+                0.0,
+                data.balance.betting.crowd_drift,
+            );
+        }
+        let after = lean(&world.speculations[0]);
+        assert!(
+            after > before,
+            "the crowd should lean toward the near-certain outcome: {before} -> {after}"
+        );
+    }
 
     #[test]
     fn replenishes_up_to_target() {

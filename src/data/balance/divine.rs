@@ -22,6 +22,10 @@ pub struct BettingBalance {
     /// How far the simulated crowd's lean can wander from the true likelihood —
     /// the crowd is wise but not perfectly rational (GDD 5.5).
     pub crowd_noise: f32,
+    /// Total simulated crowd stake added per tick to each active event, split by
+    /// the event's *current* likelihood — so the watching deities keep betting as
+    /// the world shifts and their lean tracks it, rewarding an early read (5.5).
+    pub crowd_drift: f32,
     /// Bounds on the world-state-derived target odds modifier.
     pub target_mod_min: f32,
     pub target_mod_max: f32,
