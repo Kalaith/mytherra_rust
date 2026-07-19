@@ -3,7 +3,7 @@
 //! intents; `Game` owns the actual pacing state.
 
 use crate::data::fill;
-use crate::ui::widgets::button;
+use crate::ui::widgets::{button, draw_titled};
 use crate::ui::{content_rect, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -125,12 +125,4 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         );
         y += 24.0;
     }
-}
-
-fn draw_titled(rect: Rect, title: &str) {
-    let style = SurfaceStyle::new(Color::new(0.07, 0.075, 0.095, 0.96))
-        .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.5))
-        .with_header(42.0, Color::new(0.1, 0.115, 0.145, 1.0))
-        .with_header_divider(1.0, Color::new(0.38, 0.45, 0.58, 0.4));
-    draw_surface_with_title(rect, Some(title), &style, TextStyle::new(20.0, dark::TEXT));
 }

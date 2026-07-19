@@ -2,7 +2,7 @@
 //! chronicle of past eras on the right (GDD 5.7, 10).
 
 use crate::data::fill;
-use crate::ui::widgets::bad_stat_color;
+use crate::ui::widgets::{bad_stat_color, draw_titled};
 use crate::ui::{content_rect, UiContext};
 use crate::world::compute_scores;
 use macroquad::prelude::*;
@@ -170,12 +170,4 @@ fn draw_history(ctx: &UiContext<'_>, rect: Rect) {
             break;
         }
     }
-}
-
-fn draw_titled(rect: Rect, title: &str) {
-    let style = SurfaceStyle::new(Color::new(0.07, 0.075, 0.095, 0.96))
-        .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.5))
-        .with_header(42.0, Color::new(0.1, 0.115, 0.145, 1.0))
-        .with_header_divider(1.0, Color::new(0.38, 0.45, 0.58, 0.4));
-    draw_surface_with_title(rect, Some(title), &style, TextStyle::new(20.0, dark::TEXT));
 }

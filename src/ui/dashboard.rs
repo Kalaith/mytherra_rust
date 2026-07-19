@@ -1,7 +1,7 @@
 //! Dashboard: world-at-a-glance, the player's standing, and the recent chronicle.
 
 use crate::data::fill;
-use crate::ui::widgets::{bad_stat_color, button, good_stat_color, trend_marker};
+use crate::ui::widgets::{bad_stat_color, button, draw_titled, good_stat_color, trend_marker};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::EventKind;
 use macroquad::prelude::*;
@@ -313,14 +313,6 @@ fn stat_row(content: Rect, y: f32, label: &str, value: f32, color: Color, trend:
         Some(&format!("{label}  {value:.0}{}", trend_marker(trend))),
     );
     y + 30.0
-}
-
-fn draw_titled(rect: Rect, title: &str) {
-    let style = SurfaceStyle::new(Color::new(0.07, 0.075, 0.095, 0.96))
-        .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.5))
-        .with_header(42.0, Color::new(0.1, 0.115, 0.145, 1.0))
-        .with_header_divider(1.0, Color::new(0.38, 0.45, 0.58, 0.4));
-    draw_surface_with_title(rect, Some(title), &style, TextStyle::new(20.0, dark::TEXT));
 }
 
 fn kind_color(kind: EventKind) -> Color {
