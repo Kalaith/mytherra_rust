@@ -32,5 +32,10 @@ impl EraTrigger {
 pub struct EraNameBank {
     pub prefixes: Vec<String>,
     pub titles: Vec<String>,
+    /// Name templates with `{prefix}`/`{title}` slots, so eras aren't all cast
+    /// in one rigid mold (e.g. "Age of {title}", "The {title}"). `serde(default)`
+    /// falls back to the classic single form when absent.
+    #[serde(default)]
+    pub patterns: Vec<String>,
     pub descendant_titles: Vec<String>,
 }
