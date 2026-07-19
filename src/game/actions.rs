@@ -6,7 +6,8 @@
 use super::Game;
 use crate::data::{fill, ChampionFocus};
 use crate::world::{
-    adjust_pressure, quote_event, weather_cost, Artifact, Bet, EventKind, Myth, WeatherEvent,
+    adjust_pressure, quote_event, weather_cost, Artifact, Bet, ConsequenceEffect,
+    DelayedConsequence, EventKind, Myth, WeatherEvent,
 };
 
 impl Game {
@@ -527,6 +528,19 @@ impl Game {
         if !self.player.spend(cost, &self.data.balance.player) {
             self.notifications.warning(notes.not_enough_favor);
             return;
+        }
+        // A harmful weather-working leaves a delayed scar — flood or famine
+        // follows the storm, unfolding via the consequence queue (GDD 5.6).
+        if pattern.prosperity < 0.0 {
+            let wb = &self.data.balance.weather;
+            self.world.pending_consequences.push(DelayedConsequence {
+                region_id: region_id.clone(),
+                source: pattern.name.clone(),
+                delay: wb.aftermath_delay,
+                effect: ConsequenceEffect::SettlementBlight(
+                    wb.aftermath_blight * intensity.magnitude,
+                ),
+            });
         }
         self.world
             .weather

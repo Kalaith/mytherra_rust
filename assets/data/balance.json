@@ -277,7 +277,9 @@
     "natural_chance": 0.18,
     "natural_strong_chance": 0.25,
     "natural_gentle_id": "gentle",
-    "natural_strong_id": "strong"
+    "natural_strong_id": "strong",
+    "aftermath_delay": 4,
+    "aftermath_blight": -4.0
   },
   "magic": {
     "progress_per_tick": 2.0,

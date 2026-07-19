@@ -111,6 +111,11 @@ pub struct WeatherBalance {
     /// player's alone).
     pub natural_gentle_id: String,
     pub natural_strong_id: String,
+    /// A harmful weather-working (net loss of prosperity) leaves a delayed scar
+    /// — flood or famine following the storm (GDD 5.6). Blight is per unit of the
+    /// shaped intensity's magnitude.
+    pub aftermath_delay: i32,
+    pub aftermath_blight: f32,
 }
 
 /// Pantheon tool tuning (GDD 5.6).
