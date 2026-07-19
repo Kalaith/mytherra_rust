@@ -71,6 +71,12 @@ pub struct WorldState {
     /// GDD 5.2), so no two fractured regions ever collide.
     #[serde(default)]
     pub region_seq: u64,
+    /// Decaying tally of recent region conquests (GDD 5.2 ↔ 5.7): each genesis
+    /// conquest bumps it and it bleeds off over time, feeding the era system's
+    /// Conquest pressure so an age of realms devouring each other is defined by
+    /// the conquests themselves, not just ambient danger.
+    #[serde(default)]
+    pub conquest_momentum: f32,
     pub settlements: Vec<Settlement>,
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
@@ -148,6 +154,7 @@ impl WorldState {
             tick_count: 0,
             regions,
             region_seq: 0,
+            conquest_momentum: 0.0,
             settlements,
             resource_nodes,
             landmarks,

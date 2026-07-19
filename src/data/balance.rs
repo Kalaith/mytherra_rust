@@ -114,6 +114,10 @@ pub struct ConquestBalance {
     pub winner_danger: f32,
     /// The world will never be conquered below this many regions.
     pub min_regions: usize,
+    /// Conquest momentum each annexation adds to the world (feeds Conquest-era
+    /// pressure, GDD 5.7), and the ceiling that momentum can reach.
+    pub momentum_gain: f32,
+    pub momentum_cap: f32,
 }
 
 /// Frontier-founding tuning (GDD 5.2): the third genesis path and the mirror of
@@ -508,6 +512,11 @@ pub struct EraBalance {
     pub collapse_struggling: f32,
     pub conquest_danger: f32,
     pub conquest_wartorn: f32,
+    /// Weight on the world's decaying conquest-momentum tally, so actual region
+    /// annexations (not just ambient danger) drive Conquest-era pressure.
+    pub conquest_momentum_weight: f32,
+    /// Conquest momentum bled off each tick.
+    pub conquest_momentum_decay: f32,
     pub rupture_magic: f32,
     pub rupture_known: f32,
     pub divinewar_stake: f32,

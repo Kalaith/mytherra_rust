@@ -57,7 +57,9 @@
     "winner_prosperity": -6.0,
     "winner_chaos": 10.0,
     "winner_danger": 14.0,
-    "min_regions": 3
+    "min_regions": 3,
+    "momentum_gain": 20.0,
+    "momentum_cap": 60.0
   },
   "frontier": {
     "founder_min_level": 12,
@@ -234,6 +236,8 @@
     "collapse_struggling": 20.0,
     "conquest_danger": 0.3,
     "conquest_wartorn": 30.0,
+    "conquest_momentum_weight": 0.6,
+    "conquest_momentum_decay": 1.5,
     "rupture_magic": 0.35,
     "rupture_known": 20.0,
     "divinewar_stake": 0.05,

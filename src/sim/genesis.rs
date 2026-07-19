@@ -38,6 +38,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
         trade_routes,
         civilization,
         region_seq,
+        conquest_momentum,
         rng,
         chronicle,
         year,
@@ -63,6 +64,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
         heroes,
         trade_routes,
         civilization,
+        conquest_momentum,
         &data.balance.conquest,
         region_balance,
         chronicle,
@@ -257,6 +259,8 @@ mod tests {
             .chronicle
             .iter_newest()
             .any(|e| e.message.contains("absorbs it whole")));
+        // The conquest fed the world's momentum (drives Conquest-era pressure).
+        assert!(world.conquest_momentum > 0.0);
     }
 
     #[test]

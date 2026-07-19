@@ -72,6 +72,7 @@ pub(super) fn run(
     heroes: &mut [Hero],
     trade_routes: &mut Vec<TradeRoute>,
     civilization: &mut Vec<RegionAgendas>,
+    conquest_momentum: &mut f32,
     balance: &ConquestBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -144,6 +145,9 @@ pub(super) fn run(
 
     regions.retain(|r| r.id != loser_id);
     civilization.retain(|c| c.region_id != loser_id);
+
+    // Feed the world's conquest momentum, which drives Conquest-era pressure.
+    *conquest_momentum = (*conquest_momentum + balance.momentum_gain).min(balance.momentum_cap);
 
     chronicle.push(
         year,

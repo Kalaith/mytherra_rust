@@ -25,11 +25,15 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         player.favor,
         data.config.max_favor,
         pending_stake,
+        world.conquest_momentum,
         balance,
     );
     let (dominant, pressure) = scores.dominant();
     world.era.pressure = pressure;
     world.era.dominant_trigger = dominant;
+
+    // Conquests fade from living memory: bleed the momentum they left behind.
+    world.conquest_momentum = (world.conquest_momentum - balance.conquest_momentum_decay).max(0.0);
 
     let elapsed = world.year.saturating_sub(world.era.start_year);
     if elapsed >= balance.era_length || pressure >= balance.breaking_threshold {
@@ -187,6 +191,51 @@ mod tests {
         tick_era(&mut world, &mut player, &data);
         assert!(world.era.number > era_before);
         assert_eq!(world.era_history.len(), 1);
+    }
+
+    #[test]
+    fn conquest_momentum_raises_conquest_pressure_and_decays() {
+        use crate::world::compute_scores;
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.era;
+        let mut world = WorldState::new(&data);
+
+        // Same world, scored with and without recent conquests.
+        let quiet = compute_scores(
+            &world.regions,
+            &world.heroes,
+            &world.magic_paths,
+            100,
+            data.config.max_favor,
+            0,
+            0.0,
+            balance,
+        );
+        let warlike = compute_scores(
+            &world.regions,
+            &world.heroes,
+            &world.magic_paths,
+            100,
+            data.config.max_favor,
+            0,
+            50.0,
+            balance,
+        );
+        assert!(
+            warlike.conquest > quiet.conquest,
+            "recent conquests should raise Conquest pressure"
+        );
+        assert!(
+            (warlike.conquest - quiet.conquest - 50.0 * balance.conquest_momentum_weight).abs()
+                < 0.01,
+            "the momentum term should be exactly weight * momentum"
+        );
+
+        // And the momentum bleeds off over ticks.
+        world.conquest_momentum = 40.0;
+        let mut player = PlayerState::new(&data.config);
+        tick_era(&mut world, &mut player, &data);
+        assert!(world.conquest_momentum < 40.0);
     }
 
     #[test]
