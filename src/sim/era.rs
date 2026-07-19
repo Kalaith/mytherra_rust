@@ -46,6 +46,9 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
 
 fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData) {
     let balance = &data.balance.era;
+    // How the age ends shapes its transition: a violent trigger is deadlier to
+    // heroes and rouses a different number of heirs (GDD 5.7).
+    let aftermath = balance.aftermath.get(world.era.dominant_trigger);
 
     world.era_history.push(EraRecord {
         number: world.era.number,
@@ -64,7 +67,8 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         if !hero.is_alive {
             continue;
         }
-        let dies = hero.age >= balance.death_age || world.rng.chance(balance.death_chance);
+        let death_chance = (balance.death_chance * aftermath.death_mult).clamp(0.0, 1.0);
+        let dies = hero.age >= balance.death_age || world.rng.chance(death_chance);
         if dies {
             hero.is_alive = false;
         } else {
@@ -85,7 +89,8 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
     // Descendant heroes rise.
     let region_ids: Vec<String> = world.regions.iter().map(|r| r.id.clone()).collect();
     let span = (balance.descendant_max - balance.descendant_min + 1).max(1) as usize;
-    let count = balance.descendant_min + world.rng.below(span) as u32;
+    let rolled = balance.descendant_min + world.rng.below(span) as u32;
+    let count = ((rolled as f32 * aftermath.descendant_mult).round() as u32).max(1);
     for _ in 0..count {
         world.hero_seq += 1;
         let region_id = region_ids
@@ -132,7 +137,6 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
 
     // The land is renewed — plus the mark the ending age's trigger leaves, so a
     // Collapse rebuilds prosperity while a Cataclysm leaves the new world scarred.
-    let aftermath = balance.aftermath.get(world.era.dominant_trigger);
     for region in world.regions.iter_mut() {
         region.apply_deltas(
             balance.renewal_prosperity + aftermath.prosperity,
@@ -318,6 +322,31 @@ mod tests {
         assert!(
             a.get(EraTrigger::Cataclysm).danger > 0.0,
             "a Cataclysm should scar the new world"
+        );
+    }
+
+    #[test]
+    fn violent_ends_take_more_heroes_and_reshape_the_heirs() {
+        use crate::data::EraTrigger;
+        let a = GameData::load().unwrap().balance.era.aftermath;
+        // A Divine War is a deadlier passage than a Collapse.
+        assert!(
+            a.get(EraTrigger::DivineWar).death_mult > a.get(EraTrigger::Collapse).death_mult,
+            "a divine war should be deadlier than a collapse"
+        );
+        assert!(
+            a.get(EraTrigger::Cataclysm).death_mult > 1.0,
+            "a cataclysm should raise mortality above the baseline"
+        );
+        // A Collapse leaves a depleted world with fewer heirs; a Divine War rouses
+        // more heroes to meet the new age.
+        assert!(
+            a.get(EraTrigger::Collapse).descendant_mult < 1.0,
+            "a collapse should leave fewer heirs"
+        );
+        assert!(
+            a.get(EraTrigger::DivineWar).descendant_mult > 1.0,
+            "a divine war should rouse more heirs"
         );
     }
 }

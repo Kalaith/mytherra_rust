@@ -67,10 +67,19 @@ impl EraAftermath {
     }
 }
 
+/// The mark and toll an ending trigger leaves on the transition: stat deltas on
+/// the reborn land, plus how deadly the passage is to heroes and how many heirs
+/// rise to meet the new age (GDD 5.7). So a Divine War empties the roster while a
+/// peaceful-ish end preserves it, and a Collapse rebuilds prosperity but with
+/// fewer descendants.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AftermathDelta {
     pub prosperity: f32,
     pub chaos: f32,
     pub danger: f32,
     pub magic: f32,
+    /// Multiplier on the base hero-death chance during the transition.
+    pub death_mult: f32,
+    /// Multiplier on the number of descendant heroes that rise.
+    pub descendant_mult: f32,
 }
