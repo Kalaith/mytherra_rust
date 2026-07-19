@@ -431,12 +431,19 @@ fn genesis_outlook(ctx: &UiContext<'_>, region: &Region) -> Option<(String, Colo
         return Some((g.outlook_frontier.clone(), dark::POSITIVE));
     }
     if region.status.is_crisis() {
-        let min_level = ctx.data.balance.conquest.defender_min_level;
-        let defended = ctx
-            .world
-            .heroes
-            .iter()
-            .any(|h| h.is_alive && h.region_id == region.id && h.level >= min_level);
+        let conquest = &ctx.data.balance.conquest;
+        // A Protection ward turns back conquest outright — surface it first.
+        let warded = ctx.world.artifacts.iter().any(|a| {
+            a.focus == crate::data::ArtifactFocus::Protection
+                && a.region_id == region.id
+                && a.power >= conquest.shield_min_power
+        });
+        if warded {
+            return Some((g.outlook_warded.clone(), dark::ACCENT));
+        }
+        let defended = ctx.world.heroes.iter().any(|h| {
+            h.is_alive && h.region_id == region.id && h.level >= conquest.defender_min_level
+        });
         return Some(if defended {
             (g.outlook_defended.clone(), dark::ACCENT)
         } else {

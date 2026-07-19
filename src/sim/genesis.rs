@@ -243,6 +243,8 @@ mod tests {
                 hero.level = 1;
             }
         }
+        // Strip the seeded Protection ward so this tests conquest in isolation.
+        world.artifacts.retain(|a| a.region_id != loser_id);
 
         tick_genesis(&mut world, &data);
 
@@ -301,6 +303,52 @@ mod tests {
             start,
             "a defended region was conquered anyway"
         );
+        assert!(world.regions.iter().any(|r| r.id == loser_id));
+    }
+
+    #[test]
+    fn a_protection_ward_turns_back_conquest() {
+        use crate::data::{ArtifactFocus, ArtifactSeed};
+        use crate::world::Artifact;
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let start = world.regions.len();
+        let loser_id = world.regions[0].id.clone();
+
+        // The same dominant-power-vs-defenceless-crisis setup that otherwise
+        // conquers, but the loser is undefended by heroes.
+        let winner = &mut world.regions[1];
+        winner.prosperity = 90.0;
+        winner.population = 40000.0;
+        winner.chaos = 20.0;
+        winner.danger = 20.0;
+        winner.refresh_status(&data.balance.region);
+        let loser = &mut world.regions[0];
+        loser.prosperity = 8.0;
+        loser.chaos = 90.0;
+        loser.danger = 90.0;
+        loser.population = 3000.0;
+        loser.refresh_status(&data.balance.region);
+        for hero in &mut world.heroes {
+            if hero.region_id == loser_id {
+                hero.level = 1;
+            }
+        }
+
+        // A Protection ward of sufficient power stands over the doomed region.
+        world.artifacts.push(Artifact::from_seed(&ArtifactSeed {
+            id: "aegis".to_owned(),
+            name: "Aegis".to_owned(),
+            focus: ArtifactFocus::Protection,
+            power: data.balance.conquest.shield_min_power,
+            instability: 0.0,
+            region_id: loser_id.clone(),
+        }));
+
+        for _ in 0..5 {
+            tick_genesis(&mut world, &data);
+        }
+        assert_eq!(world.regions.len(), start, "a warded region was conquered");
         assert!(world.regions.iter().any(|r| r.id == loser_id));
     }
 

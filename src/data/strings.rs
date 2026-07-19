@@ -43,6 +43,7 @@ pub struct GenesisText {
     pub outlook_frontier: String,
     pub outlook_vulnerable: String,
     pub outlook_defended: String,
+    pub outlook_warded: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

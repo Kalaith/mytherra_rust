@@ -67,6 +67,10 @@ pub struct ConquestBalance {
     /// A living hero of at least this level shields its region from conquest —
     /// the same calibre of hero who would instead lead it to secede.
     pub defender_min_level: u32,
+    /// A Protection artifact of at least this power wards its region against
+    /// conquest entirely (GDD 5.6 ↔ 5.2) — the player's divine lever to save a
+    /// threatened region from being absorbed.
+    pub shield_min_power: u32,
     /// If true, conquest only follows an existing trade route between the pair.
     pub require_trade_link: bool,
     /// Fraction of the loser's population the winner absorbs (the rest is lost).

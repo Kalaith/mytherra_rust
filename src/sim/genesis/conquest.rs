@@ -4,7 +4,7 @@
 //! of a fracture — it removes a region rather than adding one.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, ConquestBalance, RegionBalance};
+use crate::data::{fill, ArtifactFocus, ConquestBalance, RegionBalance};
 use crate::world::{
     Artifact, Chronicle, EventKind, Hero, Landmark, Region, RegionAgendas, ResourceNode,
     Settlement, TradeRoute, WeatherEvent,
@@ -17,6 +17,16 @@ fn has_defender(heroes: &[Hero], region_id: &str, balance: &ConquestBalance) -> 
         .any(|h| h.is_alive && h.region_id == region_id && h.level >= balance.defender_min_level)
 }
 
+/// Is the region warded by a Protection artifact strong enough to turn back a
+/// conquest? The player's divine lever over the genesis map (GDD 5.6 ↔ 5.2).
+fn is_warded(artifacts: &[Artifact], region_id: &str, balance: &ConquestBalance) -> bool {
+    artifacts.iter().any(|a| {
+        a.focus == ArtifactFocus::Protection
+            && a.region_id == region_id
+            && a.power >= balance.shield_min_power
+    })
+}
+
 /// The strongest aggressor / weakest eligible target pairing, if any conquest is
 /// on. Deterministic: ranked by the might gap, ties broken toward earlier
 /// regions.
@@ -24,6 +34,7 @@ fn pick(
     regions: &[Region],
     heroes: &[Hero],
     trade_routes: &[TradeRoute],
+    artifacts: &[Artifact],
     balance: &ConquestBalance,
 ) -> Option<(usize, usize)> {
     if regions.len() <= balance.min_regions {
@@ -40,7 +51,10 @@ fn pick(
                 continue;
             }
             let gap = a_might - target.might(balance);
-            if gap < balance.conquest_margin || has_defender(heroes, &target.id, balance) {
+            if gap < balance.conquest_margin
+                || has_defender(heroes, &target.id, balance)
+                || is_warded(artifacts, &target.id, balance)
+            {
                 continue;
             }
             if balance.require_trade_link
@@ -79,7 +93,8 @@ pub(super) fn run(
     text: &ChronicleText,
     year: u32,
 ) {
-    let Some((winner_idx, loser_idx)) = pick(regions, heroes, trade_routes, balance) else {
+    let Some((winner_idx, loser_idx)) = pick(regions, heroes, trade_routes, artifacts, balance)
+    else {
         return;
     };
 

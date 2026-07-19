@@ -266,6 +266,7 @@
     "might_line": "Military might: {might}",
     "outlook_frontier": "Frontier-ready — settlers may strike out to found new lands.",
     "outlook_vulnerable": "Undefended in crisis — ripe for a stronger neighbour's conquest.",
-    "outlook_defended": "A champion holds the line against conquest."
+    "outlook_defended": "A champion holds the line against conquest.",
+    "outlook_warded": "A Protection ward turns back any conquest while it stands."
   }
 }

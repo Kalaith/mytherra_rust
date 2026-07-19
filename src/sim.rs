@@ -248,6 +248,8 @@ mod tests {
                 hero.level = 1;
             }
         }
+        // Strip the seeded Protection ward so this tests conquest in isolation.
+        world.artifacts.retain(|a| a.region_id != loser_id);
 
         tick_world(&mut world, &mut player, &data);
 
