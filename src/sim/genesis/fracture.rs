@@ -58,6 +58,7 @@ pub(super) fn run(
     heroes: &mut [Hero],
     civ: &mut Vec<RegionAgendas>,
     region_seq: &mut u64,
+    secession_momentum: &mut f32,
     agenda_count: usize,
     rng: &mut SeededRng,
     balance: &GenesisBalance,
@@ -125,6 +126,9 @@ pub(super) fn run(
     let child = Region::from_seed(&child_seed, region_balance);
     regions.push(child);
     civ.push(RegionAgendas::new(child_id, agenda_count));
+
+    // Feed the world's secession momentum, which drives Collapse-era pressure.
+    *secession_momentum = (*secession_momentum + balance.momentum_gain).min(balance.momentum_cap);
 
     chronicle.push(
         year,

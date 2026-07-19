@@ -26,14 +26,17 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         data.config.max_favor,
         pending_stake,
         world.conquest_momentum,
+        world.secession_momentum,
         balance,
     );
     let (dominant, pressure) = scores.dominant();
     world.era.pressure = pressure;
     world.era.dominant_trigger = dominant;
 
-    // Conquests fade from living memory: bleed the momentum they left behind.
+    // Upheavals fade from living memory: bleed the momentum they left behind.
     world.conquest_momentum = (world.conquest_momentum - balance.conquest_momentum_decay).max(0.0);
+    world.secession_momentum =
+        (world.secession_momentum - balance.collapse_momentum_decay).max(0.0);
 
     let elapsed = world.year.saturating_sub(world.era.start_year);
     if elapsed >= balance.era_length || pressure >= balance.breaking_threshold {
@@ -209,6 +212,7 @@ mod tests {
             data.config.max_favor,
             0,
             0.0,
+            0.0,
             balance,
         );
         let warlike = compute_scores(
@@ -219,6 +223,7 @@ mod tests {
             data.config.max_favor,
             0,
             50.0,
+            0.0,
             balance,
         );
         assert!(
@@ -236,6 +241,49 @@ mod tests {
         let mut player = PlayerState::new(&data.config);
         tick_era(&mut world, &mut player, &data);
         assert!(world.conquest_momentum < 40.0);
+    }
+
+    #[test]
+    fn secession_momentum_raises_collapse_pressure_and_decays() {
+        use crate::world::compute_scores;
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.era;
+        let mut world = WorldState::new(&data);
+
+        let stable = compute_scores(
+            &world.regions,
+            &world.heroes,
+            &world.magic_paths,
+            100,
+            data.config.max_favor,
+            0,
+            0.0,
+            0.0,
+            balance,
+        );
+        let fracturing = compute_scores(
+            &world.regions,
+            &world.heroes,
+            &world.magic_paths,
+            100,
+            data.config.max_favor,
+            0,
+            0.0,
+            50.0,
+            balance,
+        );
+        assert!(
+            fracturing.collapse > stable.collapse,
+            "regions fracturing from within should raise Collapse pressure"
+        );
+        // Secession momentum feeds Collapse, not Conquest — the two ties stay
+        // distinct.
+        assert!((fracturing.conquest - stable.conquest).abs() < f32::EPSILON);
+
+        world.secession_momentum = 40.0;
+        let mut player = PlayerState::new(&data.config);
+        tick_era(&mut world, &mut player, &data);
+        assert!(world.secession_momentum < 40.0);
     }
 
     #[test]

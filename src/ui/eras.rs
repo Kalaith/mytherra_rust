@@ -100,6 +100,7 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
         ctx.data.config.max_favor,
         pending_stake,
         ctx.world.conquest_momentum,
+        ctx.world.secession_momentum,
         balance,
     );
     let dominant = scores.dominant().0;

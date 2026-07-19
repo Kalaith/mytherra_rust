@@ -83,6 +83,10 @@ pub struct GenesisBalance {
     pub parent_chaos_relief: f32,
     pub parent_danger_relief: f32,
     pub parent_prosperity_hit: f32,
+    /// Secession momentum each fracture adds to the world (feeds Collapse-era
+    /// pressure, GDD 5.7), and the ceiling that momentum can reach.
+    pub momentum_gain: f32,
+    pub momentum_cap: f32,
 }
 
 /// Region-conquest tuning (GDD 5.2): a strong region can annex a trade-linked
@@ -510,6 +514,11 @@ pub struct EraBalance {
     pub cataclysm_crisis: f32,
     pub collapse_prosperity: f32,
     pub collapse_struggling: f32,
+    /// Weight on the world's decaying secession-momentum tally, so regions
+    /// fracturing from within (not just low prosperity) drive Collapse pressure.
+    pub collapse_momentum_weight: f32,
+    /// Secession momentum bled off each tick.
+    pub collapse_momentum_decay: f32,
     pub conquest_danger: f32,
     pub conquest_wartorn: f32,
     /// Weight on the world's decaying conquest-momentum tally, so actual region

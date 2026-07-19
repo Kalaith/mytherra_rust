@@ -72,6 +72,7 @@ pub fn compute_scores(
     max_favor: i64,
     pending_stake: i64,
     conquest_momentum: f32,
+    secession_momentum: f32,
     balance: &EraBalance,
 ) -> EraScores {
     let n = regions.len().max(1) as f32;
@@ -116,7 +117,8 @@ pub fn compute_scores(
             + avg_chaos * balance.cataclysm_chaos
             + crisis * balance.cataclysm_crisis,
         collapse: (100.0 - avg_prosperity) * balance.collapse_prosperity
-            + struggling * balance.collapse_struggling,
+            + struggling * balance.collapse_struggling
+            + secession_momentum * balance.collapse_momentum_weight,
         conquest: avg_danger * balance.conquest_danger
             + wartorn * balance.conquest_wartorn
             + conquest_momentum * balance.conquest_momentum_weight,

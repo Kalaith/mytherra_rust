@@ -39,6 +39,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
         civilization,
         region_seq,
         conquest_momentum,
+        secession_momentum,
         rng,
         chronicle,
         year,
@@ -93,6 +94,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
         heroes,
         civilization,
         region_seq,
+        secession_momentum,
         agenda_count,
         rng,
         &data.balance.genesis,
@@ -156,6 +158,8 @@ mod tests {
         assert!(world.regions.len() > start);
         assert!(world.civilization.iter().any(|c| c.region_id == child_id));
         assert!(world.heroes.iter().any(|h| h.region_id == child_id));
+        // The secession fed the world's momentum (drives Collapse-era pressure).
+        assert!(world.secession_momentum > 0.0);
     }
 
     #[test]

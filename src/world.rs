@@ -77,6 +77,12 @@ pub struct WorldState {
     /// the conquests themselves, not just ambient danger.
     #[serde(default)]
     pub conquest_momentum: f32,
+    /// Decaying tally of recent region fractures (GDD 5.2 ↔ 5.7): each secession
+    /// bumps it and it bleeds off over time, feeding the era system's Collapse
+    /// pressure so a world coming apart from within builds toward a Collapse age,
+    /// distinct from one devoured by conquest.
+    #[serde(default)]
+    pub secession_momentum: f32,
     pub settlements: Vec<Settlement>,
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
@@ -155,6 +161,7 @@ impl WorldState {
             regions,
             region_seq: 0,
             conquest_momentum: 0.0,
+            secession_momentum: 0.0,
             settlements,
             resource_nodes,
             landmarks,

@@ -42,7 +42,9 @@
     "child_cultural_influence": 35.0,
     "parent_chaos_relief": 18.0,
     "parent_danger_relief": 12.0,
-    "parent_prosperity_hit": 8.0
+    "parent_prosperity_hit": 8.0,
+    "momentum_gain": 18.0,
+    "momentum_cap": 55.0
   },
   "conquest": {
     "might_prosperity": 0.5,
@@ -234,6 +236,8 @@
     "cataclysm_crisis": 25.0,
     "collapse_prosperity": 0.38,
     "collapse_struggling": 20.0,
+    "collapse_momentum_weight": 0.6,
+    "collapse_momentum_decay": 1.5,
     "conquest_danger": 0.3,
     "conquest_wartorn": 30.0,
     "conquest_momentum_weight": 0.6,
