@@ -7,6 +7,7 @@
 use crate::data::artifact::ArtifactFocus;
 use crate::data::champion::ChampionFocus;
 use crate::data::era::EraTrigger;
+use crate::data::hero::HeroRole;
 use crate::data::resource::ResourceStatus;
 use serde::{Deserialize, Serialize};
 
@@ -216,6 +217,52 @@ pub struct HeroBalance {
     pub level_up: LevelUpCurve,
     pub death: DeathParams,
     pub move_chance: f32,
+    pub migration: MigrationBalance,
+}
+
+/// Hero migration tuning (GDD 5.4): where a hero that decides to move goes is no
+/// longer uniform-random — each role is drawn to different region stats, so
+/// warriors flow toward conflict, mages toward magic, scholars toward settled
+/// culture, and rangers toward wilder lands. This ties heroes into the region
+/// and genesis systems: heroes abandoning a war-torn region leave it undefended
+/// (more conquerable), while thriving regions gather the veterans who found
+/// frontiers.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MigrationBalance {
+    /// Baseline pull every region has before stat weighting.
+    pub base_weight: f32,
+    /// Floor on a region's computed pull, so it is never zero or negative.
+    pub min_weight: f32,
+    pub roles: RoleMigrationWeights,
+}
+
+/// Per-role stat weighting for migration attractiveness.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoleMigrationWeights {
+    pub warrior: StatWeights,
+    pub mage: StatWeights,
+    pub scholar: StatWeights,
+    pub ranger: StatWeights,
+}
+
+impl RoleMigrationWeights {
+    pub fn get(&self, role: HeroRole) -> &StatWeights {
+        match role {
+            HeroRole::Warrior => &self.warrior,
+            HeroRole::Mage => &self.mage,
+            HeroRole::Scholar => &self.scholar,
+            HeroRole::Ranger => &self.ranger,
+        }
+    }
+}
+
+/// How strongly each region stat draws (positive) or repels (negative) a hero.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatWeights {
+    pub prosperity: f32,
+    pub danger: f32,
+    pub magic: f32,
+    pub culture: f32,
 }
 
 /// Per-tick level-up probability curve: `base * tier_mult * decay^(level-1)`.

@@ -90,7 +90,17 @@
       "level_divisor": 3000.0,
       "min_chance": 0.005
     },
-    "move_chance": 0.12
+    "move_chance": 0.12,
+    "migration": {
+      "base_weight": 20.0,
+      "min_weight": 0.5,
+      "roles": {
+        "warrior": { "prosperity": 0.2, "danger": 0.8, "magic": 0.0, "culture": 0.1 },
+        "mage": { "prosperity": 0.3, "danger": -0.3, "magic": 0.9, "culture": 0.2 },
+        "scholar": { "prosperity": 0.5, "danger": -0.5, "magic": 0.2, "culture": 0.7 },
+        "ranger": { "prosperity": 0.2, "danger": 0.4, "magic": 0.1, "culture": -0.2 }
+      }
+    }
   },
   "champion": {
     "max_roster": 3,

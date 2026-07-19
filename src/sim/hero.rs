@@ -3,7 +3,7 @@
 //! sim stays deterministic and auditable.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, HeroBalance};
+use crate::data::{fill, HeroBalance, HeroRole, MigrationBalance};
 use crate::world::{Chronicle, EventKind, Hero, Region};
 use macroquad_toolkit::rng::SeededRng;
 
@@ -57,7 +57,9 @@ pub fn tick_heroes(
         }
 
         if rng.chance(balance.move_chance) {
-            if let Some(dest) = pick_other_region(regions, &hero.region_id, rng) {
+            if let Some(dest) =
+                pick_destination(regions, &hero.region_id, hero.role, rng, &balance.migration)
+            {
                 hero.region_id = dest;
             }
         }
@@ -98,25 +100,168 @@ fn region_name(regions: &[Region], region_id: &str) -> String {
         .unwrap_or_else(|| region_id.to_owned())
 }
 
-/// Pick a random region id other than the hero's current one.
-fn pick_other_region(regions: &[Region], current: &str, rng: &mut SeededRng) -> Option<String> {
-    let candidates: Vec<&str> = regions
+/// How strongly a region draws a hero of the given role (GDD 5.4). Each role
+/// weights the region's stats differently, floored so the pull is always
+/// positive. This is what makes warriors flow toward danger and scholars toward
+/// settled, cultured lands.
+fn attractiveness(region: &Region, role: HeroRole, mig: &MigrationBalance) -> f32 {
+    let w = mig.roles.get(role);
+    (mig.base_weight
+        + w.prosperity * region.prosperity
+        + w.danger * region.danger
+        + w.magic * region.magic_affinity
+        + w.culture * region.cultural_influence)
+        .max(mig.min_weight)
+}
+
+/// Pick a destination region other than the hero's current one, weighted by how
+/// attractive each is to the hero's role. Deterministic given the RNG state: a
+/// single roll walks the cumulative weight.
+fn pick_destination(
+    regions: &[Region],
+    current: &str,
+    role: HeroRole,
+    rng: &mut SeededRng,
+    mig: &MigrationBalance,
+) -> Option<String> {
+    let candidates: Vec<(&str, f32)> = regions
         .iter()
-        .map(|r| r.id.as_str())
-        .filter(|id| *id != current)
+        .filter(|r| r.id != current)
+        .map(|r| (r.id.as_str(), attractiveness(r, role, mig)))
         .collect();
     if candidates.is_empty() {
-        None
-    } else {
-        Some(candidates[rng.below(candidates.len())].to_owned())
+        return None;
     }
+    let total: f32 = candidates.iter().map(|(_, w)| *w).sum();
+    let mut roll = rng.next_f32() * total;
+    for (id, weight) in &candidates {
+        roll -= *weight;
+        if roll <= 0.0 {
+            return Some((*id).to_owned());
+        }
+    }
+    // Floating-point fallthrough: take the last candidate.
+    Some(candidates[candidates.len() - 1].0.to_owned())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::GameData;
+    use crate::data::{ClimateType, Culture, GameData, HeroSeed, RegionSeed};
     use crate::world::WorldState;
+
+    fn region(id: &str, prosperity: f32, danger: f32, magic: f32, culture: f32) -> Region {
+        let balance = GameData::load().unwrap().balance.region;
+        Region::from_seed(
+            &RegionSeed {
+                id: id.to_owned(),
+                name: id.to_owned(),
+                climate: ClimateType::Temperate,
+                culture: Culture::Martial,
+                prosperity,
+                chaos: 30.0,
+                danger,
+                magic_affinity: magic,
+                population: 5000.0,
+                cultural_influence: culture,
+                divine_resonance: 50.0,
+            },
+            &balance,
+        )
+    }
+
+    fn hero(id: &str, role: HeroRole, region_id: &str) -> Hero {
+        Hero::from_seed(&HeroSeed {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            role,
+            region_id: region_id.to_owned(),
+            level: 5,
+            age: 30,
+        })
+    }
+
+    #[test]
+    fn migration_weights_pull_each_role_differently() {
+        let data = GameData::load().unwrap();
+        let mig = &data.balance.hero.migration;
+        let dangerous = region("war", 25.0, 90.0, 20.0, 20.0);
+        let settled = region("haven", 90.0, 10.0, 30.0, 85.0);
+
+        // A warrior is drawn to conflict; a scholar toward settled, cultured land.
+        assert!(
+            attractiveness(&dangerous, HeroRole::Warrior, mig)
+                > attractiveness(&settled, HeroRole::Warrior, mig)
+        );
+        assert!(
+            attractiveness(&settled, HeroRole::Scholar, mig)
+                > attractiveness(&dangerous, HeroRole::Scholar, mig)
+        );
+        // A mage follows magic.
+        let arcane = region("spire", 50.0, 30.0, 95.0, 40.0);
+        assert!(
+            attractiveness(&arcane, HeroRole::Mage, mig)
+                > attractiveness(&settled, HeroRole::Mage, mig)
+        );
+    }
+
+    #[test]
+    fn warriors_gather_where_scholars_flee() {
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.hero.clone();
+        // Sample steady-state migration, not the death/aging system: let heroes
+        // move often and live indefinitely so the distribution is what's tested.
+        balance.move_chance = 0.5;
+        balance.death.min_chance = 0.0;
+        balance.death.elder_roll = 0.0;
+        balance.death.danger_divisor = 1.0e9; // war would otherwise thin the warriors
+        balance.life_expectancy_base = 1.0e6;
+        let mut world = WorldState::new(&data);
+        // Three regions so the weighted choice actually has alternatives.
+        world.regions = vec![
+            region("war", 30.0, 70.0, 20.0, 20.0),
+            region("haven", 85.0, 10.0, 30.0, 85.0),
+            region("wild", 45.0, 45.0, 40.0, 30.0),
+        ];
+        // Everyone starts in the neutral middle; roles should sort themselves out.
+        world.heroes = (0..12)
+            .map(|i| {
+                let role = if i % 2 == 0 {
+                    HeroRole::Warrior
+                } else {
+                    HeroRole::Scholar
+                };
+                hero(&format!("h{i}"), role, "wild")
+            })
+            .collect();
+
+        for _ in 0..150 {
+            tick_heroes(
+                &mut world.heroes,
+                &world.regions,
+                &mut world.rng,
+                &balance,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        }
+
+        let warriors_in_war = world
+            .heroes
+            .iter()
+            .filter(|h| h.is_alive && h.role == HeroRole::Warrior && h.region_id == "war")
+            .count();
+        let scholars_in_war = world
+            .heroes
+            .iter()
+            .filter(|h| h.is_alive && h.role == HeroRole::Scholar && h.region_id == "war")
+            .count();
+        assert!(
+            warriors_in_war > scholars_in_war,
+            "warriors ({warriors_in_war}) should out-gather scholars ({scholars_in_war}) in the war region"
+        );
+    }
 
     #[test]
     fn heroes_age_each_tick() {
