@@ -239,7 +239,8 @@
     "culture_shift": "{region} takes on a {culture} character.",
     "settlement_built": "{settlement} raises a {building}.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
-    "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole."
+    "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
+    "region_founded": "{founder} leads settlers out of {parent} to found the frontier of {frontier}."
   },
   "genesis": {
     "breakaway_names": [
@@ -249,6 +250,14 @@
       "the {parent} Remnant",
       "Old {parent}",
       "the {parent} Reach"
+    ],
+    "frontier_names": [
+      "{parent} Colony",
+      "New {parent}",
+      "{hero}'s Landing",
+      "the {parent} Frontier",
+      "Far {parent}",
+      "{hero}'s Reach"
     ],
     "strife_line": "Secession pressure: {stage} ({pct}%)",
     "strife_simmering": "simmering",

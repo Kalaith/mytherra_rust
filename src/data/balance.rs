@@ -15,6 +15,7 @@ pub struct Balance {
     pub region: RegionBalance,
     pub genesis: GenesisBalance,
     pub conquest: ConquestBalance,
+    pub frontier: FrontierBalance,
     pub hero: HeroBalance,
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
@@ -112,6 +113,33 @@ pub struct ConquestBalance {
     pub winner_danger: f32,
     /// The world will never be conquered below this many regions.
     pub min_regions: usize,
+}
+
+/// Frontier-founding tuning (GDD 5.2): the third genesis path and the mirror of
+/// a fracture — born of prosperity, not strife. A veteran hero in a *thriving*,
+/// populous region can lead settlers out to found a new frontier region. See
+/// `sim/genesis/frontier.rs`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FrontierBalance {
+    /// A hero needs at least this level to lead a founding expedition.
+    pub founder_min_level: u32,
+    /// The home region must hold at least this population to spare settlers.
+    pub parent_min_population: f32,
+    /// Per-eligible-hero, per-tick chance of founding — kept low so expansion is
+    /// occasional rather than explosive.
+    pub found_chance: f32,
+    /// Fraction of the home region's population that leaves to settle.
+    pub settler_fraction: f32,
+    /// The world will never grow past this many regions by founding.
+    pub max_regions: usize,
+    /// A new frontier's starting stats — a hopeful but raw and wild colony.
+    pub child_prosperity: f32,
+    pub child_chaos: f32,
+    pub child_danger: f32,
+    /// Fraction of the home region's magic affinity the frontier inherits.
+    pub child_magic_carry: f32,
+    pub child_resonance: f32,
+    pub child_cultural_influence: f32,
 }
 
 /// Dynamic culture-scoring tuning (GDD 5.2).

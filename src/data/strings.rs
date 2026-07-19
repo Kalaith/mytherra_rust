@@ -29,6 +29,8 @@ pub struct Strings {
 pub struct GenesisText {
     /// Name templates for a breakaway region; `{parent}` is the origin's name.
     pub breakaway_names: Vec<String>,
+    /// Name templates for a founded frontier; `{parent}` and `{hero}` fill in.
+    pub frontier_names: Vec<String>,
     /// Region-detail line shown while secession pressure is brewing.
     pub strife_line: String,
     /// Word shown after `strife_line` describing how close a fracture is.
@@ -299,6 +301,7 @@ pub struct ChronicleText {
     pub settlement_built: String,
     pub region_fracture: String,
     pub region_conquest: String,
+    pub region_founded: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

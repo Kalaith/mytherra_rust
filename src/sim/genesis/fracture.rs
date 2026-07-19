@@ -1,0 +1,150 @@
+//! Fracture (GDD 5.2): a region ground down by sustained chaos and danger
+//! accrues secession pressure ("strife"); once it boils over and a capable hero
+//! is present to lead the revolt, part of it breaks away as a wholly new region,
+//! carrying off population, a share of the towns, and its founder.
+
+use crate::data::strings::{ChronicleText, GenesisText};
+use crate::data::{fill, Culture, GenesisBalance, RegionBalance, RegionSeed};
+use crate::world::{Chronicle, EventKind, Hero, Region, RegionAgendas, Settlement};
+use macroquad_toolkit::rng::SeededRng;
+
+/// Build or bleed a region's secession pressure for this tick (deterministic).
+/// A calm region sheds strife faster than a turbulent one builds it, so only a
+/// *sustained* crisis fractures.
+pub(super) fn accrue_strife(region: &mut Region, balance: &GenesisBalance) {
+    let pressure = region.pressure();
+    if pressure > balance.strife_pressure_threshold {
+        let over = pressure - balance.strife_pressure_threshold;
+        region.strife = (region.strife + balance.strife_gain + over * balance.strife_over_scale)
+            .min(balance.strife_cap);
+    } else {
+        region.strife = (region.strife - balance.strife_decay).max(0.0);
+    }
+}
+
+/// The eligible region with the most strife, if any has boiled over. Ties break
+/// toward the earliest region, keeping selection deterministic.
+fn pick(regions: &[Region], balance: &GenesisBalance) -> Option<usize> {
+    regions
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| {
+            r.strife >= balance.fracture_threshold && r.population >= balance.min_population
+        })
+        .max_by(|(_, a), (_, b)| a.strife.total_cmp(&b.strife))
+        .map(|(idx, _)| idx)
+}
+
+/// The strongest living hero in the region who can lead a breakaway. Ties break
+/// toward the earliest hero, keeping selection deterministic.
+fn pick_founder(heroes: &[Hero], region_id: &str, balance: &GenesisBalance) -> Option<usize> {
+    heroes
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| {
+            h.is_alive && h.region_id == region_id && h.level >= balance.founder_min_level
+        })
+        .max_by_key(|(_, h)| h.level)
+        .map(|(idx, _)| idx)
+}
+
+/// Split a region in two if one has boiled over and found a leader: spawn the
+/// breakaway, vent the parent's pressure, move the founder and any defecting
+/// towns, and chronicle the schism. At most one fracture per tick.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn run(
+    regions: &mut Vec<Region>,
+    settlements: &mut [Settlement],
+    heroes: &mut [Hero],
+    civ: &mut Vec<RegionAgendas>,
+    region_seq: &mut u64,
+    agenda_count: usize,
+    rng: &mut SeededRng,
+    balance: &GenesisBalance,
+    region_balance: &RegionBalance,
+    chronicle: &mut Chronicle,
+    genesis_text: &GenesisText,
+    chronicle_text: &ChronicleText,
+    year: u32,
+) {
+    let Some(parent_idx) = pick(regions, balance) else {
+        return;
+    };
+    let Some(founder_idx) = pick_founder(heroes, &regions[parent_idx].id, balance) else {
+        // Turmoil without a leader: pressure keeps building, no region is born.
+        return;
+    };
+
+    *region_seq += 1;
+    let seq = *region_seq;
+
+    let parent = &mut regions[parent_idx];
+    let parent_id = parent.id.clone();
+    let parent_name = parent.name.clone();
+
+    let child_id = format!("{parent_id}-rift-{seq}");
+    let child_name = breakaway_name(&parent_name, genesis_text, rng);
+    let child_population = parent.population * balance.population_split;
+    let child_seed = RegionSeed {
+        id: child_id.clone(),
+        name: child_name.clone(),
+        climate: parent.climate,
+        // Born of revolt: a breakaway takes on a martial character.
+        culture: Culture::Martial,
+        prosperity: balance.child_prosperity,
+        chaos: balance.child_chaos,
+        danger: parent.danger * balance.child_danger_carry,
+        magic_affinity: parent.magic_affinity,
+        population: child_population,
+        cultural_influence: balance.child_cultural_influence,
+        divine_resonance: balance.child_resonance,
+    };
+
+    // Vent the parent: it loses the seceding population and the pressure eases.
+    parent.population = (parent.population - child_population).max(0.0);
+    parent.strife = 0.0;
+    parent.apply_deltas(
+        -balance.parent_prosperity_hit,
+        -balance.parent_chaos_relief,
+        -balance.parent_danger_relief,
+        0.0,
+        region_balance,
+    );
+
+    // The catalyst leads the revolt into its new home.
+    let founder_name = heroes[founder_idx].name.clone();
+    heroes[founder_idx].region_id = child_id.clone();
+
+    // A share of the parent's towns throw in with the breakaway.
+    for town in settlements.iter_mut() {
+        if town.region_id == parent_id && rng.chance(balance.settlement_defect_chance) {
+            town.region_id = child_id.clone();
+        }
+    }
+
+    let child = Region::from_seed(&child_seed, region_balance);
+    regions.push(child);
+    civ.push(RegionAgendas::new(child_id, agenda_count));
+
+    chronicle.push(
+        year,
+        EventKind::Region,
+        fill(
+            &chronicle_text.region_fracture,
+            &[
+                ("parent", parent_name),
+                ("child", child_name),
+                ("founder", founder_name),
+            ],
+        ),
+    );
+}
+
+/// Choose a breakaway's name from the data-driven templates.
+fn breakaway_name(parent: &str, text: &GenesisText, rng: &mut SeededRng) -> String {
+    let template = rng
+        .choose(&text.breakaway_names)
+        .cloned()
+        .unwrap_or_else(|| "Free {parent}".to_owned());
+    fill(&template, &[("parent", parent.to_owned())])
+}

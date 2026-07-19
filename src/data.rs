@@ -29,8 +29,8 @@ pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
     ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance,
-    ConquestBalance, CultureBalance, EraBalance, GenesisBalance, HeroBalance, MagicBalance,
-    PantheonBalance, PlayerBalance, RegionBalance, ResourceBalance, ResourceOutputs,
+    ConquestBalance, CultureBalance, EraBalance, FrontierBalance, GenesisBalance, HeroBalance,
+    MagicBalance, PantheonBalance, PlayerBalance, RegionBalance, ResourceBalance, ResourceOutputs,
     SettlementBalance, TradeBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};

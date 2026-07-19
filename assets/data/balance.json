@@ -59,6 +59,19 @@
     "winner_danger": 14.0,
     "min_regions": 3
   },
+  "frontier": {
+    "founder_min_level": 12,
+    "parent_min_population": 8000.0,
+    "found_chance": 0.015,
+    "settler_fraction": 0.15,
+    "max_regions": 8,
+    "child_prosperity": 55.0,
+    "child_chaos": 20.0,
+    "child_danger": 32.0,
+    "child_magic_carry": 0.6,
+    "child_resonance": 45.0,
+    "child_cultural_influence": 40.0
+  },
   "hero": {
     "life_expectancy_base": 70.0,
     "life_expectancy_per_level": 2.0,
