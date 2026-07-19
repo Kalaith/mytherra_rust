@@ -76,6 +76,28 @@ fn draw_deity(ctx: &UiContext<'_>, deity: &PantheonDeity, rect: Rect, actions: &
         )),
     );
 
+    // What this deity does to the world when roused, coloured boon or bane — the
+    // player's cue for whom to appease (a rising bane) or leave to stir (a boon)
+    // (GDD 5.6).
+    let boon = (deity.effect_amount > 0.0) == deity.effect_stat.rising_is_good();
+    let verb = if deity.effect_amount >= 0.0 {
+        &strings.verb_raises
+    } else {
+        &strings.verb_lowers
+    };
+    draw_ui_text_ex(
+        &fill(
+            &strings.deity_effect,
+            &[
+                ("verb", verb.clone()),
+                ("stat", deity.effect_stat.label().to_owned()),
+            ],
+        ),
+        rect.x + 16.0,
+        rect.y + 98.0,
+        TextStyle::new(13.0, if boon { dark::POSITIVE } else { dark::NEGATIVE }).params(),
+    );
+
     // Appease / Challenge, or a resting note while on cooldown.
     let btn_y = rect.bottom() - 42.0;
     let half = (rect.w - 32.0 - 10.0) / 2.0;
