@@ -37,6 +37,10 @@ pub struct EraBalance {
     pub hero_level_scale: f32,
     pub descendant_min: u32,
     pub descendant_max: u32,
+    /// Chance a descendant hero takes a role matching its region's dominant
+    /// culture (a martial land breeds warriors); otherwise the role is free
+    /// (GDD 5.7 <-> 5.2). Keeps regional character reinforcing across ages.
+    pub cultural_heir_chance: f32,
     pub renewal_chaos: f32,
     pub renewal_danger: f32,
     pub renewal_prosperity: f32,

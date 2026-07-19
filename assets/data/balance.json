@@ -406,7 +406,8 @@
         "death_mult": 1.8,
         "descendant_mult": 1.3
       }
-    }
+    },
+    "cultural_heir_chance": 0.55
   },
   "settlement": {
     "base_growth": 0.02,

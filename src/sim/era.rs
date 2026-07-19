@@ -4,7 +4,8 @@
 //! killing heroes, spawning descendants, expiring boundary-spanning bets, and
 //! renewing the land. Randomness flows through the world RNG.
 
-use crate::data::{fill, GameData, HeroRole};
+use crate::data::{fill, Culture, GameData, HeroRole};
+use crate::sim::culture::culture_role;
 use crate::world::{
     compute_scores, generate_era_name, EraRecord, EventKind, Hero, PlayerState, WorldState,
 };
@@ -80,16 +81,21 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         .retain(|c| world.heroes.iter().any(|h| h.id == c.hero_id && h.is_alive));
 
     // Descendant heroes rise.
-    let region_ids: Vec<String> = world.regions.iter().map(|r| r.id.clone()).collect();
+    // Region id + culture, so an heir's role can echo the land that bore them.
+    let regions_info: Vec<(String, Culture)> = world
+        .regions
+        .iter()
+        .map(|r| (r.id.clone(), r.culture))
+        .collect();
     let span = (balance.descendant_max - balance.descendant_min + 1).max(1) as usize;
     let rolled = balance.descendant_min + world.rng.below(span) as u32;
     let count = ((rolled as f32 * aftermath.descendant_mult).round() as u32).max(1);
     for _ in 0..count {
         world.hero_seq += 1;
-        let region_id = region_ids
-            .get(world.rng.below(region_ids.len().max(1)))
+        let (region_id, culture) = regions_info
+            .get(world.rng.below(regions_info.len().max(1)))
             .cloned()
-            .unwrap_or_default();
+            .unwrap_or((String::new(), Culture::Pastoral));
         let prefix = world
             .rng
             .choose(&data.era_names.prefixes)
@@ -100,7 +106,12 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             .choose(&data.era_names.descendant_titles)
             .cloned()
             .unwrap_or_default();
-        let role = HeroRole::ALL[world.rng.below(HeroRole::ALL.len())];
+        // A land breeds heirs in its own image more often than not.
+        let role = if world.rng.chance(balance.cultural_heir_chance) {
+            culture_role(culture)
+        } else {
+            HeroRole::ALL[world.rng.below(HeroRole::ALL.len())]
+        };
         world.heroes.push(Hero {
             id: format!("descendant-{}", world.hero_seq),
             name: format!("{prefix} {title}"),

@@ -95,6 +95,19 @@ fn hero_culture(role: HeroRole) -> Culture {
     }
 }
 
+/// The archetypal hero role a culture breeds — the inverse of [`hero_culture`],
+/// used when a region's dominant culture shapes the heirs born in a new age
+/// (GDD 5.7 <-> 5.2). Mystical breeds mages; clerics arise by the free roll.
+pub(crate) fn culture_role(culture: Culture) -> HeroRole {
+    match culture {
+        Culture::Martial => HeroRole::Warrior,
+        Culture::Mystical => HeroRole::Mage,
+        Culture::Scholarly => HeroRole::Scholar,
+        Culture::Pastoral => HeroRole::Ranger,
+        Culture::Mercantile => HeroRole::Merchant,
+    }
+}
+
 fn resource_culture(kind: ResourceType) -> Culture {
     match kind {
         ResourceType::Farmland | ResourceType::Forest => Culture::Pastoral,
@@ -108,6 +121,17 @@ mod tests {
     use super::*;
     use crate::data::GameData;
     use crate::world::WorldState;
+
+    #[test]
+    fn culture_role_yields_a_role_of_that_culture() {
+        // Each culture's archetypal role maps back to that same culture, so heirs
+        // born to a land's culture reinforce it.
+        for culture in Culture::ALL {
+            assert_eq!(hero_culture(culture_role(culture)), culture);
+        }
+        assert_eq!(culture_role(Culture::Martial), HeroRole::Warrior);
+        assert_eq!(culture_role(Culture::Mercantile), HeroRole::Merchant);
+    }
 
     #[test]
     fn every_role_maps_to_a_culture_and_merchants_are_mercantile() {
