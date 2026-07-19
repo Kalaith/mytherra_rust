@@ -36,7 +36,7 @@ pub use balance::{
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use building::{BuildingSeed, BuildingType};
 pub use champion::ChampionFocus;
-pub use civilization::{Agenda, CivStat};
+pub use civilization::{Agenda, CivStat, SpilloverTarget};
 pub use config::GameConfig;
 pub use era::{EraNameBank, EraTrigger};
 pub use hero::{HeroRole, HeroSeed};
