@@ -4,13 +4,16 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, ArtifactBalance, ArtifactFocus, RegionBalance};
-use crate::world::{Artifact, Chronicle, EventKind, Region};
+use crate::world::{Artifact, Chronicle, ConsequenceEffect, DelayedConsequence, EventKind, Region};
 
-/// Advance every artifact by one tick, resolving any backlashes.
+/// Advance every artifact by one tick, resolving any backlashes. A backlash
+/// scars its region at once and schedules a two-step aftermath chain onto
+/// `pending` (GDD 5.6).
 #[allow(clippy::too_many_arguments)]
 pub fn tick_artifacts(
     artifacts: &mut Vec<Artifact>,
     regions: &mut [Region],
+    pending: &mut Vec<DelayedConsequence>,
     balance: &ArtifactBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -24,9 +27,10 @@ pub fn tick_artifacts(
         artifact.instability += artifact.instability_growth(balance);
 
         if artifact.instability >= balance.backlash_threshold {
+            let region_id = artifact.region_id.clone();
             let region_name = regions
                 .iter_mut()
-                .find(|r| r.id == artifact.region_id)
+                .find(|r| r.id == region_id)
                 .map(|r| {
                     r.apply_deltas(
                         0.0,
@@ -37,7 +41,8 @@ pub fn tick_artifacts(
                     );
                     r.name.clone()
                 })
-                .unwrap_or_else(|| artifact.region_id.clone());
+                .unwrap_or_else(|| region_id.clone());
+            schedule_aftermath(pending, &region_id, &artifact.name, balance);
             backlashed.push((artifact.name.clone(), region_name));
         }
     }
@@ -76,6 +81,31 @@ fn apply_focus(
     region.apply_deltas(prosperity, chaos, danger, magic, region_balance);
 }
 
+/// Queue the delayed steps that follow a shattering: a blighted settlement,
+/// then a later pulse of regional unrest.
+fn schedule_aftermath(
+    pending: &mut Vec<DelayedConsequence>,
+    region_id: &str,
+    source: &str,
+    balance: &ArtifactBalance,
+) {
+    pending.push(DelayedConsequence {
+        region_id: region_id.to_owned(),
+        source: source.to_owned(),
+        delay: balance.aftermath_blight_delay,
+        effect: ConsequenceEffect::SettlementBlight(balance.aftermath_blight_prosperity),
+    });
+    pending.push(DelayedConsequence {
+        region_id: region_id.to_owned(),
+        source: source.to_owned(),
+        delay: balance.aftermath_unrest_delay,
+        effect: ConsequenceEffect::RegionUnrest {
+            chaos: balance.aftermath_unrest_chaos,
+            danger: balance.aftermath_unrest_danger,
+        },
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -92,6 +122,7 @@ mod tests {
             tick_artifacts(
                 &mut world.artifacts,
                 &mut world.regions,
+                &mut world.pending_consequences,
                 &data.balance.artifact,
                 &data.balance.region,
                 &mut world.chronicle,

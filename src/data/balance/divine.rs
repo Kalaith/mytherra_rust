@@ -64,6 +64,14 @@ pub struct ArtifactBalance {
     pub backlash_threshold: f32,
     pub backlash_chaos: f32,
     pub backlash_danger: f32,
+    /// A backlash isn't over when the relic shatters: its aftermath unfolds in
+    /// two delayed steps (GDD 5.6). First a settlement is blighted, then a later
+    /// pulse of unrest strikes the region.
+    pub aftermath_blight_delay: i32,
+    pub aftermath_blight_prosperity: f32,
+    pub aftermath_unrest_delay: i32,
+    pub aftermath_unrest_chaos: f32,
+    pub aftermath_unrest_danger: f32,
     pub focus_effect: ArtifactFocusEffect,
 }
 

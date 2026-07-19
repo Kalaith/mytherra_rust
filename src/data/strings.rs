@@ -352,6 +352,9 @@ pub struct ChronicleText {
     pub bet_won: String,
     pub bet_lost: String,
     pub artifact_backlash: String,
+    /// Delayed backlash aftermath: a blighted settlement, then regional unrest.
+    pub aftermath_blight: String,
+    pub aftermath_unrest: String,
     pub magic_known: String,
     pub myth_echo: String,
     pub era_transition: String,

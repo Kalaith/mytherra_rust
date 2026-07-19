@@ -269,6 +269,8 @@
     "bet_won": "Your wager on {target} pays out {payout} favor.",
     "bet_lost": "Your wager on {target} lapses unfulfilled.",
     "artifact_backlash": "{artifact} shatters, scarring {region}.",
+    "aftermath_blight": "In the wake of {source}, blight withers {settlement}.",
+    "aftermath_unrest": "The shattering of {source} still festers — unrest grips {region}.",
     "magic_known": "{path} passes into common knowledge.",
     "myth_echo": "{title} echoes across {region}.",
     "era_transition": "A new age dawns: {era}, born of {trigger}. {lost} fell, {risen} rose to meet it.",

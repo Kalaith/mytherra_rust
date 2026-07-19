@@ -1,0 +1,26 @@
+//! Delayed world consequences (GDD 5.6): the aftermath steps of an artifact
+//! backlash, scheduled to fire some ticks after the shattering so a relic's
+//! failure ripples out over time rather than all at once.
+
+use serde::{Deserialize, Serialize};
+
+/// One scheduled effect and how many ticks remain until it fires.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DelayedConsequence {
+    /// Region the effect lands on.
+    pub region_id: String,
+    /// What caused it (e.g. the shattered relic), for the chronicle line.
+    pub source: String,
+    /// Ticks remaining until it fires.
+    pub delay: i32,
+    pub effect: ConsequenceEffect,
+}
+
+/// What a delayed consequence does when it fires.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ConsequenceEffect {
+    /// Blight the region's largest settlement (a negative prosperity delta).
+    SettlementBlight(f32),
+    /// A lingering pulse of unrest on the region itself.
+    RegionUnrest { chaos: f32, danger: f32 },
+}

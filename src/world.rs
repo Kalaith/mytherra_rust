@@ -7,6 +7,7 @@ mod building;
 mod champion;
 mod chronicle;
 mod civilization;
+mod consequence;
 mod era;
 mod hero;
 mod landmark;
@@ -27,6 +28,7 @@ pub use building::Building;
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind, WorldEvent};
 pub use civilization::{agenda_score, dominant_agenda, RegionAgendas};
+pub use consequence::{ConsequenceEffect, DelayedConsequence};
 pub use era::{compute_scores, generate_era_name, EraRecord, EraState};
 pub use hero::Hero;
 pub use landmark::Landmark;
@@ -94,6 +96,9 @@ pub struct WorldState {
     pub artifacts: Vec<Artifact>,
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
+    /// Scheduled aftermath steps of artifact backlashes (GDD 5.6).
+    #[serde(default)]
+    pub pending_consequences: Vec<DelayedConsequence>,
     pub era: EraState,
     pub era_history: Vec<EraRecord>,
     pub weather: Vec<WeatherEvent>,
@@ -171,6 +176,7 @@ impl WorldState {
             hero_seq: 0,
             artifacts,
             artifact_seq: 0,
+            pending_consequences: Vec::new(),
             era,
             era_history: Vec::new(),
             weather: Vec::new(),

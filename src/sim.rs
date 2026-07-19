@@ -4,6 +4,7 @@
 mod artifact;
 mod champion;
 mod civilization;
+mod consequence;
 mod culture;
 mod era;
 mod genesis;
@@ -128,7 +129,19 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     artifact::tick_artifacts(
         &mut world.artifacts,
         &mut world.regions,
+        &mut world.pending_consequences,
         &data.balance.artifact,
+        &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    // Delayed aftermath steps of past backlashes unfold here (GDD 5.6).
+    consequence::tick_consequences(
+        &mut world.pending_consequences,
+        &mut world.regions,
+        &mut world.settlements,
         &data.balance.region,
         &mut world.chronicle,
         &data.strings.chronicle,

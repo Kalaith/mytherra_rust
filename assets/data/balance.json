@@ -262,7 +262,12 @@
       "prosperity": 0.4,
       "war": -0.4,
       "knowledge": 0.5
-    }
+    },
+    "aftermath_blight_delay": 3,
+    "aftermath_blight_prosperity": -8.0,
+    "aftermath_unrest_delay": 6,
+    "aftermath_unrest_chaos": 6.0,
+    "aftermath_unrest_danger": 4.0
   },
   "weather": {
     "base_cost": 14,
