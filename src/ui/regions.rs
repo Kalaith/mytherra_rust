@@ -4,7 +4,7 @@
 use crate::data::{fill, RegionActionDef};
 use crate::ui::widgets::{bad_stat_color, button, good_stat_color, trend_marker};
 use crate::ui::{content_rect, UiAction, UiContext};
-use crate::world::Region;
+use crate::world::{Region, RegionStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
@@ -205,6 +205,25 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         y += 22.0;
     }
 
+    // Military might and the region's genesis outlook (GDD 5.2 — surface why the
+    // map reshapes: which regions can conquer, expand, or be swallowed).
+    let gtext = &strings.genesis;
+    let conquest = &ctx.data.balance.conquest;
+    draw_ui_text_ex(
+        &fill(
+            &gtext.might_line,
+            &[("might", format!("{:.0}", region.might(conquest)))],
+        ),
+        content.x,
+        y,
+        TextStyle::new(14.0, dark::TEXT_DIM).params(),
+    );
+    y += 22.0;
+    if let Some((text, color)) = genesis_outlook(ctx, region) {
+        draw_ui_text_ex(&text, content.x, y, TextStyle::new(14.0, color).params());
+        y += 22.0;
+    }
+
     // Divine action buttons.
     draw_ui_text_ex(
         &strings.panels.divine_actions,
@@ -398,6 +417,33 @@ fn action_tone(id: &str) -> ButtonTone {
         "corrupt" => ButtonTone::Danger,
         _ => ButtonTone::Primary,
     }
+}
+
+/// The region's genesis outlook line + colour, if it has one: a thriving land
+/// ready to spawn a frontier, or a crisis region's conquest exposure. Reads the
+/// same balance the sim's genesis paths use, so the cue matches the mechanic.
+fn genesis_outlook(ctx: &UiContext<'_>, region: &Region) -> Option<(String, Color)> {
+    let g = &ctx.data.strings.genesis;
+    let frontier = &ctx.data.balance.frontier;
+    if region.status == RegionStatus::Thriving
+        && region.population >= frontier.parent_min_population
+    {
+        return Some((g.outlook_frontier.clone(), dark::POSITIVE));
+    }
+    if region.status.is_crisis() {
+        let min_level = ctx.data.balance.conquest.defender_min_level;
+        let defended = ctx
+            .world
+            .heroes
+            .iter()
+            .any(|h| h.is_alive && h.region_id == region.id && h.level >= min_level);
+        return Some(if defended {
+            (g.outlook_defended.clone(), dark::ACCENT)
+        } else {
+            (g.outlook_vulnerable.clone(), dark::NEGATIVE)
+        });
+    }
+    None
 }
 
 /// How close a region is to fracturing, as an escalating descriptor (view-only).

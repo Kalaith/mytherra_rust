@@ -1,6 +1,8 @@
 //! Runtime region state: the mutable, simulated form of a `RegionSeed`.
 
-use crate::data::{ClimateType, Culture, RegionActionDef, RegionBalance, RegionSeed};
+use crate::data::{
+    ClimateType, ConquestBalance, Culture, RegionActionDef, RegionBalance, RegionSeed,
+};
 use serde::{Deserialize, Serialize};
 
 /// Derived, at-a-glance health of a region. Recomputed from stats each tick
@@ -152,6 +154,21 @@ impl Region {
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {
         self.chaos * 0.38 + self.danger * 0.42 + (100.0 - self.prosperity) * 0.2
+    }
+
+    /// Projected military might (GDD 5.2): drawn from wealth, numbers, standing
+    /// threat, and — for martial cultures — a warlike bonus. The currency of
+    /// conquest; the single source of truth shared by the sim and the UI.
+    pub fn might(&self, balance: &ConquestBalance) -> f32 {
+        let martial = if self.culture == Culture::Martial {
+            balance.might_martial_bonus
+        } else {
+            0.0
+        };
+        self.prosperity * balance.might_prosperity
+            + self.population * balance.might_population
+            + self.danger * balance.might_danger
+            + martial
     }
 
     /// Apply raw (already-computed) stat deltas, clamp, and refresh status.

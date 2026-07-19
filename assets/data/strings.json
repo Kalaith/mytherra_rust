@@ -262,6 +262,10 @@
     "strife_line": "Secession pressure: {stage} ({pct}%)",
     "strife_simmering": "simmering",
     "strife_seething": "seething",
-    "strife_breaking": "at the breaking point"
+    "strife_breaking": "at the breaking point",
+    "might_line": "Military might: {might}",
+    "outlook_frontier": "Frontier-ready — settlers may strike out to found new lands.",
+    "outlook_vulnerable": "Undefended in crisis — ripe for a stronger neighbour's conquest.",
+    "outlook_defended": "A champion holds the line against conquest."
   }
 }

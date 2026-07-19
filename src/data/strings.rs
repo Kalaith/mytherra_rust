@@ -37,6 +37,12 @@ pub struct GenesisText {
     pub strife_simmering: String,
     pub strife_seething: String,
     pub strife_breaking: String,
+    /// Region-detail military-might line; `{might}` is the computed value.
+    pub might_line: String,
+    /// Genesis-outlook lines on the region detail (one shown at a time).
+    pub outlook_frontier: String,
+    pub outlook_vulnerable: String,
+    pub outlook_defended: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

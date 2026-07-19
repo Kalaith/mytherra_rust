@@ -4,25 +4,11 @@
 //! of a fracture — it removes a region rather than adding one.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, ConquestBalance, Culture, RegionBalance};
+use crate::data::{fill, ConquestBalance, RegionBalance};
 use crate::world::{
     Artifact, Chronicle, EventKind, Hero, Landmark, Region, RegionAgendas, ResourceNode,
     Settlement, TradeRoute, WeatherEvent,
 };
-
-/// A region's projected military might (GDD 5.2): drawn from its wealth, numbers,
-/// standing threat, and — for martial cultures — a warlike bonus.
-fn might(region: &Region, balance: &ConquestBalance) -> f32 {
-    let martial = if region.culture == Culture::Martial {
-        balance.might_martial_bonus
-    } else {
-        0.0
-    };
-    region.prosperity * balance.might_prosperity
-        + region.population * balance.might_population
-        + region.danger * balance.might_danger
-        + martial
-}
 
 /// Does a hero strong enough to hold the region against invasion live there?
 fn has_defender(heroes: &[Hero], region_id: &str, balance: &ConquestBalance) -> bool {
@@ -45,15 +31,15 @@ fn pick(
     }
     let mut best: Option<(usize, usize, f32)> = None;
     for (ai, aggressor) in regions.iter().enumerate() {
-        if aggressor.status.is_crisis() || might(aggressor, balance) < balance.aggressor_min_might {
+        if aggressor.status.is_crisis() || aggressor.might(balance) < balance.aggressor_min_might {
             continue;
         }
-        let a_might = might(aggressor, balance);
+        let a_might = aggressor.might(balance);
         for (ti, target) in regions.iter().enumerate() {
             if ti == ai || !target.status.is_crisis() {
                 continue;
             }
-            let gap = a_might - might(target, balance);
+            let gap = a_might - target.might(balance);
             if gap < balance.conquest_margin || has_defender(heroes, &target.id, balance) {
                 continue;
             }
