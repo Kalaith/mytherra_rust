@@ -10,15 +10,29 @@ pub enum HeroRole {
     Mage,
     Scholar,
     Ranger,
+    Merchant,
+    Cleric,
 }
 
 impl HeroRole {
+    /// Every role, in declaration order — used when a new hero's role is rolled.
+    pub const ALL: [HeroRole; 6] = [
+        HeroRole::Warrior,
+        HeroRole::Mage,
+        HeroRole::Scholar,
+        HeroRole::Ranger,
+        HeroRole::Merchant,
+        HeroRole::Cleric,
+    ];
+
     pub fn label(self) -> &'static str {
         match self {
             HeroRole::Warrior => "Warrior",
             HeroRole::Mage => "Mage",
             HeroRole::Scholar => "Scholar",
             HeroRole::Ranger => "Ranger",
+            HeroRole::Merchant => "Merchant",
+            HeroRole::Cleric => "Cleric",
         }
     }
 }

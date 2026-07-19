@@ -90,6 +90,8 @@ fn hero_culture(role: HeroRole) -> Culture {
         HeroRole::Mage => Culture::Mystical,
         HeroRole::Scholar => Culture::Scholarly,
         HeroRole::Ranger => Culture::Pastoral,
+        HeroRole::Merchant => Culture::Mercantile,
+        HeroRole::Cleric => Culture::Mystical,
     }
 }
 
@@ -106,6 +108,19 @@ mod tests {
     use super::*;
     use crate::data::GameData;
     use crate::world::WorldState;
+
+    #[test]
+    fn every_role_maps_to_a_culture_and_merchants_are_mercantile() {
+        // A merchant is the only role that feeds Mercantile culture, filling the
+        // gap the settlement/trade signals otherwise carried alone.
+        assert_eq!(hero_culture(HeroRole::Merchant), Culture::Mercantile);
+        assert_eq!(hero_culture(HeroRole::Cleric), Culture::Mystical);
+        // The mapping is total over every declared role (would not compile
+        // otherwise, but this guards the ALL list too).
+        for role in HeroRole::ALL {
+            let _ = hero_culture(role);
+        }
+    }
 
     #[test]
     fn scholarly_landmark_and_scholar_hold_aldermoor_scholarly() {

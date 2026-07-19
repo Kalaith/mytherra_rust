@@ -351,11 +351,10 @@ mod tests {
         world.regions[0].danger = 90.0;
         world.regions[0].population = 3000.0;
         world.regions[0].refresh_status(&data.balance.region);
-        for hero in &mut world.heroes {
-            if hero.region_id == loser_id {
-                hero.level = 1;
-            }
-        }
+        // Remove every hero so no defender can arise — and so this determinism
+        // guard stays robust as the seeded roster changes over time (conquest
+        // itself uses no RNG; it fires purely on the region state set up here).
+        world.heroes.clear();
         // Strip the seeded Protection ward so this tests conquest in isolation.
         world.artifacts.retain(|a| a.region_id != loser_id);
 

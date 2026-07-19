@@ -53,6 +53,8 @@ pub struct RoleMigrationWeights {
     pub mage: StatWeights,
     pub scholar: StatWeights,
     pub ranger: StatWeights,
+    pub merchant: StatWeights,
+    pub cleric: StatWeights,
 }
 
 impl RoleMigrationWeights {
@@ -62,6 +64,8 @@ impl RoleMigrationWeights {
             HeroRole::Mage => &self.mage,
             HeroRole::Scholar => &self.scholar,
             HeroRole::Ranger => &self.ranger,
+            HeroRole::Merchant => &self.merchant,
+            HeroRole::Cleric => &self.cleric,
         }
     }
 }

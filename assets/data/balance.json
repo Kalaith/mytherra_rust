@@ -134,6 +134,18 @@
           "danger": 0.4,
           "magic": 0.1,
           "culture": -0.2
+        },
+        "merchant": {
+          "prosperity": 0.7,
+          "danger": -0.4,
+          "magic": 0.0,
+          "culture": 0.4
+        },
+        "cleric": {
+          "prosperity": 0.2,
+          "danger": -0.3,
+          "magic": 0.6,
+          "culture": 0.5
         }
       }
     },

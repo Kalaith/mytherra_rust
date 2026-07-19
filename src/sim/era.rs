@@ -100,12 +100,7 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             .choose(&data.era_names.descendant_titles)
             .cloned()
             .unwrap_or_default();
-        let role = match world.rng.below(4) {
-            0 => HeroRole::Warrior,
-            1 => HeroRole::Mage,
-            2 => HeroRole::Scholar,
-            _ => HeroRole::Ranger,
-        };
+        let role = HeroRole::ALL[world.rng.below(HeroRole::ALL.len())];
         world.heroes.push(Hero {
             id: format!("descendant-{}", world.hero_seq),
             name: format!("{prefix} {title}"),
