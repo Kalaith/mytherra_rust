@@ -52,8 +52,19 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
     let aftermath = balance.aftermath.get(world.era.dominant_trigger);
 
     // Heroes reincarnate (age reset, scaled level) or die. Tally the fallen so
-    // the closing age's record remembers what its ending cost (GDD 5.7).
+    // the closing age's record remembers what its ending cost (GDD 5.7). A
+    // legend among the fallen is remembered by name, not just in the count —
+    // the closing bookend to its "passes into legend" rise (GDD 5.4 <-> 5.7).
+    let legend_bar = data
+        .balance
+        .hero
+        .renown
+        .thresholds
+        .last()
+        .copied()
+        .unwrap_or(f32::INFINITY);
     let mut heroes_lost = 0u32;
+    let mut fallen_legends: Vec<(String, String)> = Vec::new();
     for hero in world.heroes.iter_mut() {
         if !hero.is_alive {
             continue;
@@ -63,6 +74,9 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         if dies {
             hero.is_alive = false;
             heroes_lost += 1;
+            if hero.renown >= legend_bar {
+                fallen_legends.push((hero.name.clone(), hero.region_id.clone()));
+            }
         } else {
             hero.age = reincarnate_age(
                 &mut world.rng,
@@ -73,6 +87,24 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             // Surviving an age is the stuff of legend.
             hero.renown += data.balance.hero.renown.per_era;
         }
+    }
+
+    // Even amid an age's collapse, the fall of a legend is its own moment.
+    for (name, region_id) in fallen_legends {
+        let region = world
+            .regions
+            .iter()
+            .find(|r| r.id == region_id)
+            .map(|r| r.name.clone())
+            .unwrap_or_default();
+        world.chronicle.push(
+            world.year,
+            EventKind::Hero,
+            fill(
+                &data.strings.chronicle.hero_legend_death,
+                &[("hero", name), ("region", region)],
+            ),
+        );
     }
 
     // Champions of the departed pass with them.
@@ -359,6 +391,43 @@ mod tests {
         let mut player = PlayerState::new(&data.config);
         tick_era(&mut world, &mut player, &data);
         assert!(world.secession_momentum < 40.0);
+    }
+
+    #[test]
+    fn a_legend_that_falls_at_a_transition_is_chronicled() {
+        // A legend taken by an age's violent end is remembered by name, not just
+        // folded into the aggregate toll (GDD 5.4 <-> 5.7).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        for region in &mut world.regions {
+            region.danger = 100.0;
+            region.chaos = 100.0;
+            region.prosperity = 0.0;
+            region.refresh_status(&data.balance.region);
+        }
+        // Make the first hero an aged legend, so it certainly dies this passage.
+        let legend_bar = *data.balance.hero.renown.thresholds.last().unwrap();
+        world.heroes[0].renown = legend_bar + 10.0;
+        world.heroes[0].age = data.balance.era.death_age;
+        let legend_name = world.heroes[0].name.clone();
+
+        tick_era(&mut world, &mut player, &data);
+
+        assert!(
+            !world
+                .heroes
+                .iter()
+                .any(|h| h.name == legend_name && h.is_alive),
+            "the aged legend should have fallen at the transition"
+        );
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains(&legend_name) && e.message.contains("legend endures")),
+            "a legend's fall at a transition should be chronicled by name"
+        );
     }
 
     #[test]
