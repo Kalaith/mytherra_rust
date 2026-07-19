@@ -15,9 +15,13 @@ pub struct BettingBalance {
     pub bet_history_cap: usize,
     /// Selectable stake amounts.
     pub stake_presets: Vec<i64>,
-    /// Range of simulated crowd stake seeded onto each outcome.
+    /// Range of the total simulated crowd stake seeded onto an event; it is then
+    /// split between the outcomes by the crowd's read of the likelihood.
     pub crowd_seed_min: f32,
     pub crowd_seed_max: f32,
+    /// How far the simulated crowd's lean can wander from the true likelihood —
+    /// the crowd is wise but not perfectly rational (GDD 5.5).
+    pub crowd_noise: f32,
     /// Bounds on the world-state-derived target odds modifier.
     pub target_mod_min: f32,
     pub target_mod_max: f32,

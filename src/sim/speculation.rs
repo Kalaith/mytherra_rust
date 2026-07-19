@@ -3,7 +3,7 @@
 //! uses the world RNG; bet payouts were locked at placement, so resolution here
 //! is a pure win/lose credit.
 
-use crate::data::{fill, GameData, TargetKind};
+use crate::data::{fill, BettingBalance, GameData, TargetKind};
 use crate::world::{
     Bet, Chronicle, EventKind, Hero, PlayerState, Region, Settlement, SpeculationEvent,
 };
@@ -146,7 +146,7 @@ fn generate_event(
 
     *seq += 1;
     let b = &data.balance.betting;
-    Some(SpeculationEvent {
+    let mut event = SpeculationEvent {
         id: format!("spec-{seq}"),
         bet_type_name: bet_type.name.clone(),
         description: fill(
@@ -166,10 +166,25 @@ fn generate_event(
         timeframe_modifier: timeframe.modifier,
         created_year: year,
         deadline_year: year + timeframe.years,
-        crowd_yes: rng.range_f32(b.crowd_seed_min, b.crowd_seed_max),
-        crowd_no: rng.range_f32(b.crowd_seed_min, b.crowd_seed_max),
+        crowd_yes: 0.0,
+        crowd_no: 0.0,
         resolved: None,
-    })
+    };
+    // The crowd of watching deities is wise but imperfect: it stakes toward the
+    // proposition's real likelihood, so backing the favourite pays less.
+    let likelihood = event.likelihood(heroes, regions, settlements);
+    (event.crowd_yes, event.crowd_no) = seed_crowd(likelihood, rng, b);
+    Some(event)
+}
+
+/// Split a random total crowd stake between the outcomes by the crowd's read of
+/// the likelihood, wandering from it by up to `crowd_noise`. Deterministic given
+/// the RNG state.
+fn seed_crowd(likelihood: f32, rng: &mut SeededRng, balance: &BettingBalance) -> (f32, f32) {
+    let total = rng.range_f32(balance.crowd_seed_min * 2.0, balance.crowd_seed_max * 2.0);
+    let lean =
+        (likelihood + rng.range_f32(-balance.crowd_noise, balance.crowd_noise)).clamp(0.05, 0.95);
+    (total * lean, total * (1.0 - lean))
 }
 
 /// Drop the oldest resolved events once the store exceeds its cap.
@@ -226,6 +241,22 @@ mod tests {
         );
         let active = world.speculations.iter().filter(|e| e.is_active()).count();
         assert_eq!(active, data.balance.betting.active_events);
+    }
+
+    #[test]
+    fn the_crowd_leans_toward_the_likely_outcome() {
+        let data = GameData::load().unwrap();
+        let b = &data.balance.betting;
+        let mut rng = crate::world::WorldState::new(&data).rng;
+        // With noise 0.18, a near-certain proposition (0.95) always leaves the
+        // crowd backing "yes" harder than "no"; a near-impossible one (0.05) the
+        // reverse — the market reads the world.
+        for _ in 0..64 {
+            let (yes, no) = seed_crowd(0.95, &mut rng, b);
+            assert!(yes > no, "the crowd should back a likely outcome");
+            let (yes, no) = seed_crowd(0.05, &mut rng, b);
+            assert!(no > yes, "the crowd should shun an unlikely outcome");
+        }
     }
 
     #[test]
