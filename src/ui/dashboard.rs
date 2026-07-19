@@ -120,12 +120,15 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         )),
     );
     y += 32.0;
+    let (done, total) = ctx.player.achievements.progress();
     draw_ui_text_ex(
         &fill(
             &strings.ui.standing_summary,
             &[
                 ("nudges", ctx.player.nudges.to_string()),
                 ("spent", ctx.player.favor_spent.to_string()),
+                ("goals", done.to_string()),
+                ("total", total.to_string()),
             ],
         ),
         content.x,
