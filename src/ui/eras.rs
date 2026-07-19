@@ -2,14 +2,14 @@
 //! chronicle of past eras on the right (GDD 5.7, 10).
 
 use crate::data::fill;
-use crate::ui::widgets::{bad_stat_color, draw_titled};
-use crate::ui::{content_rect, UiContext};
+use crate::ui::widgets::{bad_stat_color, draw_titled, page_controls, paginate};
+use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::compute_scores;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
 
-pub fn draw(ctx: &UiContext<'_>) {
+pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let area = content_rect();
     let left = Rect::new(area.x, area.y, 604.0, area.h);
     let right = Rect::new(
@@ -19,7 +19,7 @@ pub fn draw(ctx: &UiContext<'_>) {
         area.h,
     );
     draw_present(ctx, left);
-    draw_history(ctx, right);
+    draw_history(ctx, right, actions);
 }
 
 fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
@@ -122,7 +122,7 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
     }
 }
 
-fn draw_history(ctx: &UiContext<'_>, rect: Rect) {
+fn draw_history(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
     let strings = &ctx.data.strings.eras;
     draw_titled(rect, &strings.history_title);
     let content = rect.inset(18.0);
@@ -137,8 +137,16 @@ fn draw_history(ctx: &UiContext<'_>, rect: Rect) {
         return;
     }
 
-    let mut y = content.y + 32.0;
-    for record in ctx.world.era_history.iter().rev() {
+    // Newest age first, paged so the whole chronicle stays reachable.
+    let records: Vec<&crate::world::EraRecord> = ctx.world.era_history.iter().rev().collect();
+    let list_start = content.y + 32.0;
+    let stride = 62.0;
+    let pager_row = Rect::new(content.x, content.bottom() - 26.0, content.w, 24.0);
+    let page_size = (((pager_row.y - 6.0 - list_start) / stride).floor() as usize).max(1);
+    let (page, start, end, total_pages) = paginate(records.len(), page_size, ctx.eras_page);
+
+    let mut y = list_start;
+    for record in &records[start..end] {
         draw_ui_text_ex(
             &fill(
                 &strings.record_line,
@@ -177,9 +185,28 @@ fn draw_history(ctx: &UiContext<'_>, rect: Rect) {
             y + 37.0,
             TextStyle::new(13.0, toll_color(record.heroes_lost)).params(),
         );
-        y += 62.0;
-        if y > content.bottom() {
-            break;
+        y += stride;
+    }
+
+    if total_pages > 1 {
+        let ui = &ctx.data.strings.ui;
+        let label = fill(
+            &ui.page_label,
+            &[
+                ("page", (page + 1).to_string()),
+                ("pages", total_pages.to_string()),
+            ],
+        );
+        if let Some(target) = page_controls(
+            pager_row,
+            page,
+            total_pages,
+            &ui.page_prev,
+            &ui.page_next,
+            &label,
+            ctx.mouse,
+        ) {
+            actions.push(UiAction::SetErasPage(target));
         }
     }
 }

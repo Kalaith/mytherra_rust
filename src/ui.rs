@@ -69,6 +69,8 @@ pub enum UiAction {
     SelectRegion(usize),
     /// Jump the region roster to the given (already-clamped) page.
     SetRegionPage(usize),
+    /// Jump the eras chronicle to the given (already-clamped) page.
+    SetErasPage(usize),
     /// Apply a region action (by id) to the currently selected region.
     RegionAction(String),
     /// Designate the given hero (by id) as a champion.
@@ -159,6 +161,8 @@ pub struct UiContext<'a> {
     pub hero_page: usize,
     /// Region roster page (0-based); the view clamps it to the current page count.
     pub region_page: usize,
+    /// Eras chronicle page (0-based); the view clamps it to the current page count.
+    pub eras_page: usize,
     /// Selected auto-tick cadence (index into `balance.settings.tick_speed_presets`).
     pub tick_speed_index: usize,
     /// Whether automatic world ticking is paused.
@@ -180,7 +184,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
         Screen::Heroes => heroes::draw(ctx, &mut actions),
         Screen::DivineTools => divine_tools::draw(ctx, &mut actions),
         Screen::Betting => betting::draw(ctx, &mut actions),
-        Screen::Eras => eras::draw(ctx),
+        Screen::Eras => eras::draw(ctx, &mut actions),
         Screen::Settings => settings::draw(ctx, &mut actions),
     }
 
