@@ -6,7 +6,7 @@
 //! the one settlement effect that draws on the world RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, BuildingType, RegionBalance, SettlementBalance};
+use crate::data::{fill, BuildingType, Culture, RegionBalance, SettlementBalance};
 use crate::world::{Building, Chronicle, EventKind, Region, Settlement};
 use macroquad_toolkit::data_loader::DataRegistry;
 use macroquad_toolkit::math::approach;
@@ -52,6 +52,7 @@ pub fn tick_settlements(
 #[allow(clippy::too_many_arguments)]
 pub fn tick_construction(
     settlements: &[Settlement],
+    regions: &[Region],
     buildings: &mut Vec<Building>,
     building_types: &DataRegistry<BuildingType>,
     balance: &SettlementBalance,
@@ -82,9 +83,27 @@ pub fn tick_construction(
             })
             .collect();
         candidates.sort_by(|a, b| a.id.cmp(&b.id));
-        let Some(&chosen) = rng.choose(&candidates) else {
+        if candidates.is_empty() {
             continue;
+        }
+
+        // Favour a building that fits the region's dominant culture.
+        let region_culture = regions
+            .iter()
+            .find(|r| r.id == settlement.region_id)
+            .map(|r| r.culture);
+        let weight = |t: &BuildingType| {
+            build_weight(t.culture, region_culture, balance.culture_affinity_weight)
         };
+        let total: f32 = candidates.iter().map(|t| weight(t)).sum();
+        let mut roll = rng.next_f32() * total;
+        let chosen = *candidates
+            .iter()
+            .find(|t| {
+                roll -= weight(t);
+                roll <= 0.0
+            })
+            .unwrap_or(&candidates[candidates.len() - 1]);
 
         buildings.push(Building {
             id: format!("{}_{}", settlement.id, chosen.id),
@@ -107,11 +126,41 @@ pub fn tick_construction(
     }
 }
 
+/// Selection weight for a building type given the region's dominant culture: a
+/// match is boosted by `affinity`, everything else stays at the 1.0 baseline.
+fn build_weight(
+    building_culture: Option<Culture>,
+    region_culture: Option<Culture>,
+    affinity: f32,
+) -> f32 {
+    match (building_culture, region_culture) {
+        (Some(b), Some(r)) if b == r => 1.0 + affinity,
+        _ => 1.0,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::data::GameData;
     use crate::world::WorldState;
+
+    #[test]
+    fn a_building_matching_its_region_culture_is_favoured() {
+        let a = 2.0;
+        // A martial building in a martial land outweighs the baseline...
+        assert_eq!(
+            build_weight(Some(Culture::Martial), Some(Culture::Martial), a),
+            3.0
+        );
+        // ...a mismatch stays at baseline...
+        assert_eq!(
+            build_weight(Some(Culture::Mercantile), Some(Culture::Martial), a),
+            1.0
+        );
+        // ...and a culture-less building never gets the boost.
+        assert_eq!(build_weight(None, Some(Culture::Martial), a), 1.0);
+    }
 
     #[test]
     fn calm_prosperous_region_grows_its_settlements() {
@@ -178,6 +227,7 @@ mod tests {
         for _ in 0..400 {
             tick_construction(
                 &world.settlements,
+                &world.regions,
                 &mut world.buildings,
                 &data.building_types,
                 &data.balance.settlement,

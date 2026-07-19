@@ -406,7 +406,8 @@
     "region_contribution": 0.015,
     "construction_prosperity_min": 60.0,
     "construction_population_min": 4000.0,
-    "construction_chance": 0.04
+    "construction_chance": 0.04,
+    "culture_affinity_weight": 2.0
   },
   "culture": {
     "inertia": 3.0,

@@ -66,6 +66,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     settlement::tick_construction(
         &world.settlements,
+        &world.regions,
         &mut world.buildings,
         &data.building_types,
         &data.balance.settlement,

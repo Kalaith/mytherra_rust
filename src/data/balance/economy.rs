@@ -64,4 +64,7 @@ pub struct SettlementBalance {
     pub construction_population_min: f32,
     /// Per-tick chance an eligible settlement raises one new building.
     pub construction_chance: f32,
+    /// Extra selection weight a building type gets when it matches its region's
+    /// dominant culture, so a martial land forges and a mercantile one trades.
+    pub culture_affinity_weight: f32,
 }
