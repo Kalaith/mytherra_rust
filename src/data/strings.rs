@@ -278,6 +278,10 @@ pub struct UiText {
     pub trade_line: String,
     pub buildings_line: String,
     pub no_holdings: String,
+    /// Generic list pager, reusable across screens: "Page {page} / {pages}".
+    pub page_label: String,
+    pub page_prev: String,
+    pub page_next: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

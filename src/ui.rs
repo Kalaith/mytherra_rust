@@ -67,6 +67,8 @@ impl Screen {
 pub enum UiAction {
     SelectScreen(Screen),
     SelectRegion(usize),
+    /// Jump the region roster to the given (already-clamped) page.
+    SetRegionPage(usize),
     /// Apply a region action (by id) to the currently selected region.
     RegionAction(String),
     /// Designate the given hero (by id) as a champion.
@@ -155,6 +157,8 @@ pub struct UiContext<'a> {
     pub hero_filter: usize,
     /// Hero roster page (0-based); the view clamps it to the current page count.
     pub hero_page: usize,
+    /// Region roster page (0-based); the view clamps it to the current page count.
+    pub region_page: usize,
     /// Selected auto-tick cadence (index into `balance.settings.tick_speed_presets`).
     pub tick_speed_index: usize,
     /// Whether automatic world ticking is paused.

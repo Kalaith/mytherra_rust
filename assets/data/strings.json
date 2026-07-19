@@ -57,7 +57,10 @@
     "landmarks_line": "Landmarks:  {list}",
     "trade_line": "Trade:  {list}",
     "buildings_line": "Buildings:  {list}",
-    "no_holdings": "No holdings here."
+    "no_holdings": "No holdings here.",
+    "page_label": "Page {page} / {pages}",
+    "page_prev": "< Prev",
+    "page_next": "Next >"
   },
   "divine": {
     "artifacts_panel": "Artifacts ({count}/{max})",

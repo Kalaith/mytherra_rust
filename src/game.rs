@@ -45,6 +45,8 @@ pub struct Game {
     hero_filter: usize,
     /// Hero roster page (0-based), reset when the region filter changes.
     hero_page: usize,
+    /// Region roster page (0-based); clamped by the view as regions come and go.
+    region_page: usize,
     /// Auto-tick cadence (index into `balance.settings.tick_speed_presets`).
     tick_speed_index: usize,
     /// Whether automatic world ticking is paused (Settings, GDD 10).
@@ -96,6 +98,7 @@ impl Game {
             chronicle_filter: 0,
             chronicle_page: 0,
             hero_page: 0,
+            region_page: 0,
             hero_filter: 0,
             tick_speed_index,
             paused: false,
@@ -139,6 +142,7 @@ impl Game {
             chronicle_filter: self.chronicle_filter,
             chronicle_page: self.chronicle_page,
             hero_page: self.hero_page,
+            region_page: self.region_page,
             hero_filter: self.hero_filter,
             tick_speed_index: self.tick_speed_index,
             paused: self.paused,
@@ -210,6 +214,7 @@ impl Game {
                     self.selected_region = index;
                 }
             }
+            UiAction::SetRegionPage(page) => self.region_page = page,
             UiAction::RegionAction(id) => self.apply_region_action(&id),
             UiAction::DesignateChampion(id) => self.designate_champion(&id),
             UiAction::CultivateChampion(id) => self.cultivate_champion(&id),

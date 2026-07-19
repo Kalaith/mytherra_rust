@@ -2,7 +2,9 @@
 //! right (GDD 10 "World Map / Regions").
 
 use crate::data::{fill, RegionActionDef};
-use crate::ui::widgets::{bad_stat_color, button, draw_titled, good_stat_color, trend_marker};
+use crate::ui::widgets::{
+    bad_stat_color, button, draw_titled, good_stat_color, page_controls, paginate, trend_marker,
+};
 use crate::ui::{content_rect, UiAction, UiContext};
 use crate::world::{Region, RegionStatus};
 use macroquad::prelude::*;
@@ -27,9 +29,19 @@ fn draw_region_list(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
     draw_titled(rect, &ctx.data.strings.panels.regions);
     let content = rect.inset(16.0);
     let selected = selected_index(ctx);
-    let mut y = content.y + 34.0;
 
-    for (index, region) in ctx.world.regions.iter().enumerate() {
+    // Page the roster: region genesis grows the list past the panel, so drawing
+    // every card would spill off the bottom (GDD 5.2 <-> 10).
+    let list_start = content.y + 34.0;
+    let stride = 78.0;
+    let pager_row = Rect::new(content.x, content.bottom() - 26.0, content.w, 24.0);
+    let page_size = (((pager_row.y - 6.0 - list_start) / stride).floor() as usize).max(1);
+    let (page, start, end, total_pages) =
+        paginate(ctx.world.regions.len(), page_size, ctx.region_page);
+
+    let mut y = list_start;
+    // `index` stays the true world index so selection is unaffected by paging.
+    for (index, region) in ctx.world.regions.iter().enumerate().take(end).skip(start) {
         let card = Rect::new(content.x, y, content.w, 68.0);
         let hovered = card.contains_point(ctx.mouse);
         let is_selected = index == selected;
@@ -74,7 +86,29 @@ fn draw_region_list(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         if hovered && is_mouse_button_released(MouseButton::Left) {
             actions.push(UiAction::SelectRegion(index));
         }
-        y += 78.0;
+        y += stride;
+    }
+
+    if total_pages > 1 {
+        let ui = &ctx.data.strings.ui;
+        let label = fill(
+            &ui.page_label,
+            &[
+                ("page", (page + 1).to_string()),
+                ("pages", total_pages.to_string()),
+            ],
+        );
+        if let Some(target) = page_controls(
+            pager_row,
+            page,
+            total_pages,
+            &ui.page_prev,
+            &ui.page_next,
+            &label,
+            ctx.mouse,
+        ) {
+            actions.push(UiAction::SetRegionPage(target));
+        }
     }
 }
 
