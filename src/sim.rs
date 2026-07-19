@@ -489,4 +489,29 @@ mod tests {
         }
         assert!(world.year >= 350);
     }
+
+    #[test]
+    fn the_same_seed_yields_a_bit_identical_world() {
+        // GDD 5.8: the simulation is fully deterministic — the same seed and the
+        // same inputs must reproduce the exact same world, byte for byte, so any
+        // outcome is auditable. Two independent runs are compared over their full
+        // serialized state (not just a digest) after many ages.
+        let data = GameData::load().unwrap();
+        let run = || {
+            let mut world = WorldState::new(&data);
+            let mut player = PlayerState::new(&data.config);
+            for _ in 0..200 {
+                tick_world(&mut world, &mut player, &data);
+            }
+            (
+                serde_json::to_string(&world).expect("world serializes"),
+                serde_json::to_string(&player).expect("player serializes"),
+            )
+        };
+        assert_eq!(
+            run(),
+            run(),
+            "same seed must reproduce identical world and player state"
+        );
+    }
 }
