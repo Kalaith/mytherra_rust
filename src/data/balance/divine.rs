@@ -153,4 +153,9 @@ pub struct MagicBalance {
     pub research_evidence_gain: f32,
     pub emerging_effect_scale: f32,
     pub stat_cap: f32,
+    /// A mature path's effect on a region is scaled by that region's arcane
+    /// attunement: `affinity_base + magic_affinity * affinity_coeff` (GDD 5.6).
+    /// Magic flows along the world's currents — attuned lands are reshaped more.
+    pub affinity_base: f32,
+    pub affinity_coeff: f32,
 }

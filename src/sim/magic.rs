@@ -37,8 +37,12 @@ pub fn tick_magic(
 
         let scale = path.effect_scale(balance);
         if scale > 0.0 {
-            let (dp, dc, dd, dm) = stat_deltas(path.effect_stat, path.effect_per_tick * scale);
+            let amount = path.effect_per_tick * scale;
             for region in regions.iter_mut() {
+                // Magic bites deepest where the arcane runs strong.
+                let attunement =
+                    balance.affinity_base + region.magic_affinity * balance.affinity_coeff;
+                let (dp, dc, dd, dm) = stat_deltas(path.effect_stat, amount * attunement);
                 region.apply_deltas(dp, dc, dd, dm, region_balance);
             }
         }
@@ -67,6 +71,48 @@ mod tests {
     use super::*;
     use crate::data::GameData;
     use crate::world::WorldState;
+
+    #[test]
+    fn magic_manifests_strongest_where_affinity_is_high() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.regions.truncate(2);
+        world.regions[0].magic_affinity = 100.0;
+        world.regions[0].prosperity = 50.0;
+        world.regions[1].magic_affinity = 0.0;
+        world.regions[1].prosperity = 50.0;
+
+        // A single Known path that lifts prosperity.
+        world.magic_paths.clear();
+        world.magic_paths.push(MagicPath {
+            id: "p".to_owned(),
+            name: "Test Art".to_owned(),
+            description: String::new(),
+            effect_stat: MagicStat::Prosperity,
+            effect_per_tick: 1.0,
+            progress: data.balance.magic.known_progress,
+            evidence: data.balance.magic.known_evidence,
+            state: MagicState::Known,
+            announced_known: true,
+        });
+
+        tick_magic(
+            &mut world.magic_paths,
+            &mut world.regions,
+            &data.balance.magic,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        let attuned_gain = world.regions[0].prosperity - 50.0;
+        let barren_gain = world.regions[1].prosperity - 50.0;
+        assert!(
+            attuned_gain > barren_gain,
+            "magic should manifest more strongly in the attuned region ({attuned_gain} vs {barren_gain})"
+        );
+    }
 
     #[test]
     fn research_paths_mature_over_time() {
