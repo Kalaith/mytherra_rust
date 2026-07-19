@@ -275,7 +275,8 @@
     "emerging_effect_scale": 0.5,
     "stat_cap": 100.0,
     "affinity_base": 0.5,
-    "affinity_coeff": 0.01
+    "affinity_coeff": 0.01,
+    "known_renown_per_tick": 0.35
   },
   "myth": {
     "promote_cost": 22,

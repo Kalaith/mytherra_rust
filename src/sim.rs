@@ -132,6 +132,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     magic::tick_magic(
         &mut world.magic_paths,
         &mut world.regions,
+        &mut world.heroes,
         &data.balance.magic,
         &data.balance.region,
         &mut world.chronicle,

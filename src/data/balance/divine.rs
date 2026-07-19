@@ -180,4 +180,8 @@ pub struct MagicBalance {
     /// Magic flows along the world's currents — attuned lands are reshaped more.
     pub affinity_base: f32,
     pub affinity_coeff: f32,
+    /// Renown each *Known* path grants, per tick, to a living hero — scaled by
+    /// the hero's region attunement. Magic reaches living things too, not just
+    /// the land (GDD 5.6): an age of mastered arcana breeds legends.
+    pub known_renown_per_tick: f32,
 }
