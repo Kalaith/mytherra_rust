@@ -107,13 +107,27 @@ fn draw_card(ctx: &UiContext<'_>, artifact: &Artifact, rect: Rect, actions: &mut
         rect.y + 44.0,
         TextStyle::new(13.0, dark::TEXT_DIM).params(),
     );
+    // Colour and label the instability by proximity to the backlash threshold
+    // (not an absolute 0-100 scale), so the warning is correct for any tuning and
+    // the player is told to stabilize before a relic shatters (GDD 5.6).
+    let proximity = artifact.instability / balance.backlash_threshold.max(1.0);
+    let critical = proximity >= 0.7;
+    let template = if critical {
+        &strings.instability_critical
+    } else {
+        &strings.instability
+    };
     meter(
         Rect::new(rect.x + 14.0, rect.y + 54.0, rect.w - 28.0, 12.0),
         artifact.instability,
         balance.backlash_threshold,
-        bad_stat_color(artifact.instability),
+        if critical {
+            dark::NEGATIVE
+        } else {
+            bad_stat_color(proximity * 100.0)
+        },
         Some(&fill(
-            &strings.instability,
+            template,
             &[("instability", format!("{:.0}", artifact.instability))],
         )),
     );

@@ -191,6 +191,8 @@ pub struct DivineText {
     pub transfer: String,
     pub artifact_meta: String,
     pub instability: String,
+    /// Instability meter label when a relic is close to backlash — a call to stabilize.
+    pub instability_critical: String,
     pub omens_panel: String,
     pub omens_intro: String,
     pub omen_line: String,
