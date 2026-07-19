@@ -118,5 +118,29 @@
     "predicate": "new_region",
     "threshold": 0.0,
     "description": "A new region will rise before the wager expires — a frontier founded or a land fractured."
+  },
+  {
+    "id": "grandmaster",
+    "name": "Grandmaster",
+    "base_odds": 3.2,
+    "predicate": "hero_level_at_least",
+    "threshold": 25.0,
+    "description": "{target} will rise to the rarefied level {threshold}."
+  },
+  {
+    "id": "metropolis",
+    "name": "Metropolis",
+    "base_odds": 3.0,
+    "predicate": "settlement_population_at_least",
+    "threshold": 16000.0,
+    "description": "{target} will swell into a metropolis of {threshold} souls."
+  },
+  {
+    "id": "arcane_zenith",
+    "name": "Arcane Zenith",
+    "base_odds": 3.2,
+    "predicate": "region_magic_at_least",
+    "threshold": 90.0,
+    "description": "{target}'s magic will surge to the arcane zenith of {threshold}."
   }
 ]
