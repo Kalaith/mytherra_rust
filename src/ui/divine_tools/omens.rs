@@ -22,6 +22,7 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
         TextStyle::new(15.0, dark::TEXT_DIM).params(),
     );
 
+    let omens = &ctx.data.balance.omens;
     let mut y = content.y + 52.0;
     for region in &ctx.world.regions {
         let pressure = region.pressure();
@@ -43,6 +44,30 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
                     ("tier", tier(pressure, strings).to_owned()),
                 ],
             )),
+        );
+
+        // Generational horizon (GDD 5.6): extrapolate the current pressure drift
+        // forward — a read-only projection, never a change to the world.
+        let drift = pressure - region.prev_pressure();
+        let projected = (pressure + drift * omens.horizon_ticks).clamp(0.0, 100.0);
+        let outlook = if drift > omens.trend_deadzone {
+            &strings.omen_deepening
+        } else if drift < -omens.trend_deadzone {
+            &strings.omen_easing
+        } else {
+            &strings.omen_holding
+        };
+        draw_ui_text_ex(
+            &fill(
+                &strings.omen_horizon,
+                &[
+                    ("outlook", outlook.clone()),
+                    ("tier", tier(projected, strings).to_owned()),
+                ],
+            ),
+            content.x,
+            y + 66.0,
+            TextStyle::new(13.0, bad_stat_color(projected)).params(),
         );
 
         // The divine works currently shaping this region — omens surface cause,
@@ -80,10 +105,10 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
         draw_ui_text_ex(
             &forces,
             content.x,
-            y + 68.0,
+            y + 86.0,
             TextStyle::new(14.0, dark::TEXT_DIM).params(),
         );
-        y += 84.0;
+        y += 102.0;
     }
 }
 

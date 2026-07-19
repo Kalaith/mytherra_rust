@@ -36,6 +36,7 @@ pub struct Balance {
     pub hero: HeroBalance,
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
+    pub omens: OmensBalance,
     pub artifact: ArtifactBalance,
     pub weather: WeatherBalance,
     pub magic: MagicBalance,

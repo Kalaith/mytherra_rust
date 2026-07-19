@@ -182,6 +182,11 @@ pub struct DivineText {
     pub omen_dire: String,
     pub omen_forces: String,
     pub omen_no_forces: String,
+    /// Generational-horizon forecast line and its three outlook words.
+    pub omen_horizon: String,
+    pub omen_deepening: String,
+    pub omen_easing: String,
+    pub omen_holding: String,
     pub tool_todo: String,
     pub new_artifact_name: String,
     pub weather_panel: String,

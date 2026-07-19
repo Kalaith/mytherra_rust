@@ -35,6 +35,18 @@ pub struct BettingBalance {
     pub min_odds: f32,
 }
 
+/// Omens forecasting tuning (GDD 5.6). Omens never mutate world state; these
+/// values only shape how far the read-only projection extrapolates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OmensBalance {
+    /// How many ticks of the current pressure drift to extrapolate for the
+    /// generational horizon.
+    pub horizon_ticks: f32,
+    /// Deadzone (in pressure points/tick) below which the drift reads as
+    /// "holding" rather than deepening or easing.
+    pub trend_deadzone: f32,
+}
+
 /// Artifact tool tuning (GDD 5.6).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArtifactBalance {

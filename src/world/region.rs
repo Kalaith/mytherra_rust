@@ -159,7 +159,17 @@ impl Region {
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {
-        self.chaos * 0.38 + self.danger * 0.42 + (100.0 - self.prosperity) * 0.2
+        Self::pressure_of(self.chaos, self.danger, self.prosperity)
+    }
+
+    /// The same pressure a tick ago (from the `prev` snapshot); `pressure() -
+    /// prev_pressure()` is the drift the Omens horizon extrapolates.
+    pub fn prev_pressure(&self) -> f32 {
+        Self::pressure_of(self.prev.chaos, self.prev.danger, self.prev.prosperity)
+    }
+
+    fn pressure_of(chaos: f32, danger: f32, prosperity: f32) -> f32 {
+        chaos * 0.38 + danger * 0.42 + (100.0 - prosperity) * 0.2
     }
 
     /// Projected military might (GDD 5.2): drawn from wealth, numbers, standing
@@ -242,6 +252,24 @@ mod tests {
             cultural_influence: 50.0,
             divine_resonance: 50.0,
         }
+    }
+
+    #[test]
+    fn pressure_drift_tracks_worsening_stats() {
+        let balance = balance().region;
+        let mut region = Region::from_seed(&seed(), &balance);
+        // Snapshot the calm baseline, then let danger and chaos climb.
+        region.prev = StatSnapshot {
+            prosperity: region.prosperity,
+            chaos: region.chaos,
+            danger: region.danger,
+            magic_affinity: region.magic_affinity,
+        };
+        region.danger = 90.0;
+        region.chaos = 80.0;
+        // Pressure now exceeds the snapshot's, so the drift the omens read is
+        // positive — the age is deepening.
+        assert!(region.pressure() > region.prev_pressure());
     }
 
     fn bless() -> RegionActionDef {
