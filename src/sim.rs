@@ -152,23 +152,10 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
     );
 
-    // With every stat-mover settled for this tick, let regions that have been
-    // pushed past their breaking point fracture into new ones (GDD 5.2).
-    genesis::tick_genesis(
-        &mut world.regions,
-        &mut world.settlements,
-        &mut world.heroes,
-        &mut world.civilization,
-        &mut world.region_seq,
-        data.agendas.len(),
-        &mut world.rng,
-        &data.balance.genesis,
-        &data.balance.region,
-        &mut world.chronicle,
-        &data.strings.genesis,
-        &data.strings.chronicle,
-        world.year,
-    );
+    // With every stat-mover settled for this tick, let the map reshape: regions
+    // pushed past breaking fracture into new ones, and strong powers annex
+    // collapsed, undefended neighbours (GDD 5.2).
+    genesis::tick_genesis(world, data);
 
     pantheon::tick_pantheon(
         &mut world.pantheon,
@@ -232,6 +219,41 @@ mod tests {
         assert_eq!(world.year, start_year + 1);
         assert_eq!(world.tick_count, 1);
         assert_eq!(player.favor, data.config.favor_per_tick);
+    }
+
+    #[test]
+    fn a_collapsed_region_is_conquered_through_the_full_tick() {
+        // End-to-end: with a dominant power next door and no defender, a
+        // crisis-stricken region is annexed — and every later tick system copes
+        // with the region vanishing mid-tick. This is the integration guard that
+        // removing a region from `world.regions` never desyncs the pipeline.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        let start = world.regions.len();
+
+        let loser_id = world.regions[0].id.clone(); // aldermoor, trade-linked to kharzul
+        world.regions[1].prosperity = 90.0;
+        world.regions[1].population = 40000.0;
+        world.regions[1].chaos = 20.0;
+        world.regions[1].danger = 20.0;
+        world.regions[1].refresh_status(&data.balance.region);
+        world.regions[0].prosperity = 8.0;
+        world.regions[0].chaos = 90.0;
+        world.regions[0].danger = 90.0;
+        world.regions[0].population = 3000.0;
+        world.regions[0].refresh_status(&data.balance.region);
+        for hero in &mut world.heroes {
+            if hero.region_id == loser_id {
+                hero.level = 1;
+            }
+        }
+
+        tick_world(&mut world, &mut player, &data);
+
+        assert_eq!(world.regions.len(), start - 1, "no region was conquered");
+        assert!(!world.regions.iter().any(|r| r.id == loser_id));
+        assert!(world.summary().region_count == start - 1);
     }
 
     #[test]

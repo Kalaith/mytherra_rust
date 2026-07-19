@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 pub struct Balance {
     pub region: RegionBalance,
     pub genesis: GenesisBalance,
+    pub conquest: ConquestBalance,
     pub hero: HeroBalance,
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
@@ -80,6 +81,37 @@ pub struct GenesisBalance {
     pub parent_chaos_relief: f32,
     pub parent_danger_relief: f32,
     pub parent_prosperity_hit: f32,
+}
+
+/// Region-conquest tuning (GDD 5.2): a strong region can annex a trade-linked
+/// neighbour that has collapsed into crisis, merging the loser into the winner.
+/// The inverse of a fracture — it removes a region rather than adding one. See
+/// `sim/genesis.rs`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConquestBalance {
+    /// Military-might weights: a region projects force from its wealth, numbers,
+    /// standing threat, and (for martial cultures) a warlike bonus.
+    pub might_prosperity: f32,
+    pub might_population: f32,
+    pub might_danger: f32,
+    pub might_martial_bonus: f32,
+    /// A region must reach this might to move on a neighbour at all.
+    pub aggressor_min_might: f32,
+    /// The aggressor's might must exceed the target's by this margin.
+    pub conquest_margin: f32,
+    /// A living hero of at least this level shields its region from conquest —
+    /// the same calibre of hero who would instead lead it to secede.
+    pub defender_min_level: u32,
+    /// If true, conquest only follows an existing trade route between the pair.
+    pub require_trade_link: bool,
+    /// Fraction of the loser's population the winner absorbs (the rest is lost).
+    pub population_transfer: f32,
+    /// Stat marks the war of conquest leaves on the victor.
+    pub winner_prosperity: f32,
+    pub winner_chaos: f32,
+    pub winner_danger: f32,
+    /// The world will never be conquered below this many regions.
+    pub min_regions: usize,
 }
 
 /// Dynamic culture-scoring tuning (GDD 5.2).

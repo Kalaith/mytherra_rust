@@ -298,6 +298,7 @@ pub struct ChronicleText {
     pub culture_shift: String,
     pub settlement_built: String,
     pub region_fracture: String,
+    pub region_conquest: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.

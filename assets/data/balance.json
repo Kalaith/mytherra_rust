@@ -44,6 +44,21 @@
     "parent_danger_relief": 12.0,
     "parent_prosperity_hit": 8.0
   },
+  "conquest": {
+    "might_prosperity": 0.5,
+    "might_population": 0.002,
+    "might_danger": 0.2,
+    "might_martial_bonus": 12.0,
+    "aggressor_min_might": 55.0,
+    "conquest_margin": 16.0,
+    "defender_min_level": 5,
+    "require_trade_link": true,
+    "population_transfer": 0.7,
+    "winner_prosperity": -6.0,
+    "winner_chaos": 10.0,
+    "winner_danger": 14.0,
+    "min_regions": 3
+  },
   "hero": {
     "life_expectancy_base": 70.0,
     "life_expectancy_per_level": 2.0,
