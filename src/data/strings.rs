@@ -290,6 +290,8 @@ pub struct UiText {
     pub page_label: String,
     pub page_prev: String,
     pub page_next: String,
+    /// Region-detail warning of scheduled backlash/weather aftermaths; `{count}`.
+    pub aftermath_looms: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

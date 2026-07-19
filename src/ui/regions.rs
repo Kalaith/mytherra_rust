@@ -270,6 +270,27 @@ fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiActio
         y += 22.0;
     }
 
+    // Scheduled aftermaths (artifact backlash / harmful weather) that will strike
+    // this region — surfaced so the player can foresee and answer them (GDD 5.6).
+    let looming = ctx
+        .world
+        .pending_consequences
+        .iter()
+        .filter(|c| c.region_id == region.id)
+        .count();
+    if looming > 0 {
+        draw_ui_text_ex(
+            &fill(
+                &strings.ui.aftermath_looms,
+                &[("count", looming.to_string())],
+            ),
+            content.x,
+            y,
+            TextStyle::new(14.0, dark::NEGATIVE).params(),
+        );
+        y += 22.0;
+    }
+
     // Divine action buttons.
     draw_ui_text_ex(
         &strings.panels.divine_actions,
