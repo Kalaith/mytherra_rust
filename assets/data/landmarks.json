@@ -1,9 +1,107 @@
 [
-  { "id": "grand_library", "name": "The Grand Library", "region_id": "aldermoor", "culture": "scholarly", "influence": 2.0 },
-  { "id": "sunspire", "name": "Sunspire Temple", "region_id": "aldermoor", "culture": "mystical", "influence": 1.5 },
-  { "id": "war_cairns", "name": "The War Cairns", "region_id": "kharzul", "culture": "martial", "influence": 2.0 },
-  { "id": "ironmarket", "name": "Ironmarket", "region_id": "kharzul", "culture": "mercantile", "influence": 1.5 },
-  { "id": "world_tree", "name": "The World Tree", "region_id": "sylvenmar", "culture": "mystical", "influence": 2.5 },
-  { "id": "tide_temple", "name": "Temple of Tides", "region_id": "sylvenmar", "culture": "pastoral", "influence": 1.5 },
-  { "id": "harvest_shrine", "name": "The Harvest Shrine", "region_id": "hearthmoor", "culture": "pastoral", "influence": 2.0 }
+  {
+    "id": "grand_library",
+    "name": "The Grand Library",
+    "region_id": "aldermoor",
+    "culture": "scholarly",
+    "influence": 2.0
+  },
+  {
+    "id": "sunspire",
+    "name": "Sunspire Temple",
+    "region_id": "aldermoor",
+    "culture": "mystical",
+    "influence": 1.5
+  },
+  {
+    "id": "war_cairns",
+    "name": "The War Cairns",
+    "region_id": "kharzul",
+    "culture": "martial",
+    "influence": 2.0
+  },
+  {
+    "id": "ironmarket",
+    "name": "Ironmarket",
+    "region_id": "kharzul",
+    "culture": "mercantile",
+    "influence": 1.5
+  },
+  {
+    "id": "world_tree",
+    "name": "The World Tree",
+    "region_id": "sylvenmar",
+    "culture": "mystical",
+    "influence": 2.5
+  },
+  {
+    "id": "tide_temple",
+    "name": "Temple of Tides",
+    "region_id": "sylvenmar",
+    "culture": "pastoral",
+    "influence": 1.5
+  },
+  {
+    "id": "harvest_shrine",
+    "name": "The Harvest Shrine",
+    "region_id": "hearthmoor",
+    "culture": "pastoral",
+    "influence": 2.0
+  },
+  {
+    "id": "astronomers_tower",
+    "name": "The Astronomer's Tower",
+    "region_id": "aldermoor",
+    "culture": "scholarly",
+    "influence": 2.0
+  },
+  {
+    "id": "hall_of_records",
+    "name": "Hall of Records",
+    "region_id": "aldermoor",
+    "culture": "scholarly",
+    "influence": 1.5
+  },
+  {
+    "id": "bloodied_gate",
+    "name": "The Bloodied Gate",
+    "region_id": "kharzul",
+    "culture": "martial",
+    "influence": 2.0
+  },
+  {
+    "id": "warriors_barrow",
+    "name": "Warrior's Barrow",
+    "region_id": "kharzul",
+    "culture": "martial",
+    "influence": 1.5
+  },
+  {
+    "id": "whispering_grove",
+    "name": "The Whispering Grove",
+    "region_id": "sylvenmar",
+    "culture": "mystical",
+    "influence": 2.0
+  },
+  {
+    "id": "moonlit_spring",
+    "name": "Moonlit Spring",
+    "region_id": "sylvenmar",
+    "culture": "mystical",
+    "influence": 1.5
+  },
+  {
+    "id": "golden_fields",
+    "name": "The Golden Fields",
+    "region_id": "hearthmoor",
+    "culture": "pastoral",
+    "influence": 2.5
+  },
+  {
+    "id": "old_mill_commons",
+    "name": "Old Mill Commons",
+    "region_id": "hearthmoor",
+    "culture": "pastoral",
+    "influence": 1.5
+  }
 ]
