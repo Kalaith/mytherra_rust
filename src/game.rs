@@ -3,6 +3,7 @@
 
 mod achievements;
 mod actions;
+mod actions_tools;
 mod capture;
 
 use crate::data::{fill, ArtifactFocus, GameData};
