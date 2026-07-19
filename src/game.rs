@@ -229,7 +229,16 @@ impl Game {
     }
 
     fn run_tick(&mut self) {
+        let era_before = self.world.era.number;
         tick_world(&mut self.world, &mut self.player, &self.data);
+        // An age turning is the world's most consequential event — surface it
+        // proactively rather than leaving it to be found in the chronicle.
+        if self.world.era.number > era_before {
+            self.notifications.info(fill(
+                &self.data.strings.notifications.era_dawns,
+                &[("era", self.world.era.name.clone())],
+            ));
+        }
     }
 
     fn apply_action(&mut self, action: UiAction) {

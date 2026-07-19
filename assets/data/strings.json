@@ -164,6 +164,7 @@
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
     "achievement_unlocked": "Achievement unlocked — {name}",
+    "era_dawns": "A new age dawns: {era}",
     "not_enough_favor": "Not enough Divine Favor.",
     "action_success": "{action} on {region} ({cost} favor).",
     "advance_tick": "You will the world forward a year.",

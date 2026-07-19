@@ -297,6 +297,8 @@ pub struct Notifications {
     pub awaken: String,
     /// Shown when an achievement is unlocked; slot `{name}`.
     pub achievement_unlocked: String,
+    /// Shown when an era transition ushers in a new age; slot `{era}`.
+    pub era_dawns: String,
     pub not_enough_favor: String,
     pub action_success: String,
     pub advance_tick: String,
