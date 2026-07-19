@@ -190,6 +190,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
     );
 
+    let era_progress = world.era.pressure / data.balance.era.breaking_threshold.max(1.0);
     speculation::tick_speculations(
         &mut world.speculations,
         &mut world.speculation_seq,
@@ -201,6 +202,8 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.rng,
         data,
         world.year,
+        world.era.number,
+        era_progress,
     );
 
     era::tick_era(world, player, data);

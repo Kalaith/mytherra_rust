@@ -102,5 +102,13 @@
     "predicate": "region_conquered",
     "threshold": 0.0,
     "description": "{target} will be conquered and absorbed by a rival."
+  },
+  {
+    "id": "age_ends",
+    "name": "The Turning Age",
+    "base_odds": 2.2,
+    "predicate": "age_ends",
+    "threshold": 0.0,
+    "description": "The present age will end before the wager expires."
   }
 ]

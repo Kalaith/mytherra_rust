@@ -56,6 +56,10 @@ pub fn quote_event(
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bet {
     pub event_id: String,
+    /// The proposition being wagered on, so boundary handling can tell an
+    /// `AgeEnds` bet (which the era transition *wins*) from the rest.
+    #[serde(default)]
+    pub predicate: crate::data::BetPredicate,
     pub bet_type_name: String,
     pub target_name: String,
     pub confidence_name: String,
@@ -177,6 +181,7 @@ mod tests {
     fn bet(stake: i64, payout: i64, resolved: Option<bool>) -> Bet {
         Bet {
             event_id: "e".to_owned(),
+            predicate: crate::data::BetPredicate::default(),
             bet_type_name: String::new(),
             target_name: String::new(),
             confidence_name: String::new(),

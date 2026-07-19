@@ -172,6 +172,8 @@ pub struct BettingText {
     pub bets_more: String,
     /// Track-record header: wins/losses, net favor, pending count.
     pub record: String,
+    /// Target label for the world-scale "age ends" wager (no entity target).
+    pub age_target: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

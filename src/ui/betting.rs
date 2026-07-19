@@ -124,10 +124,12 @@ fn draw_event_card(
         TextStyle::new(13.0, dark::TEXT_DIM).params(),
     );
 
+    let era_progress = ctx.world.era.pressure / ctx.data.balance.era.breaking_threshold.max(1.0);
     let likelihood = event.likelihood(
         &ctx.world.heroes,
         &ctx.world.regions,
         &ctx.world.settlements,
+        era_progress,
     );
     let quote = quote_event(
         event,

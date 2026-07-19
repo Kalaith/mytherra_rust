@@ -22,6 +22,8 @@ pub fn tick_speculations(
     rng: &mut SeededRng,
     data: &GameData,
     year: u32,
+    era_number: u32,
+    era_progress: f32,
 ) {
     resolve_due(
         events,
@@ -32,8 +34,20 @@ pub fn tick_speculations(
         chronicle,
         data,
         year,
+        era_number,
     );
-    replenish(events, seq, heroes, regions, settlements, rng, data, year);
+    replenish(
+        events,
+        seq,
+        heroes,
+        regions,
+        settlements,
+        rng,
+        data,
+        year,
+        era_number,
+        era_progress,
+    );
     prune(events, data.balance.betting.event_cap);
     prune_bets(&mut player.bets, data.balance.betting.bet_history_cap);
 }
@@ -48,13 +62,14 @@ fn resolve_due(
     chronicle: &mut Chronicle,
     data: &GameData,
     year: u32,
+    era_number: u32,
 ) {
     let text = &data.strings.chronicle;
     for event in events.iter_mut() {
         if !event.is_active() {
             continue;
         }
-        let outcome = if event.is_satisfied(heroes, regions, settlements) {
+        let outcome = if event.is_satisfied(heroes, regions, settlements, era_number) {
             Some(true)
         } else if year >= event.deadline_year {
             Some(false)
@@ -103,19 +118,32 @@ fn replenish(
     rng: &mut SeededRng,
     data: &GameData,
     year: u32,
+    era_number: u32,
+    era_progress: f32,
 ) {
     let target = data.balance.betting.active_events;
     let mut active = events.iter().filter(|e| e.is_active()).count();
     let mut attempts = 0;
     while active < target && attempts < target * 6 {
         attempts += 1;
-        if let Some(event) = generate_event(seq, heroes, regions, settlements, rng, data, year) {
+        if let Some(event) = generate_event(
+            seq,
+            heroes,
+            regions,
+            settlements,
+            rng,
+            data,
+            year,
+            era_number,
+            era_progress,
+        ) {
             events.push(event);
             active += 1;
         }
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn generate_event(
     seq: &mut u64,
     heroes: &[Hero],
@@ -124,6 +152,8 @@ fn generate_event(
     rng: &mut SeededRng,
     data: &GameData,
     year: u32,
+    era_number: u32,
+    era_progress: f32,
 ) -> Option<SpeculationEvent> {
     let bet_type = rng.choose(&data.bet_types)?.clone();
     let timeframe = rng.choose(&data.timeframes)?.clone();
@@ -142,6 +172,8 @@ fn generate_event(
             let settlement = rng.choose(settlements)?;
             (settlement.id.clone(), settlement.name.clone())
         }
+        // A world-scale proposition has no entity; it reads on the age itself.
+        TargetKind::World => (String::new(), data.strings.betting.age_target.clone()),
     };
 
     *seq += 1;
@@ -166,13 +198,14 @@ fn generate_event(
         timeframe_modifier: timeframe.modifier,
         created_year: year,
         deadline_year: year + timeframe.years,
+        created_era: era_number,
         crowd_yes: 0.0,
         crowd_no: 0.0,
         resolved: None,
     };
     // The crowd of watching deities is wise but imperfect: it stakes toward the
     // proposition's real likelihood, so backing the favourite pays less.
-    let likelihood = event.likelihood(heroes, regions, settlements);
+    let likelihood = event.likelihood(heroes, regions, settlements, era_progress);
     (event.crowd_yes, event.crowd_no) = seed_crowd(likelihood, rng, b);
     Some(event)
 }
@@ -238,6 +271,8 @@ mod tests {
             &mut world.rng,
             &data,
             world.year,
+            world.era.number,
+            0.0,
         );
         let active = world.speculations.iter().filter(|e| e.is_active()).count();
         assert_eq!(active, data.balance.betting.active_events);
@@ -276,6 +311,8 @@ mod tests {
                 &mut world.rng,
                 &data,
                 world.year,
+                world.era.number,
+                0.0,
             );
         }
         let mut ids: Vec<&str> = world.speculations.iter().map(|e| e.id.as_str()).collect();
@@ -288,6 +325,7 @@ mod tests {
     fn bet(id: &str, resolved: Option<bool>) -> Bet {
         Bet {
             event_id: id.to_owned(),
+            predicate: crate::data::BetPredicate::default(),
             bet_type_name: "t".to_owned(),
             target_name: "x".to_owned(),
             confidence_name: "c".to_owned(),

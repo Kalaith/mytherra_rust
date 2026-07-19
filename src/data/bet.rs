@@ -4,10 +4,11 @@
 use serde::{Deserialize, Serialize};
 
 /// What a speculation event predicts, and against which kind of target.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum BetPredicate {
     /// The target hero is no longer alive.
+    #[default]
     HeroDies,
     /// The target hero reaches at least `threshold` level.
     HeroLevelAtLeast,
@@ -34,6 +35,9 @@ pub enum BetPredicate {
     SettlementPopulationAtLeast,
     /// The target settlement's prosperity reaches at least `threshold`.
     SettlementProsperityAtLeast,
+    /// The present age ends (a new era begins) before the wager expires — a
+    /// world-scale proposition with no entity target (GDD 5.7).
+    AgeEnds,
 }
 
 /// Which kind of world entity a predicate targets.
@@ -42,6 +46,8 @@ pub enum TargetKind {
     Hero,
     Region,
     Settlement,
+    /// The world as a whole — no single entity (e.g. the era ending).
+    World,
 }
 
 impl BetPredicate {
@@ -59,6 +65,7 @@ impl BetPredicate {
             | BetPredicate::RegionConquered => TargetKind::Region,
             BetPredicate::SettlementPopulationAtLeast
             | BetPredicate::SettlementProsperityAtLeast => TargetKind::Settlement,
+            BetPredicate::AgeEnds => TargetKind::World,
         }
     }
 }

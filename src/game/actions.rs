@@ -153,12 +153,15 @@ impl Game {
             return;
         };
 
-        let (quote, target_name, bet_type_name, deadline) = {
+        let (quote, target_name, bet_type_name, deadline, predicate) = {
             let event = &self.world.speculations[idx];
+            let era_progress =
+                self.world.era.pressure / self.data.balance.era.breaking_threshold.max(1.0);
             let likelihood = event.likelihood(
                 &self.world.heroes,
                 &self.world.regions,
                 &self.world.settlements,
+                era_progress,
             );
             let quote = quote_event(
                 event,
@@ -172,6 +175,7 @@ impl Game {
                 event.target_name.clone(),
                 event.bet_type_name.clone(),
                 event.deadline_year,
+                event.predicate,
             )
         };
 
@@ -184,6 +188,7 @@ impl Game {
 
         self.player.bets.push(Bet {
             event_id: event_id.to_owned(),
+            predicate,
             bet_type_name,
             target_name: target_name.clone(),
             confidence_name: confidence.name.clone(),

@@ -23,6 +23,10 @@ pub struct SpeculationEvent {
     pub timeframe_modifier: f32,
     pub created_year: u32,
     pub deadline_year: u32,
+    /// Era number when the wager was opened; an `AgeEnds` proposition is met once
+    /// the world's era has advanced past it. `serde(default)` keeps old saves loadable.
+    #[serde(default)]
+    pub created_era: u32,
     /// Simulated stakes other deities have placed for/against the proposition.
     pub crowd_yes: f32,
     pub crowd_no: f32,
@@ -40,11 +44,14 @@ impl SpeculationEvent {
     }
 
     /// Whether the proposition is currently satisfied by world state.
+    /// `era_number` is the world's current era, needed only by world-scale
+    /// propositions (`AgeEnds`).
     pub fn is_satisfied(
         &self,
         heroes: &[Hero],
         regions: &[Region],
         settlements: &[Settlement],
+        era_number: u32,
     ) -> bool {
         match self.predicate {
             BetPredicate::HeroDies => self.hero(heroes).map(|h| !h.is_alive).unwrap_or(false),
@@ -91,16 +98,20 @@ impl SpeculationEvent {
                 .settlement(settlements)
                 .map(|s| s.prosperity >= self.threshold)
                 .unwrap_or(false),
+            // The age has turned since the wager opened.
+            BetPredicate::AgeEnds => era_number > self.created_era,
         }
     }
 
     /// Rough current likelihood in [0, 1], used to derive the target odds
-    /// modifier so odds react to real world state.
+    /// modifier so odds react to real world state. `era_progress` is the era's
+    /// pressure over its breaking threshold, read only by `AgeEnds`.
     pub fn likelihood(
         &self,
         heroes: &[Hero],
         regions: &[Region],
         settlements: &[Settlement],
+        era_progress: f32,
     ) -> f32 {
         match self.predicate {
             BetPredicate::HeroDies => self
@@ -175,6 +186,9 @@ impl SpeculationEvent {
                 .settlement(settlements)
                 .map(|s| clamp01(s.prosperity / self.threshold.max(1.0)))
                 .unwrap_or(0.5),
+            // The nearer the era is to breaking, the likelier the age ends soon;
+            // squared so a calm age reads as genuinely unlikely to turn.
+            BetPredicate::AgeEnds => clamp01(era_progress * era_progress),
         }
     }
 
@@ -231,6 +245,7 @@ mod tests {
             timeframe_modifier: 1.0,
             created_year: 1,
             deadline_year: 50,
+            created_era: 1,
             crowd_yes: 1.0,
             crowd_no: 1.0,
             resolved: None,
@@ -242,9 +257,9 @@ mod tests {
         let event = usurpation_event("kharzul");
         // While the region stands, the wager is unfulfilled.
         let standing = vec![region("kharzul")];
-        assert!(!event.is_satisfied(&[], &standing, &[]));
+        assert!(!event.is_satisfied(&[], &standing, &[], 1));
         // Once conquest removes it from the map, the proposition is satisfied.
-        assert!(event.is_satisfied(&[], &[], &[]));
+        assert!(event.is_satisfied(&[], &[], &[], 1));
     }
 
     fn hero(id: &str, renown: f32, alive: bool) -> Hero {
@@ -272,20 +287,20 @@ mod tests {
     fn legend_resolves_only_for_a_living_hero_past_the_renown_bar() {
         let event = legend_event("brogan", 100.0);
         // Below the bar: unfulfilled.
-        assert!(!event.is_satisfied(&[hero("brogan", 60.0, true)], &[], &[]));
+        assert!(!event.is_satisfied(&[hero("brogan", 60.0, true)], &[], &[], 1));
         // At/over the bar while alive: a legend.
-        assert!(event.is_satisfied(&[hero("brogan", 120.0, true)], &[], &[]));
+        assert!(event.is_satisfied(&[hero("brogan", 120.0, true)], &[], &[], 1));
         // A fallen hero can never win the wager, however renowned.
-        assert!(!event.is_satisfied(&[hero("brogan", 200.0, false)], &[], &[]));
+        assert!(!event.is_satisfied(&[hero("brogan", 200.0, false)], &[], &[], 1));
     }
 
     #[test]
     fn legend_likelihood_scales_with_renown_and_zeroes_on_death() {
         let event = legend_event("brogan", 100.0);
-        let rising = event.likelihood(&[hero("brogan", 50.0, true)], &[], &[]);
+        let rising = event.likelihood(&[hero("brogan", 50.0, true)], &[], &[], 0.0);
         assert!((rising - 0.5).abs() < 0.01, "halfway to the bar reads ~0.5");
         assert_eq!(
-            event.likelihood(&[hero("brogan", 40.0, false)], &[], &[]),
+            event.likelihood(&[hero("brogan", 40.0, false)], &[], &[], 0.0),
             0.0
         );
     }
@@ -296,9 +311,9 @@ mod tests {
         // A weak, crisis-stricken region reads as more likely to fall than a
         // vanished one reads as certain.
         let weak = vec![region("kharzul")];
-        let vulnerable = event.likelihood(&[], &weak, &[]);
+        let vulnerable = event.likelihood(&[], &weak, &[], 0.0);
         assert!(vulnerable > 0.0 && vulnerable < 1.0);
-        assert_eq!(event.likelihood(&[], &[], &[]), 1.0);
+        assert_eq!(event.likelihood(&[], &[], &[], 0.0), 1.0);
     }
 
     #[test]
@@ -310,15 +325,31 @@ mod tests {
 
         event.threshold = 30.0;
         assert!(
-            event.is_satisfied(&[], &regions, &[]),
+            event.is_satisfied(&[], &regions, &[], 1),
             "40 clears a bar of 30"
         );
         event.threshold = 60.0;
         assert!(
-            !event.is_satisfied(&[], &regions, &[]),
+            !event.is_satisfied(&[], &regions, &[], 1),
             "40 falls short of 60"
         );
         // Likelihood tracks the ratio to the bar.
-        assert!((event.likelihood(&[], &regions, &[]) - 40.0 / 60.0).abs() < 0.01);
+        assert!((event.likelihood(&[], &regions, &[], 0.0) - 40.0 / 60.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn the_turning_age_resolves_once_the_era_advances() {
+        let mut event = usurpation_event("");
+        event.predicate = BetPredicate::AgeEnds;
+        event.target_kind = TargetKind::World;
+        event.created_era = 3;
+        // Still the same age: unfulfilled.
+        assert!(!event.is_satisfied(&[], &[], &[], 3));
+        // A new age has dawned: satisfied.
+        assert!(event.is_satisfied(&[], &[], &[], 4));
+        // A near-breaking age reads far likelier to turn than a calm one.
+        let calm = event.likelihood(&[], &[], &[], 0.2);
+        let breaking = event.likelihood(&[], &[], &[], 0.95);
+        assert!(breaking > calm && calm < 0.1);
     }
 }

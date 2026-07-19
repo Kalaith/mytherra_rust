@@ -137,10 +137,16 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         world.era_history.remove(0);
     }
 
-    // Bets spanning the boundary are force-expired.
+    // Bets spanning the boundary are force-expired — except a wager on the age
+    // ending, whose winning condition is exactly this transition (GDD 5.7 <-> 5.5).
     for bet in player.bets.iter_mut() {
         if bet.resolved.is_none() {
-            bet.resolved = Some(false);
+            if bet.predicate == crate::data::BetPredicate::AgeEnds {
+                bet.resolved = Some(true);
+                player.favor += bet.potential_payout;
+            } else {
+                bet.resolved = Some(false);
+            }
         }
     }
 
@@ -221,6 +227,42 @@ mod tests {
             record.heroes_lost <= world.heroes.len() as u32,
             "the fallen can't exceed the roster"
         );
+    }
+
+    #[test]
+    fn a_transition_wins_a_wager_on_the_age_ending() {
+        use crate::data::BetPredicate;
+        use crate::world::Bet;
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        for region in &mut world.regions {
+            region.danger = 100.0;
+            region.chaos = 100.0;
+            region.prosperity = 0.0;
+            region.refresh_status(&data.balance.region);
+        }
+        player.bets.push(Bet {
+            event_id: "spec-1".to_owned(),
+            predicate: BetPredicate::AgeEnds,
+            bet_type_name: "The Turning Age".to_owned(),
+            target_name: "the present age".to_owned(),
+            confidence_name: String::new(),
+            stake: 10,
+            potential_payout: 25,
+            odds: 2.0,
+            placed_year: world.year,
+            deadline_year: world.year + 50,
+            resolved: None,
+        });
+        let favor_before = player.favor;
+
+        tick_era(&mut world, &mut player, &data);
+
+        // The age ended, so the wager wins and its payout is credited — the era
+        // boundary must not force-expire it like an ordinary bet.
+        assert_eq!(player.bets[0].resolved, Some(true));
+        assert_eq!(player.favor, favor_before + 25);
     }
 
     #[test]
