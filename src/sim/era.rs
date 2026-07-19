@@ -50,19 +50,9 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
     // heroes and rouses a different number of heirs (GDD 5.7).
     let aftermath = balance.aftermath.get(world.era.dominant_trigger);
 
-    world.era_history.push(EraRecord {
-        number: world.era.number,
-        name: world.era.name.clone(),
-        start_year: world.era.start_year,
-        end_year: world.year,
-        trigger: world.era.dominant_trigger,
-        pressure: world.era.pressure,
-    });
-    if world.era_history.len() > 20 {
-        world.era_history.remove(0);
-    }
-
-    // Heroes reincarnate (age reset, scaled level) or die.
+    // Heroes reincarnate (age reset, scaled level) or die. Tally the fallen so
+    // the closing age's record remembers what its ending cost (GDD 5.7).
+    let mut heroes_lost = 0u32;
     for hero in world.heroes.iter_mut() {
         if !hero.is_alive {
             continue;
@@ -71,6 +61,7 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         let dies = hero.age >= balance.death_age || world.rng.chance(death_chance);
         if dies {
             hero.is_alive = false;
+            heroes_lost += 1;
         } else {
             hero.age = reincarnate_age(
                 &mut world.rng,
@@ -129,6 +120,21 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             is_alive: true,
             renown: 0.0,
         });
+    }
+
+    // The closing age is sealed into the chronicle, now that its toll is known.
+    world.era_history.push(EraRecord {
+        number: world.era.number,
+        name: world.era.name.clone(),
+        start_year: world.era.start_year,
+        end_year: world.year,
+        trigger: world.era.dominant_trigger,
+        pressure: world.era.pressure,
+        heroes_lost,
+        heroes_risen: count,
+    });
+    if world.era_history.len() > 20 {
+        world.era_history.remove(0);
     }
 
     // Bets spanning the boundary are force-expired.
@@ -201,6 +207,18 @@ mod tests {
         tick_era(&mut world, &mut player, &data);
         assert!(world.era.number > era_before);
         assert_eq!(world.era_history.len(), 1);
+
+        // The closed age remembers its toll: at least one heir always rises to
+        // meet the new age (GDD 5.7).
+        let record = world.era_history.last().unwrap();
+        assert!(
+            record.heroes_risen >= 1,
+            "a transition must rouse at least one heir"
+        );
+        assert!(
+            record.heroes_lost <= world.heroes.len() as u32,
+            "the fallen can't exceed the roster"
+        );
     }
 
     #[test]

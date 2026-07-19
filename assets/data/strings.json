@@ -27,7 +27,8 @@
     "holding": "the age holds",
     "trending": "Portents point toward {trigger}.",
     "record_line": "Era {number}: {name}",
-    "record_span": "years {start}-{end}  ·  {trigger}  ·  pressure {pressure}"
+    "record_span": "years {start}-{end}  ·  {trigger}  ·  pressure {pressure}",
+    "record_toll": "{lost} fell  ·  {risen} rose to the new age"
   },
   "ui": {
     "footer_hint": "The world advances on its own. {regions} regions watched  |  S save  L load  N new world  Space advance tick",
@@ -206,7 +207,12 @@
     "focus_effect_valor": "eases danger",
     "focus_effect_wisdom": "kindles magic",
     "focus_effect_devotion": "lifts prosperity",
-    "renown_titles": ["the Renowned", "the Storied", "the Legendary", "the Mythic"],
+    "renown_titles": [
+      "the Renowned",
+      "the Storied",
+      "the Legendary",
+      "the Mythic"
+    ],
     "titled_meta": "{title}  ·  {role}  ·  {region}  ·  {level}",
     "untitled_meta": "{role}  ·  {region}  ·  {level}"
   },

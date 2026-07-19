@@ -162,12 +162,36 @@ fn draw_history(ctx: &UiContext<'_>, rect: Rect) {
                 ],
             ),
             content.x,
-            y + 20.0,
+            y + 19.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),
         );
-        y += 52.0;
+        draw_ui_text_ex(
+            &fill(
+                &strings.record_toll,
+                &[
+                    ("lost", record.heroes_lost.to_string()),
+                    ("risen", record.heroes_risen.to_string()),
+                ],
+            ),
+            content.x,
+            y + 37.0,
+            TextStyle::new(13.0, toll_color(record.heroes_lost)).params(),
+        );
+        y += 62.0;
         if y > content.bottom() {
             break;
         }
+    }
+}
+
+/// A costlier age reads redder in the chronicle: no fallen heroes is calm, a
+/// heavy toll is grim.
+fn toll_color(lost: u32) -> Color {
+    if lost == 0 {
+        dark::TEXT_DIM
+    } else if lost <= 2 {
+        dark::WARNING
+    } else {
+        dark::NEGATIVE
     }
 }

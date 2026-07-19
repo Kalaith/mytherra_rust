@@ -24,6 +24,13 @@ pub struct EraRecord {
     pub end_year: u32,
     pub trigger: EraTrigger,
     pub pressure: f32,
+    /// The human toll of the age's ending (GDD 5.7): heroes who fell in the
+    /// transition and heirs who rose to meet the new age. `serde(default)` keeps
+    /// older saves loadable.
+    #[serde(default)]
+    pub heroes_lost: u32,
+    #[serde(default)]
+    pub heroes_risen: u32,
 }
 
 /// The five trigger scores, highest of which is the era pressure (GDD 5.7).
