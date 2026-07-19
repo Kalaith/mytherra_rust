@@ -1,0 +1,9 @@
+[
+  { "id": "first_nudge", "name": "First Intervention", "description": "Spend favor to nudge the world for the first time." },
+  { "id": "ascendant", "name": "Ascendant", "description": "Rise to the fifth tier of divine standing." },
+  { "id": "divine_hoard", "name": "Divine Hoard", "description": "Hold 500 favor at once." },
+  { "id": "kingmaker", "name": "Kingmaker", "description": "Cultivate a full roster of champions." },
+  { "id": "legend_maker", "name": "Maker of Legends", "description": "See a hero pass into legend." },
+  { "id": "age_witness", "name": "Witness to Ages", "description": "Watch an age end and a new one dawn." },
+  { "id": "prophet", "name": "The Prophet", "description": "Win ten wagers at the Divine Observatory." }
+]

@@ -158,10 +158,12 @@
     "info_display": "World:  {name}",
     "info_version": "Version:  {version}",
     "info_seed": "Seed:  {seed}",
-    "info_year": "Year:  {year}  ·  {regions} regions watched"
+    "info_year": "Year:  {year}  ·  {regions} regions watched",
+    "achievements_title": "Achievements ({done}/{total})"
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
+    "achievement_unlocked": "Achievement unlocked — {name}",
     "not_enough_favor": "Not enough Divine Favor.",
     "action_success": "{action} on {region} ({cost} favor).",
     "advance_tick": "You will the world forward a year.",

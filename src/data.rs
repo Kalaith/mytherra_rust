@@ -78,6 +78,7 @@ const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.jso
 const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
 const BALANCE_JSON: &str = include_str!("../assets/data/balance.json");
 const STRINGS_JSON: &str = include_str!("../assets/data/strings.json");
+const ACHIEVEMENTS_JSON: &str = include_str!("../assets/data/achievements.json");
 
 /// All static content the game needs, resolved once at boot.
 #[derive(Debug, Clone)]
@@ -105,6 +106,8 @@ pub struct GameData {
     pub timeframes: Vec<TimeframeModifier>,
     pub balance: Balance,
     pub strings: Strings,
+    /// Achievement definitions (unlock state lives in the player's save).
+    pub achievements: Vec<macroquad_toolkit::achievements::Achievement>,
 }
 
 impl GameData {
@@ -133,6 +136,8 @@ impl GameData {
         let timeframes: Vec<TimeframeModifier> = load_embedded_json(TIMEFRAMES_JSON)?;
         let balance: Balance = load_embedded_json_labeled("balance", BALANCE_JSON)?;
         let strings: Strings = load_embedded_json_labeled("strings", STRINGS_JSON)?;
+        let achievements: Vec<macroquad_toolkit::achievements::Achievement> =
+            load_embedded_json(ACHIEVEMENTS_JSON)?;
 
         if regions.is_empty() {
             return Err("regions.json contained no regions".to_owned());
@@ -168,6 +173,7 @@ impl GameData {
             timeframes,
             balance,
             strings,
+            achievements,
         })
     }
 

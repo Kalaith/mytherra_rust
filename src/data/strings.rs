@@ -62,6 +62,8 @@ pub struct SettingsText {
     pub info_version: String,
     pub info_seed: String,
     pub info_year: String,
+    /// Achievements column header; slots `{done}` / `{total}`.
+    pub achievements_title: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -293,6 +295,8 @@ pub struct UiText {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Notifications {
     pub awaken: String,
+    /// Shown when an achievement is unlocked; slot `{name}`.
+    pub achievement_unlocked: String,
     pub not_enough_favor: String,
     pub action_success: String,
     pub advance_tick: String,

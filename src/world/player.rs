@@ -21,6 +21,10 @@ pub struct PlayerState {
     pub champions: Vec<Champion>,
     /// The player's placed bets (GDD 5.5).
     pub bets: Vec<Bet>,
+    /// Unlocked-achievement state; reconciled with the current definitions on
+    /// load. `serde(default)` keeps pre-achievement saves loadable.
+    #[serde(default)]
+    pub achievements: macroquad_toolkit::achievements::Achievements,
 }
 
 impl PlayerState {
@@ -33,6 +37,7 @@ impl PlayerState {
             nudges: 0,
             champions: Vec::new(),
             bets: Vec::new(),
+            achievements: macroquad_toolkit::achievements::Achievements::new(),
         }
     }
 

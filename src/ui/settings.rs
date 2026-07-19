@@ -16,6 +16,8 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let content = area.inset(24.0);
     let mut y = content.y + 34.0;
 
+    draw_achievements(ctx, content);
+
     // --- World tick speed ---------------------------------------------------
     draw_ui_text_ex(
         &strings.tick_speed_title,
@@ -124,5 +126,44 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
             TextStyle::new(15.0, dark::TEXT).params(),
         );
         y += 24.0;
+    }
+}
+
+/// The player's achievements, listed down the panel's right column with their
+/// unlock state (GDD 10 — the deity's standing made concrete).
+fn draw_achievements(ctx: &UiContext<'_>, content: Rect) {
+    let strings = &ctx.data.strings.settings;
+    let (done, total) = ctx.player.achievements.progress();
+    let x = content.x + content.w * 0.52;
+    let mut y = content.y + 34.0;
+    draw_ui_text_ex(
+        &fill(
+            &strings.achievements_title,
+            &[("done", done.to_string()), ("total", total.to_string())],
+        ),
+        x,
+        y,
+        TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+    );
+    y += 28.0;
+    for achievement in ctx.player.achievements.iter() {
+        let (mark, color) = if achievement.unlocked {
+            ("[x]", dark::POSITIVE)
+        } else {
+            ("[ ]", dark::TEXT_DIM)
+        };
+        draw_ui_text_ex(
+            &format!("{mark} {}", achievement.name),
+            x,
+            y,
+            TextStyle::new(15.0, color).params(),
+        );
+        draw_ui_text_ex(
+            &achievement.description,
+            x + 6.0,
+            y + 16.0,
+            TextStyle::new(12.0, dark::TEXT_DIM).params(),
+        );
+        y += 40.0;
     }
 }

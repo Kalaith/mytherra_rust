@@ -1,6 +1,7 @@
 //! High-level game loop: owns the world, the player, and screen navigation,
 //! runs the tick timer, and interprets UI intents.
 
+mod achievements;
 mod actions;
 mod capture;
 
@@ -108,6 +109,7 @@ impl Game {
             last_autosave_tick: 0,
         };
         game.refresh_save_state();
+        game.sync_achievements();
         game
     }
 
@@ -121,7 +123,27 @@ impl Game {
             self.apply_action(action);
         }
 
+        self.check_achievements();
         self.maybe_autosave();
+    }
+
+    /// Reconcile the player's saved unlock state with the current achievement
+    /// definitions (call after a new world or a load).
+    fn sync_achievements(&mut self) {
+        self.player
+            .achievements
+            .sync_definitions(self.data.achievements.clone());
+    }
+
+    /// Unlock any newly-earned achievements and toast them.
+    fn check_achievements(&mut self) {
+        let unlocked = achievements::check(&self.world, &mut self.player, &self.data);
+        for name in unlocked {
+            self.notifications.success(fill(
+                &self.data.strings.notifications.achievement_unlocked,
+                &[("name", name)],
+            ));
+        }
     }
 
     pub fn draw(&mut self) {
@@ -282,6 +304,7 @@ impl Game {
     fn new_world(&mut self) {
         self.world = WorldState::new(&self.data);
         self.player = PlayerState::new(&self.data.config);
+        self.sync_achievements();
         self.selected_region = 0;
         self.tick_accum = 0.0;
         self.last_autosave_tick = 0;
@@ -350,6 +373,7 @@ impl Game {
             Ok(save) => {
                 self.world = save.world;
                 self.player = save.player;
+                self.sync_achievements();
                 self.selected_region = 0;
                 self.tick_accum = 0.0;
                 self.last_autosave_tick = self.world.tick_count;
