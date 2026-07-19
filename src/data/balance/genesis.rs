@@ -71,6 +71,10 @@ pub struct ConquestBalance {
     /// conquest entirely (GDD 5.6 ↔ 5.2) — the player's divine lever to save a
     /// threatened region from being absorbed.
     pub shield_min_power: u32,
+    /// Conquest might each point of War-artifact power adds to a region — the
+    /// offensive counterpart to the shield: empower a war relic to turn a region
+    /// into a conqueror (or a militarised holdout).
+    pub artifact_war_might: f32,
     /// If true, conquest only follows an existing trade route between the pair.
     pub require_trade_link: bool,
     /// Fraction of the loser's population the winner absorbs (the rest is lost).

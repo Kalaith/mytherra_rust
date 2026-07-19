@@ -55,6 +55,7 @@
     "conquest_margin": 16.0,
     "defender_min_level": 5,
     "shield_min_power": 3,
+    "artifact_war_might": 8.0,
     "require_trade_link": true,
     "population_transfer": 0.7,
     "winner_prosperity": -6.0,

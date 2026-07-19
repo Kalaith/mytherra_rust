@@ -353,6 +353,78 @@ mod tests {
     }
 
     #[test]
+    fn a_war_relic_empowers_a_marginal_conqueror() {
+        use crate::data::{ArtifactFocus, ArtifactSeed};
+        use crate::world::Artifact;
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.artifacts.clear(); // drop the seeded aegis ward on aldermoor
+        let loser_id = world.regions[0].id.clone(); // aldermoor
+        let winner_id = world.regions[1].id.clone(); // kharzul, trade-linked
+        let start = world.regions.len();
+
+        // An aggressor mighty enough to attack only once a war relic empowers it.
+        {
+            let w = &mut world.regions[1];
+            w.culture = Culture::Mercantile; // no martial might bonus
+            w.prosperity = 60.0;
+            w.population = 5000.0;
+            w.danger = 20.0;
+            w.chaos = 20.0;
+            w.refresh_status(&data.balance.region);
+        }
+        {
+            let l = &mut world.regions[0];
+            l.prosperity = 8.0;
+            l.chaos = 90.0;
+            l.danger = 90.0;
+            l.population = 3000.0;
+            l.refresh_status(&data.balance.region);
+        }
+        // Neutralise every other region: benign (not in crisis, so not a target)
+        // and low-might (not an aggressor), leaving kharzul the only would-be
+        // conqueror and aldermoor its only prey.
+        for i in 2..world.regions.len() {
+            let r = &mut world.regions[i];
+            r.prosperity = 50.0;
+            r.chaos = 20.0;
+            r.danger = 20.0;
+            r.population = 1000.0;
+            r.refresh_status(&data.balance.region);
+        }
+        for hero in &mut world.heroes {
+            if hero.region_id == loser_id {
+                hero.level = 1;
+            }
+        }
+
+        // Without a relic the aggressor is below the might floor — nothing happens.
+        tick_genesis(&mut world, &data);
+        assert_eq!(
+            world.regions.len(),
+            start,
+            "a sub-threshold aggressor conquered without a relic"
+        );
+
+        // A War relic tips it over the threshold and the conquest lands.
+        world.artifacts.push(Artifact::from_seed(&ArtifactSeed {
+            id: "warhorn2".to_owned(),
+            name: "Warhorn".to_owned(),
+            focus: ArtifactFocus::War,
+            power: 3,
+            instability: 0.0,
+            region_id: winner_id.clone(),
+        }));
+        tick_genesis(&mut world, &data);
+        assert_eq!(
+            world.regions.len(),
+            start - 1,
+            "the war relic did not empower the conquest"
+        );
+        assert!(!world.regions.iter().any(|r| r.id == loser_id));
+    }
+
+    #[test]
     fn a_veteran_in_a_thriving_land_founds_a_frontier() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
