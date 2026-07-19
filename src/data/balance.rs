@@ -57,6 +57,11 @@ pub struct Balance {
 pub struct PlayerBalance {
     pub level_base_cost: i64,
     pub level_cost_step: i64,
+    /// A rising deity holds more divine power and recovers it faster: each level
+    /// past the first adds this much to the favor cap and per-tick recovery,
+    /// giving level-ups a mechanical payoff (GDD 5.1).
+    pub max_favor_per_level: i64,
+    pub favor_per_tick_per_level: i64,
 }
 
 /// Settings-screen tuning (GDD 10): the selectable auto-tick cadences, in real

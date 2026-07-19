@@ -87,16 +87,19 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
     );
     y += 14.0;
+    let max_favor = ctx
+        .player
+        .max_favor(&ctx.data.config, &ctx.data.balance.player);
     meter(
         Rect::new(content.x, y, content.w, 22.0),
         ctx.player.favor as f32,
-        ctx.data.config.max_favor as f32,
+        max_favor as f32,
         dark::POSITIVE,
         Some(&fill(
             &strings.ui.favor_meter,
             &[
                 ("favor", ctx.player.favor.to_string()),
-                ("max", ctx.data.config.max_favor.to_string()),
+                ("max", max_favor.to_string()),
             ],
         )),
     );

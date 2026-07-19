@@ -222,7 +222,8 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     era::tick_era(world, player, data);
 
-    player.recover(&data.config);
+    let recovered = player.favor_recovery(&data.config, &data.balance.player);
+    player.recover(&data.config, &data.balance.player);
 
     let text = &data.strings.chronicle;
     world.chronicle.push(
@@ -232,7 +233,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             &text.year_dawns,
             &[
                 ("year", world.year.to_string()),
-                ("favor", data.config.favor_per_tick.to_string()),
+                ("favor", recovered.to_string()),
             ],
         ),
     );

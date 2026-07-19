@@ -88,9 +88,21 @@ impl PlayerState {
         true
     }
 
-    /// Passive per-tick favor recovery, capped at the configured ceiling.
-    pub fn recover(&mut self, config: &GameConfig) {
-        self.favor = (self.favor + config.favor_per_tick).min(config.max_favor);
+    /// The deity's favor ceiling at its current standing: the base plus a bonus
+    /// per level attained (GDD 5.1).
+    pub fn max_favor(&self, config: &GameConfig, balance: &PlayerBalance) -> i64 {
+        config.max_favor + (self.level as i64 - 1) * balance.max_favor_per_level
+    }
+
+    /// Passive per-tick favor recovery at the current standing.
+    pub fn favor_recovery(&self, config: &GameConfig, balance: &PlayerBalance) -> i64 {
+        config.favor_per_tick + (self.level as i64 - 1) * balance.favor_per_tick_per_level
+    }
+
+    /// Passive per-tick favor recovery, capped at the standing's ceiling.
+    pub fn recover(&mut self, config: &GameConfig, balance: &PlayerBalance) {
+        self.favor = (self.favor + self.favor_recovery(config, balance))
+            .min(self.max_favor(config, balance));
     }
 
     fn gain_experience(&mut self, amount: i64, balance: &PlayerBalance) {
@@ -132,6 +144,8 @@ mod tests {
         PlayerBalance {
             level_base_cost: 100,
             level_cost_step: 60,
+            max_favor_per_level: 40,
+            favor_per_tick_per_level: 1,
         }
     }
 
@@ -154,10 +168,35 @@ mod tests {
     #[test]
     fn recovery_respects_ceiling() {
         let cfg = config();
+        let bal = player_balance();
         let mut player = PlayerState::new(&cfg);
         player.favor = cfg.max_favor - 5;
-        player.recover(&cfg);
+        player.recover(&cfg, &bal);
         assert_eq!(player.favor, cfg.max_favor);
+    }
+
+    #[test]
+    fn a_higher_standing_holds_and_recovers_more_favor() {
+        let cfg = config();
+        let bal = player_balance();
+        let mut player = PlayerState::new(&cfg);
+        let base_cap = player.max_favor(&cfg, &bal);
+        let base_recovery = player.favor_recovery(&cfg, &bal);
+
+        player.level = 4; // three levels past the first
+        assert_eq!(
+            player.max_favor(&cfg, &bal),
+            base_cap + 3 * bal.max_favor_per_level
+        );
+        assert_eq!(
+            player.favor_recovery(&cfg, &bal),
+            base_recovery + 3 * bal.favor_per_tick_per_level
+        );
+
+        // Recovery now fills toward the raised ceiling, not the base one.
+        player.favor = base_cap;
+        player.recover(&cfg, &bal);
+        assert!(player.favor > base_cap);
     }
 
     #[test]
