@@ -49,6 +49,14 @@ pub struct RivalryParams {
     pub escalated_danger: f32,
     pub escalated_chaos: f32,
     pub escalated_strife: f32,
+    /// Bonus renown a triumph grants its hero, scaled by the threat overcome:
+    /// quelling a dangerous region forges more legend than calming a quiet one,
+    /// so the margin of the deed matters, not just that it happened (GDD 5.4).
+    pub triumph_renown_per_threat: f32,
+    /// Bond a defeat frays, scaled by how far the champion's strength fell short
+    /// of the threat — a champion sent against a rivalry beyond them pays for it,
+    /// making cultivation a real defensive investment (GDD 5.4).
+    pub defeat_bond_loss: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

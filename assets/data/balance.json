@@ -191,7 +191,9 @@
       "resolved_strife": -14.0,
       "escalated_danger": 4.0,
       "escalated_chaos": 3.0,
-      "escalated_strife": 9.0
+      "escalated_strife": 9.0,
+      "triumph_renown_per_threat": 0.04,
+      "defeat_bond_loss": 0.25
     },
     "focuses": {
       "valor": {

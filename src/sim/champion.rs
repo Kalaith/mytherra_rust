@@ -35,7 +35,7 @@ pub fn tick_champions(
         champion.quests += 1;
         champion.recompute_rank(balance);
 
-        resolve_rivalry(
+        let outcome = resolve_rivalry(
             champion,
             &heroes[idx],
             regions,
@@ -46,9 +46,28 @@ pub fn tick_champions(
             year,
         );
         // A completed quest is a deed that spreads the champion's fame; a patron's
-        // attention carries them toward legend (GDD 5.4 -> the renown web).
-        heroes[idx].renown += balance.renown_per_quest;
+        // attention carries them toward legend (GDD 5.4 -> the renown web). A
+        // triumph over a dangerous region forges more legend than a quiet one,
+        // while a rout frays the bond the player paid to build.
+        let r = &balance.rivalry;
+        if outcome.resolved {
+            heroes[idx].renown +=
+                balance.renown_per_quest + outcome.threat * r.triumph_renown_per_threat;
+        } else {
+            heroes[idx].renown += balance.renown_per_quest;
+            champion.bond = (champion.bond - outcome.shortfall * r.defeat_bond_loss).max(0.0);
+        }
     }
+}
+
+/// The margin of a resolved rivalry: whether the champion prevailed, and the
+/// figures the caller scales its reward or setback by.
+struct RivalryOutcome {
+    resolved: bool,
+    /// Threat the champion faced (used to scale a triumph's renown).
+    threat: f32,
+    /// How far strength fell short of threat on a defeat, else 0.
+    shortfall: f32,
 }
 
 /// Resolve a quest's rivalry against the hero's current region.
@@ -62,9 +81,14 @@ fn resolve_rivalry(
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
-) {
+) -> RivalryOutcome {
     let Some(region) = regions.iter_mut().find(|r| r.id == hero.region_id) else {
-        return;
+        // No region to contest: treat as a bloodless draw — no reward, no setback.
+        return RivalryOutcome {
+            resolved: false,
+            threat: 0.0,
+            shortfall: 0.0,
+        };
     };
     let r = &balance.rivalry;
     let strength = champion.bond * r.strength_bond
@@ -72,8 +96,9 @@ fn resolve_rivalry(
         + hero.level as f32 * r.strength_level;
     let threat =
         region.pressure() + region.danger * r.threat_danger + region.chaos / r.threat_chaos_div;
+    let resolved = strength >= threat;
 
-    let (template, prosperity, chaos, danger, magic, strife) = if strength >= threat {
+    let (template, prosperity, chaos, danger, magic, strife) = if resolved {
         // A successful champion also stamps its focus on the region: Valor cuts
         // danger, Wisdom kindles magic, Devotion lifts prosperity. It further
         // holds the region together, bleeding off secession pressure.
@@ -107,6 +132,12 @@ fn resolve_rivalry(
             &[("hero", hero.name.clone()), ("region", region.name.clone())],
         ),
     );
+
+    RivalryOutcome {
+        resolved,
+        threat,
+        shortfall: (threat - strength).max(0.0),
+    }
 }
 
 #[cfg(test)]
@@ -255,6 +286,91 @@ mod tests {
         assert!(
             world.regions[region_idx].strife < 60.0,
             "a resolved rivalry should bleed secession pressure"
+        );
+    }
+
+    #[test]
+    fn a_routed_champion_frays_its_bond() {
+        // A modest champion sent against an overwhelming region is defeated, and
+        // pays for it: the bond the player cultivated frays (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let hero = world.heroes[0].clone();
+        let region_idx = world
+            .regions
+            .iter()
+            .position(|r| r.id == hero.region_id)
+            .unwrap();
+        world.regions[region_idx].danger = 100.0;
+        world.regions[region_idx].chaos = 100.0;
+        world.regions[region_idx].strife = 100.0;
+
+        let mut champion = Champion::designate(hero.id.clone(), ChampionFocus::Valor);
+        champion.bond = 50.0;
+        champion.quest_progress = data.balance.champion.quest.goal;
+        let mut champions = vec![champion];
+
+        tick_champions(
+            &mut champions,
+            &mut world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert_eq!(champions[0].quests, 1);
+        assert!(
+            champions[0].bond < 50.0,
+            "a routed champion should fray its bond"
+        );
+        assert!(champions[0].bond >= 0.0, "bond never goes negative");
+    }
+
+    #[test]
+    fn a_harder_won_triumph_forges_more_renown() {
+        // Two triumphs by the same champion, differing only in the region's
+        // threat: quelling the dangerous land forges more renown (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let renown_gained = |danger: f32, chaos: f32| {
+            let mut world = WorldState::new(&data);
+            let hero = world.heroes[0].clone();
+            let region_idx = world
+                .regions
+                .iter()
+                .position(|r| r.id == hero.region_id)
+                .unwrap();
+            world.regions[region_idx].danger = danger;
+            world.regions[region_idx].chaos = chaos;
+            let before = world.heroes[0].renown;
+
+            let mut champion = Champion::designate(hero.id.clone(), ChampionFocus::Valor);
+            champion.bond = 500.0; // strong enough to triumph in both regions
+            champion.rank = 10;
+            champion.quest_progress = data.balance.champion.quest.goal;
+            let mut champions = vec![champion];
+
+            tick_champions(
+                &mut champions,
+                &mut world.heroes,
+                &mut world.regions,
+                &data.balance.champion,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            assert_eq!(champions[0].quests, 1);
+            world.heroes[0].renown - before
+        };
+
+        let calm = renown_gained(10.0, 10.0);
+        let dangerous = renown_gained(80.0, 80.0);
+        assert!(
+            dangerous > calm,
+            "quelling a dangerous region should forge more renown than a quiet one"
         );
     }
 }
