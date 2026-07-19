@@ -94,5 +94,101 @@
     "region_id": "hearthmoor",
     "level": 4,
     "age": 29
+  },
+  {
+    "id": "aldous",
+    "name": "Aldous Merrow",
+    "role": "scholar",
+    "region_id": "aldermoor",
+    "level": 5,
+    "age": 47
+  },
+  {
+    "id": "perrin",
+    "name": "Perrin Ashe",
+    "role": "mage",
+    "region_id": "aldermoor",
+    "level": 3,
+    "age": 29
+  },
+  {
+    "id": "dain",
+    "name": "Dain Ironmaw",
+    "role": "warrior",
+    "region_id": "kharzul",
+    "level": 7,
+    "age": 38
+  },
+  {
+    "id": "kesh",
+    "name": "Kesh Vulgar",
+    "role": "warrior",
+    "region_id": "kharzul",
+    "level": 4,
+    "age": 26
+  },
+  {
+    "id": "thora",
+    "name": "Thora Blacktide",
+    "role": "ranger",
+    "region_id": "kharzul",
+    "level": 6,
+    "age": 41
+  },
+  {
+    "id": "nyra",
+    "name": "Nyra Moonwell",
+    "role": "mage",
+    "region_id": "sylvenmar",
+    "level": 8,
+    "age": 55
+  },
+  {
+    "id": "faelin",
+    "name": "Faelin Duskwind",
+    "role": "ranger",
+    "region_id": "sylvenmar",
+    "level": 3,
+    "age": 24
+  },
+  {
+    "id": "orin",
+    "name": "Orin Starweave",
+    "role": "mage",
+    "region_id": "sylvenmar",
+    "level": 5,
+    "age": 33
+  },
+  {
+    "id": "bly",
+    "name": "Bly Hollowoak",
+    "role": "ranger",
+    "region_id": "hearthmoor",
+    "level": 2,
+    "age": 22
+  },
+  {
+    "id": "marda",
+    "name": "Marda Fenwick",
+    "role": "scholar",
+    "region_id": "hearthmoor",
+    "level": 6,
+    "age": 58
+  },
+  {
+    "id": "cael",
+    "name": "Cael Thornbrook",
+    "role": "warrior",
+    "region_id": "hearthmoor",
+    "level": 4,
+    "age": 31
+  },
+  {
+    "id": "wisp",
+    "name": "Wisp Greenmantle",
+    "role": "ranger",
+    "region_id": "hearthmoor",
+    "level": 3,
+    "age": 27
   }
 ]
