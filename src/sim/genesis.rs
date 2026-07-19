@@ -52,7 +52,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
     let ctext = &data.strings.chronicle;
 
     for region in regions.iter_mut() {
-        fracture::accrue_strife(region, &data.balance.genesis);
+        fracture::accrue_strife(region, artifacts, &data.balance.genesis);
     }
 
     conquest::run(
@@ -161,6 +161,46 @@ mod tests {
         assert!(world.heroes.iter().any(|h| h.region_id == child_id));
         // The secession fed the world's momentum (drives Collapse-era pressure).
         assert!(world.secession_momentum > 0.0);
+    }
+
+    #[test]
+    fn a_knowledge_relic_quells_secession() {
+        use crate::data::{ArtifactFocus, ArtifactSeed};
+        use crate::world::Artifact;
+        let data = GameData::load().unwrap();
+        // Same turmoil that fractures a region in `sustained_turmoil...`, but a
+        // Knowledge relic now bleeds strife faster than the crisis builds it.
+        let mut world = primed_world(&data);
+        // region[0] stays at index 0 (nothing before it is ever removed), and it
+        // is shielded from conquest by its lvl-20 hero, so a fracture is the only
+        // way it could reshape.
+        let base_id = world.regions[0].id.clone();
+        world.artifacts.push(Artifact::from_seed(&ArtifactSeed {
+            id: "codex2".to_owned(),
+            name: "Codex".to_owned(),
+            focus: ArtifactFocus::Knowledge,
+            power: 100,
+            instability: 0.0,
+            region_id: base_id.clone(),
+        }));
+
+        for _ in 0..200 {
+            world.regions[0].chaos = 95.0;
+            world.regions[0].danger = 95.0;
+            world.regions[0].refresh_status(&data.balance.region);
+            tick_genesis(&mut world, &data);
+        }
+
+        let rift_prefix = format!("{base_id}-rift-");
+        assert!(
+            !world.regions.iter().any(|r| r.id.starts_with(&rift_prefix)),
+            "a region held by a Knowledge relic still fractured"
+        );
+        let region0 = world.regions.iter().find(|r| r.id == base_id).unwrap();
+        assert!(
+            region0.strife < data.balance.genesis.fracture_threshold,
+            "the relic should keep strife below the fracture threshold"
+        );
     }
 
     #[test]

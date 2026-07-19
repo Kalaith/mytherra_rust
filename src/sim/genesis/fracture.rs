@@ -4,14 +4,15 @@
 //! carrying off population, a share of the towns, and its founder.
 
 use crate::data::strings::{ChronicleText, GenesisText};
-use crate::data::{fill, Culture, GenesisBalance, RegionBalance, RegionSeed};
-use crate::world::{Chronicle, EventKind, Hero, Region, RegionAgendas, Settlement};
+use crate::data::{fill, ArtifactFocus, Culture, GenesisBalance, RegionBalance, RegionSeed};
+use crate::world::{Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, Settlement};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Build or bleed a region's secession pressure for this tick (deterministic).
 /// A calm region sheds strife faster than a turbulent one builds it, so only a
-/// *sustained* crisis fractures.
-pub(super) fn accrue_strife(region: &mut Region, balance: &GenesisBalance) {
+/// *sustained* crisis fractures. A Knowledge relic bound to the region bleeds
+/// strife on top of that — the player's lever to quell secession by reason.
+pub(super) fn accrue_strife(region: &mut Region, artifacts: &[Artifact], balance: &GenesisBalance) {
     let pressure = region.pressure();
     if pressure > balance.strife_pressure_threshold {
         let over = pressure - balance.strife_pressure_threshold;
@@ -20,6 +21,19 @@ pub(super) fn accrue_strife(region: &mut Region, balance: &GenesisBalance) {
     } else {
         region.strife = (region.strife - balance.strife_decay).max(0.0);
     }
+    let relief = knowledge_relief(&region.id, artifacts, balance);
+    if relief > 0.0 {
+        region.strife = (region.strife - relief).max(0.0);
+    }
+}
+
+/// Strife bled from a region by Knowledge artifacts bound to it (GDD 5.6 ↔ 5.2).
+fn knowledge_relief(region_id: &str, artifacts: &[Artifact], balance: &GenesisBalance) -> f32 {
+    artifacts
+        .iter()
+        .filter(|a| a.focus == ArtifactFocus::Knowledge && a.region_id == region_id)
+        .map(|a| a.power as f32 * balance.artifact_knowledge_relief)
+        .sum()
 }
 
 /// The eligible region with the most strife, if any has boiled over. Ties break

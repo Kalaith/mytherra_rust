@@ -44,7 +44,8 @@
     "parent_danger_relief": 12.0,
     "parent_prosperity_hit": 8.0,
     "momentum_gain": 18.0,
-    "momentum_cap": 55.0
+    "momentum_cap": 55.0,
+    "artifact_knowledge_relief": 0.5
   },
   "conquest": {
     "might_prosperity": 0.5,

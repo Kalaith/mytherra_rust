@@ -47,6 +47,10 @@ pub struct GenesisBalance {
     /// pressure, GDD 5.7), and the ceiling that momentum can reach.
     pub momentum_gain: f32,
     pub momentum_cap: f32,
+    /// Strife each point of Knowledge-artifact power bleeds from its region per
+    /// tick (GDD 5.6 ↔ 5.2) — the player's lever to quell secession by reason,
+    /// the counterpart to a champion holding a region by devotion.
+    pub artifact_knowledge_relief: f32,
 }
 
 /// Region-conquest tuning: a strong region can annex a trade-linked neighbour
