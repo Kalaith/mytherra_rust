@@ -443,4 +443,50 @@ mod tests {
             summary.avg_magic
         );
     }
+
+    #[test]
+    fn the_world_stays_coherent_across_many_ages() {
+        // Drive the whole pipeline through several era transitions, asserting the
+        // world never degenerates: every stat stays finite and in range, no NaN
+        // slips in, settlements never go negative, and the map is never emptied.
+        // A cross-system regression guard for the deterministic simulation.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+
+        for _ in 0..350 {
+            tick_world(&mut world, &mut player, &data);
+
+            assert!(!world.regions.is_empty(), "the map was emptied of regions");
+            for r in &world.regions {
+                for v in [
+                    r.prosperity,
+                    r.chaos,
+                    r.danger,
+                    r.magic_affinity,
+                    r.cultural_influence,
+                    r.divine_resonance,
+                ] {
+                    assert!(
+                        v.is_finite() && (0.0..=100.0).contains(&v),
+                        "region {} stat out of range: {v}",
+                        r.id
+                    );
+                }
+                assert!(r.population.is_finite() && r.population >= 0.0);
+                assert!(r.strife.is_finite() && r.strife >= 0.0);
+            }
+            for s in &world.settlements {
+                assert!(
+                    s.prosperity.is_finite() && (0.0..=100.0).contains(&s.prosperity),
+                    "settlement {} prosperity out of range: {}",
+                    s.id,
+                    s.prosperity
+                );
+                assert!(s.population.is_finite() && s.population >= 0.0);
+            }
+            assert!(player.favor >= 0, "favor went negative");
+        }
+        assert!(world.year >= 350);
+    }
 }
