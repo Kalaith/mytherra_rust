@@ -1,0 +1,77 @@
+//! Region, culture, and trade tuning (GDD 5.2).
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegionBalance {
+    pub cost_multiplier: MultiplierCurve,
+    pub effect_multiplier: MultiplierCurve,
+    pub status: StatusThresholds,
+    pub drift: DriftParams,
+}
+
+/// A resonance-scaled multiplier: `clamp(min, max, 1 +/- (resonance-50) * coeff)`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiplierCurve {
+    pub coeff: f32,
+    pub min: f32,
+    pub max: f32,
+}
+
+/// Thresholds that derive a region's status band from its stats (GDD 5.2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatusThresholds {
+    pub wartorn_danger: f32,
+    pub wartorn_chaos: f32,
+    pub unrest_chaos: f32,
+    pub thriving_prosperity: f32,
+    pub thriving_chaos_max: f32,
+    pub prospering_prosperity: f32,
+    pub struggling_prosperity: f32,
+}
+
+/// Per-tick region drift parameters (GDD 5.2). Prosperity mean-reverts toward a
+/// chaos/danger-derived equilibrium so the world settles dynamically instead of
+/// climbing to the ceiling as every system stacks positive contributions.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DriftParams {
+    pub prosperity_target_base: f32,
+    pub prosperity_chaos_weight: f32,
+    pub prosperity_danger_weight: f32,
+    pub prosperity_reversion_rate: f32,
+    pub chaos_target: f32,
+    pub chaos_rate: f32,
+    pub danger_target: f32,
+    pub danger_rate: f32,
+    pub magic_target: f32,
+    /// Proportional pull toward `magic_target`, so magic — pushed up by
+    /// knowledge artifacts / divination / the Growth deity — settles rather than
+    /// pinning at the ceiling (mirrors the prosperity mean-reversion).
+    pub magic_reversion_rate: f32,
+}
+
+/// Dynamic culture-scoring tuning (GDD 5.2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CultureBalance {
+    /// A challenger must beat the incumbent by this to flip the dominant culture.
+    pub inertia: f32,
+    pub hero_weight: f32,
+    pub landmark_weight: f32,
+    pub resource_weight: f32,
+    pub settlement_weight: f32,
+    /// Mercantile score per trade route touching a region (weighted by volume).
+    pub trade_weight: f32,
+    /// Cultural-influence baseline and per-landmark bonus (the reversion target).
+    pub influence_base: f32,
+    pub influence_per_landmark: f32,
+    pub influence_rate: f32,
+}
+
+/// Trade-route tuning (GDD 5.2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TradeBalance {
+    /// Prosperity added to each endpoint per tick, per unit of route volume.
+    pub prosperity_bonus: f32,
+    /// Fraction each endpoint drifts toward the pair's average prosperity.
+    pub equalize_rate: f32,
+}
