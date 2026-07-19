@@ -4,7 +4,7 @@
 use crate::data::fill;
 use crate::ui::widgets::{button, draw_titled};
 use crate::ui::{content_rect, UiAction, UiContext};
-use crate::world::{quote_event, Bet, SpeculationEvent};
+use crate::world::{bet_record, quote_event, Bet, SpeculationEvent};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
@@ -183,6 +183,28 @@ fn draw_bets_panel(ctx: &UiContext<'_>, rect: Rect) {
         return;
     }
 
+    // Track record header: how the deity's speculation has fared overall.
+    let record = bet_record(&ctx.player.bets);
+    let net_color = match record.net.cmp(&0) {
+        std::cmp::Ordering::Greater => dark::POSITIVE,
+        std::cmp::Ordering::Less => dark::NEGATIVE,
+        std::cmp::Ordering::Equal => dark::TEXT_DIM,
+    };
+    draw_ui_text_ex(
+        &fill(
+            &strings.record,
+            &[
+                ("won", record.won.to_string()),
+                ("lost", record.lost.to_string()),
+                ("net", format!("{:+}", record.net)),
+                ("pending", record.pending.to_string()),
+            ],
+        ),
+        content.x,
+        content.y + 28.0,
+        TextStyle::new(14.0, net_color).params(),
+    );
+
     // Pending wagers first (they still matter), then most recent — and truncate
     // what doesn't fit rather than silently dropping the tail.
     let mut bets: Vec<(usize, &Bet)> = ctx.player.bets.iter().enumerate().collect();
@@ -193,7 +215,7 @@ fn draw_bets_panel(ctx: &UiContext<'_>, rect: Rect) {
             .then(ib.cmp(ia))
     });
 
-    let mut y = content.y + 26.0;
+    let mut y = content.y + 52.0;
     let mut shown = 0;
     for (_, bet) in &bets {
         if y + 56.0 > content.bottom() - 20.0 {

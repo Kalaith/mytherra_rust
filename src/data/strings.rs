@@ -170,6 +170,8 @@ pub struct BettingText {
     pub bet_line: String,
     pub bet_meta: String,
     pub bets_more: String,
+    /// Track-record header: wins/losses, net favor, pending count.
+    pub record: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -70,6 +70,36 @@ pub struct Bet {
     pub resolved: Option<bool>,
 }
 
+/// The player's betting track record, summarized from their wager history.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct BetRecord {
+    pub won: u32,
+    pub lost: u32,
+    pub pending: u32,
+    /// Net favor from settled wagers: `+(payout - stake)` per win, `-stake` per
+    /// loss. Pending wagers don't count until they resolve.
+    pub net: i64,
+}
+
+/// Summarize a player's wagers into a win/loss/pending tally and net favor.
+pub fn bet_record(bets: &[Bet]) -> BetRecord {
+    let mut record = BetRecord::default();
+    for bet in bets {
+        match bet.resolved {
+            Some(true) => {
+                record.won += 1;
+                record.net += bet.potential_payout - bet.stake;
+            }
+            Some(false) => {
+                record.lost += 1;
+                record.net -= bet.stake;
+            }
+            None => record.pending += 1,
+        }
+    }
+    record
+}
+
 /// House odds from the fair-value formula, floored and rounded (GDD 5.5).
 pub fn house_odds(
     base_odds: f32,
@@ -142,5 +172,40 @@ mod tests {
         let b = balance();
         let conf = GameData::load().unwrap().confidence_levels[0].clone();
         assert!(payout(50, 1.1, &conf, &b) >= 51);
+    }
+
+    fn bet(stake: i64, payout: i64, resolved: Option<bool>) -> Bet {
+        Bet {
+            event_id: "e".to_owned(),
+            bet_type_name: String::new(),
+            target_name: String::new(),
+            confidence_name: String::new(),
+            stake,
+            potential_payout: payout,
+            odds: 2.0,
+            placed_year: 1,
+            deadline_year: 5,
+            resolved,
+        }
+    }
+
+    #[test]
+    fn record_tallies_wins_losses_and_net_favor() {
+        let bets = vec![
+            bet(20, 50, Some(true)), // +30
+            bet(30, 90, Some(true)), // +60
+            bet(40, 0, Some(false)), // -40
+            bet(25, 0, None),        // pending, ignored
+        ];
+        let r = bet_record(&bets);
+        assert_eq!(r.won, 2);
+        assert_eq!(r.lost, 1);
+        assert_eq!(r.pending, 1);
+        assert_eq!(r.net, 30 + 60 - 40);
+    }
+
+    #[test]
+    fn an_empty_history_is_a_blank_record() {
+        assert_eq!(bet_record(&[]), BetRecord::default());
     }
 }

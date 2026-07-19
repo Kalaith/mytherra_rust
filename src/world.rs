@@ -22,7 +22,7 @@ mod trade;
 mod weather;
 
 pub use artifact::Artifact;
-pub use bet::{quote_event, Bet};
+pub use bet::{bet_record, quote_event, Bet};
 pub use building::Building;
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind, WorldEvent};
