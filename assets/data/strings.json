@@ -251,7 +251,7 @@
     "artifact_backlash": "{artifact} shatters, scarring {region}.",
     "magic_known": "{path} passes into common knowledge.",
     "myth_echo": "{title} echoes across {region}.",
-    "era_transition": "A new age dawns: {era}, born of {trigger}.",
+    "era_transition": "A new age dawns: {era}, born of {trigger}. {lost} fell, {risen} rose to meet it.",
     "culture_shift": "{region} takes on a {culture} character.",
     "settlement_built": "{settlement} raises a {building}.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",

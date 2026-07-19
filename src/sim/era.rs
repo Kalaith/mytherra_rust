@@ -176,6 +176,8 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             &[
                 ("era", world.era.name.clone()),
                 ("trigger", trigger.to_owned()),
+                ("lost", heroes_lost.to_string()),
+                ("risen", count.to_string()),
             ],
         ),
     );
