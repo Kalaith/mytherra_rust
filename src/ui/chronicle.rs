@@ -35,12 +35,20 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         })
         .collect();
 
+    let strings = &ctx.data.strings.event_log;
     let list_top = content.y + 82.0;
+    let list_start = list_top + 24.0;
+    let row_h = 26.0;
+    // Fill the panel with as many rows as fit, then page the rest so the whole
+    // chronicle is reachable rather than silently truncated at the fold.
+    let page_size = (((content.bottom() - list_start) / row_h).floor() as usize).max(1);
+    let (page, start, end, total_pages) = paginate(events.len(), page_size, ctx.chronicle_page);
+
     draw_ui_text_ex(
         &fill(
-            &ctx.data.strings.event_log.count_line,
+            &strings.count_line,
             &[
-                ("shown", events.len().to_string()),
+                ("shown", (end - start).to_string()),
                 ("total", total.to_string()),
                 ("filter", filter_name.clone()),
             ],
@@ -52,19 +60,20 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
 
     if events.is_empty() {
         draw_ui_text_ex(
-            &fill(
-                &ctx.data.strings.event_log.empty_filtered,
-                &[("filter", filter_name)],
-            ),
+            &fill(&strings.empty_filtered, &[("filter", filter_name)]),
             content.x,
-            list_top + 24.0,
+            list_start,
             TextStyle::new(15.0, dark::TEXT_DIM).params(),
         );
         return;
     }
 
-    let mut y = list_top + 24.0;
-    for event in events {
+    if total_pages > 1 {
+        draw_pager(ctx, content, list_top - 34.0, page, total_pages, actions);
+    }
+
+    let mut y = list_start;
+    for event in &events[start..end] {
         let color = kind_color(event.kind);
         draw_badge(
             Rect::new(content.x, y - 15.0, 66.0, 20.0),
@@ -84,10 +93,70 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
             y,
             TextStyle::new(15.0, dark::TEXT).params(),
         );
-        y += 26.0;
-        if y > content.bottom() {
-            break;
-        }
+        y += row_h;
+    }
+}
+
+/// Clamp `requested` to a valid page over `count` items and return
+/// `(page, start, end, total_pages)`. `page_size` is floored at 1; an empty list
+/// still yields one (empty) page so callers never divide by zero.
+fn paginate(count: usize, page_size: usize, requested: usize) -> (usize, usize, usize, usize) {
+    let page_size = page_size.max(1);
+    let total_pages = count.div_ceil(page_size).max(1);
+    let page = requested.min(total_pages - 1);
+    let start = page * page_size;
+    let end = (start + page_size).min(count);
+    (page, start, end, total_pages)
+}
+
+/// Newer/Older page controls, right-aligned on the header row. The view passes
+/// the exact clamped target page, so a stale stored page can never strand the
+/// player (the buttons always step from what's actually shown).
+fn draw_pager(
+    ctx: &UiContext<'_>,
+    content: Rect,
+    y: f32,
+    page: usize,
+    total_pages: usize,
+    actions: &mut Vec<UiAction>,
+) {
+    let strings = &ctx.data.strings.event_log;
+    let bw = 84.0;
+    let h = 26.0;
+    let label_w = 116.0;
+    let next = Rect::new(content.right() - bw, y, bw, h);
+    let label_x = next.x - 10.0 - label_w;
+    let prev = Rect::new(label_x - 10.0 - bw, y, bw, h);
+
+    if button(
+        prev,
+        &strings.prev_page,
+        page > 0,
+        ButtonTone::Secondary,
+        ctx.mouse,
+    ) {
+        actions.push(UiAction::SetChroniclePage(page - 1));
+    }
+    draw_ui_text_ex(
+        &fill(
+            &strings.page_label,
+            &[
+                ("page", (page + 1).to_string()),
+                ("pages", total_pages.to_string()),
+            ],
+        ),
+        label_x,
+        y + 18.0,
+        TextStyle::new(14.0, dark::TEXT_DIM).params(),
+    );
+    if button(
+        next,
+        &strings.next_page,
+        page + 1 < total_pages,
+        ButtonTone::Secondary,
+        ctx.mouse,
+    ) {
+        actions.push(UiAction::SetChroniclePage(page + 1));
     }
 }
 
@@ -138,5 +207,40 @@ fn kind_color(kind: EventKind) -> Color {
         EventKind::Region => dark::WARNING,
         EventKind::Hero => Color::new(0.7, 0.55, 0.9, 1.0),
         EventKind::System => dark::POSITIVE,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::paginate;
+
+    #[test]
+    fn first_page_starts_at_the_newest() {
+        // 30 events, 14 per page -> 3 pages; page 0 shows the first 14.
+        assert_eq!(paginate(30, 14, 0), (0, 0, 14, 3));
+    }
+
+    #[test]
+    fn a_middle_and_last_page_slice_correctly() {
+        assert_eq!(paginate(30, 14, 1), (1, 14, 28, 3));
+        // The short final page stops at the count, not a full page_size.
+        assert_eq!(paginate(30, 14, 2), (2, 28, 30, 3));
+    }
+
+    #[test]
+    fn an_overshot_request_clamps_to_the_last_page() {
+        // A stale page index (e.g. after a filter narrowed the list) can't strand
+        // the reader on a blank page.
+        assert_eq!(paginate(30, 14, 99), (2, 28, 30, 3));
+    }
+
+    #[test]
+    fn an_empty_list_is_one_empty_page() {
+        assert_eq!(paginate(0, 14, 3), (0, 0, 0, 1));
+    }
+
+    #[test]
+    fn a_zero_page_size_never_divides_by_zero() {
+        assert_eq!(paginate(5, 0, 0), (0, 0, 1, 5));
     }
 }

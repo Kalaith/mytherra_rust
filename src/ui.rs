@@ -83,6 +83,8 @@ pub enum UiAction {
     CycleStake,
     /// Set the Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     SetChronicleFilter(usize),
+    /// Jump the Event Log to the given (already-clamped) page.
+    SetChroniclePage(usize),
     /// Set the hero roster's region filter (0 = all, else `regions[n-1]`).
     SetHeroFilter(usize),
     /// Select the auto-tick cadence by preset index (Settings, GDD 10).
@@ -145,6 +147,8 @@ pub struct UiContext<'a> {
     pub weather_intensity: usize,
     /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     pub chronicle_filter: usize,
+    /// Event Log page (0-based); the view clamps it to the current page count.
+    pub chronicle_page: usize,
     /// Hero roster region filter (0 = all, else `regions[n-1]`).
     pub hero_filter: usize,
     /// Selected auto-tick cadence (index into `balance.settings.tick_speed_presets`).

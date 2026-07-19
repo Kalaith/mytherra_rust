@@ -39,6 +39,8 @@ pub struct Game {
     weather_intensity: usize,
     /// Event Log kind filter (0 = all, else `EventKind::ALL[n-1]`).
     chronicle_filter: usize,
+    /// Event Log page (0-based), reset to the newest page when the filter changes.
+    chronicle_page: usize,
     /// Hero roster region filter (0 = all, else `regions[n-1]`).
     hero_filter: usize,
     /// Auto-tick cadence (index into `balance.settings.tick_speed_presets`).
@@ -90,6 +92,7 @@ impl Game {
             weather_pattern: 0,
             weather_intensity: 0,
             chronicle_filter: 0,
+            chronicle_page: 0,
             hero_filter: 0,
             tick_speed_index,
             paused: false,
@@ -131,6 +134,7 @@ impl Game {
             weather_pattern: self.weather_pattern,
             weather_intensity: self.weather_intensity,
             chronicle_filter: self.chronicle_filter,
+            chronicle_page: self.chronicle_page,
             hero_filter: self.hero_filter,
             tick_speed_index: self.tick_speed_index,
             paused: self.paused,
@@ -214,7 +218,11 @@ impl Game {
                 self.bet_stake_index =
                     (self.bet_stake_index + 1) % self.data.balance.betting.stake_presets.len();
             }
-            UiAction::SetChronicleFilter(index) => self.chronicle_filter = index,
+            UiAction::SetChronicleFilter(index) => {
+                self.chronicle_filter = index;
+                self.chronicle_page = 0; // jump back to the newest page
+            }
+            UiAction::SetChroniclePage(page) => self.chronicle_page = page,
             UiAction::SetHeroFilter(index) => self.hero_filter = index,
             UiAction::SetTickSpeed(index) => {
                 if index < self.data.balance.settings.tick_speed_presets.len() {

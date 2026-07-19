@@ -71,6 +71,10 @@ pub struct EventLogText {
     pub filter_label: String,
     pub count_line: String,
     pub empty_filtered: String,
+    /// Pager: "Page {page} / {pages}" and the two nav buttons.
+    pub page_label: String,
+    pub prev_page: String,
+    pub next_page: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

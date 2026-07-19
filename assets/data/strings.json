@@ -136,7 +136,10 @@
     "filter_all": "All",
     "filter_label": "Filter:",
     "count_line": "{shown} of {total} events  ·  {filter}",
-    "empty_filtered": "No {filter} events recorded yet."
+    "empty_filtered": "No {filter} events recorded yet.",
+    "page_label": "Page {page} / {pages}",
+    "prev_page": "< Newer",
+    "next_page": "Older >"
   },
   "settings": {
     "panel": "Settings",
