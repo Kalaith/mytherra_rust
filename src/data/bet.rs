@@ -38,6 +38,9 @@ pub enum BetPredicate {
     /// The present age ends (a new era begins) before the wager expires — a
     /// world-scale proposition with no entity target (GDD 5.7).
     AgeEnds,
+    /// A new region rises (genesis fracture/frontier lifts the region count above
+    /// where it stood when the wager opened) — world-scale (GDD 5.2).
+    NewRegion,
 }
 
 /// Which kind of world entity a predicate targets.
@@ -65,7 +68,7 @@ impl BetPredicate {
             | BetPredicate::RegionConquered => TargetKind::Region,
             BetPredicate::SettlementPopulationAtLeast
             | BetPredicate::SettlementProsperityAtLeast => TargetKind::Settlement,
-            BetPredicate::AgeEnds => TargetKind::World,
+            BetPredicate::AgeEnds | BetPredicate::NewRegion => TargetKind::World,
         }
     }
 }

@@ -110,5 +110,13 @@
     "predicate": "age_ends",
     "threshold": 0.0,
     "description": "The present age will end before the wager expires."
+  },
+  {
+    "id": "new_region",
+    "name": "A New Land Rises",
+    "base_odds": 2.5,
+    "predicate": "new_region",
+    "threshold": 0.0,
+    "description": "A new region will rise before the wager expires — a frontier founded or a land fractured."
   }
 ]

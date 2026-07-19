@@ -248,7 +248,8 @@
     "bet_meta": "{confidence}  ·  stake {stake}  ·  win {payout}  ·  by {deadline}",
     "bets_more": "+{count} older wagers",
     "record": "{won}W / {lost}L   net {net} favor   {pending} pending",
-    "age_target": "the present age"
+    "age_target": "the present age",
+    "frontier_target": "the shape of the world"
   },
   "chronicle": {
     "world_awakens": "The world awakens.",

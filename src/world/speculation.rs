@@ -27,6 +27,10 @@ pub struct SpeculationEvent {
     /// the world's era has advanced past it. `serde(default)` keeps old saves loadable.
     #[serde(default)]
     pub created_era: u32,
+    /// Region count when the wager was opened; a `NewRegion` proposition is met
+    /// once the world holds more regions than this.
+    #[serde(default)]
+    pub created_region_count: u32,
     /// Simulated stakes other deities have placed for/against the proposition.
     pub crowd_yes: f32,
     pub crowd_no: f32,
@@ -100,6 +104,8 @@ impl SpeculationEvent {
                 .unwrap_or(false),
             // The age has turned since the wager opened.
             BetPredicate::AgeEnds => era_number > self.created_era,
+            // The world holds more regions than when the wager opened.
+            BetPredicate::NewRegion => regions.len() as u32 > self.created_region_count,
         }
     }
 
@@ -189,6 +195,19 @@ impl SpeculationEvent {
             // The nearer the era is to breaking, the likelier the age ends soon;
             // squared so a calm age reads as genuinely unlikely to turn.
             BetPredicate::AgeEnds => clamp01(era_progress * era_progress),
+            // A churning world — lands fracturing from strife or thriving toward a
+            // frontier — is likelier to birth a new region.
+            BetPredicate::NewRegion => {
+                if regions.is_empty() {
+                    0.3
+                } else {
+                    let churning = regions
+                        .iter()
+                        .filter(|r| r.strife > 30.0 || r.prosperity > 75.0)
+                        .count();
+                    clamp01(0.15 + churning as f32 / regions.len() as f32 * 0.6)
+                }
+            }
         }
     }
 
@@ -246,6 +265,7 @@ mod tests {
             created_year: 1,
             deadline_year: 50,
             created_era: 1,
+            created_region_count: 4,
             crowd_yes: 1.0,
             crowd_no: 1.0,
             resolved: None,
@@ -351,5 +371,25 @@ mod tests {
         let calm = event.likelihood(&[], &[], &[], 0.2);
         let breaking = event.likelihood(&[], &[], &[], 0.95);
         assert!(breaking > calm && calm < 0.1);
+    }
+
+    #[test]
+    fn a_new_land_resolves_once_the_region_count_grows() {
+        let mut event = usurpation_event("");
+        event.predicate = BetPredicate::NewRegion;
+        event.target_kind = TargetKind::World;
+        event.created_region_count = 4;
+        // Same four regions: unfulfilled.
+        let four = vec![region("a"), region("b"), region("c"), region("d")];
+        assert!(!event.is_satisfied(&[], &four, &[], 1));
+        // A fifth region has risen: satisfied.
+        let five = vec![
+            region("a"),
+            region("b"),
+            region("c"),
+            region("d"),
+            region("e"),
+        ];
+        assert!(event.is_satisfied(&[], &five, &[], 1));
     }
 }

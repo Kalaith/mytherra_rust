@@ -174,6 +174,8 @@ pub struct BettingText {
     pub record: String,
     /// Target label for the world-scale "age ends" wager (no entity target).
     pub age_target: String,
+    /// Target label for the world-scale "a new land rises" wager.
+    pub frontier_target: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

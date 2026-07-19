@@ -172,8 +172,17 @@ fn generate_event(
             let settlement = rng.choose(settlements)?;
             (settlement.id.clone(), settlement.name.clone())
         }
-        // A world-scale proposition has no entity; it reads on the age itself.
-        TargetKind::World => (String::new(), data.strings.betting.age_target.clone()),
+        // A world-scale proposition has no entity; its label depends on what it
+        // watches — the age, or the shape of the map.
+        TargetKind::World => {
+            let label = match bet_type.predicate {
+                crate::data::BetPredicate::NewRegion => {
+                    data.strings.betting.frontier_target.clone()
+                }
+                _ => data.strings.betting.age_target.clone(),
+            };
+            (String::new(), label)
+        }
     };
 
     *seq += 1;
@@ -199,6 +208,7 @@ fn generate_event(
         created_year: year,
         deadline_year: year + timeframe.years,
         created_era: era_number,
+        created_region_count: regions.len() as u32,
         crowd_yes: 0.0,
         crowd_no: 0.0,
         resolved: None,
