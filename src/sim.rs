@@ -19,13 +19,31 @@ mod trade;
 mod weather;
 
 use crate::data::{fill, GameData};
-use crate::world::{EventKind, PlayerState, WorldState};
+use crate::world::{EventKind, Hero, PlayerState, WorldState};
 
 /// Advance the entire world by one tick: age every region, credit passive
 /// favor, and record the chronicle entries a returning player would read.
 pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameData) {
     world.year += 1;
     world.tick_count += 1;
+
+    // Heroes who were already legends (the top renown title) before this tick, so
+    // we can chronicle the moment any hero first crosses that bar — a milestone
+    // the level-up, era-survival, and mastered-magic renown systems all feed.
+    let legend_bar = data
+        .balance
+        .hero
+        .renown
+        .thresholds
+        .last()
+        .copied()
+        .unwrap_or(f32::INFINITY);
+    let already_legend: Vec<String> = world
+        .heroes
+        .iter()
+        .filter(|h| h.renown >= legend_bar)
+        .map(|h| h.id.clone())
+        .collect();
 
     let mut newly_in_crisis: Vec<String> = Vec::new();
     for region in &mut world.regions {
@@ -207,11 +225,54 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             fill(&text.crisis, &[("region", name)]),
         );
     }
+    for name in newly_legendary(&already_legend, &world.heroes, legend_bar) {
+        world.chronicle.push(
+            world.year,
+            EventKind::Hero,
+            fill(&text.hero_legend, &[("hero", name)]),
+        );
+    }
+}
+
+/// Names of living heroes who have reached `bar` renown this tick but hadn't
+/// before, so the crossing into legend is chronicled exactly once.
+fn newly_legendary(before: &[String], heroes: &[Hero], bar: f32) -> Vec<String> {
+    heroes
+        .iter()
+        .filter(|h| h.is_alive && h.renown >= bar && !before.iter().any(|id| id == &h.id))
+        .map(|h| h.name.clone())
+        .collect()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_a_fresh_living_crossing_into_legend_is_reported() {
+        use crate::data::HeroRole;
+        let h = |id: &str, renown: f32, alive: bool| Hero {
+            id: id.to_owned(),
+            name: format!("{id}-name"),
+            role: HeroRole::Warrior,
+            region_id: "r".to_owned(),
+            level: 1,
+            age: 20,
+            is_alive: alive,
+            renown,
+        };
+        let heroes = vec![
+            h("old", 200.0, true),   // already a legend last tick — no repeat
+            h("new", 200.0, true),   // crossed this tick — announced
+            h("dead", 200.0, false), // legendary but fallen — no fanfare
+            h("mortal", 50.0, true), // below the bar
+        ];
+        let before = vec!["old".to_owned()];
+        assert_eq!(
+            newly_legendary(&before, &heroes, 180.0),
+            vec!["new-name".to_owned()]
+        );
+    }
 
     #[test]
     fn tick_advances_year_and_favor() {

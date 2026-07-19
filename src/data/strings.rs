@@ -313,6 +313,8 @@ pub struct ChronicleText {
     pub divine_action: String,
     pub hero_level_up: String,
     pub hero_death: String,
+    /// A hero crossing into the top renown title.
+    pub hero_legend: String,
     pub champion_resolved: String,
     pub champion_escalated: String,
     pub bet_won: String,
