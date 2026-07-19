@@ -5,7 +5,7 @@ use crate::data::fill;
 use crate::ui::divine_tools::draw_panel;
 use crate::ui::widgets::button;
 use crate::ui::{UiAction, UiContext};
-use crate::world::{agenda_score, RegionAgendas};
+use crate::world::{agenda_score, dominant_agenda, RegionAgendas};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
@@ -59,10 +59,12 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
     let cost = ctx.data.balance.civilization.advance_cost;
     let can_advance = entry.cooldown == 0 && ctx.player.can_afford(cost);
 
+    // Only the region's dominant agenda is the one it actually pursues.
+    let dominant = dominant_agenda(&ctx.data.agendas, region, entry, threshold);
     let mut y = content.y + 68.0;
     for (index, agenda) in ctx.data.agendas.iter().enumerate() {
         let score = agenda_score(agenda, region, entry.boost(index));
-        let active = score >= threshold;
+        let active = dominant == Some(index);
         draw_agenda(
             ctx,
             &agenda.name,

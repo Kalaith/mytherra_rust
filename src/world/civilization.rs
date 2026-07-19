@@ -41,3 +41,25 @@ pub fn agenda_score(agenda: &Agenda, region: &Region, boost: f32) -> f32 {
         + agenda.w_culture * region.cultural_influence
         + boost
 }
+
+/// The single agenda a region is currently pursuing: its highest-scoring one,
+/// but only if that clears the activation threshold. A society commits to one
+/// prevailing course rather than every agenda at once, so a player boost that
+/// makes an agenda dominant *redirects* the region (GDD 5.6). Ties break toward
+/// the earliest agenda, keeping selection deterministic.
+pub fn dominant_agenda(
+    agendas: &[Agenda],
+    region: &Region,
+    entry: &RegionAgendas,
+    threshold: f32,
+) -> Option<usize> {
+    let mut best: Option<(usize, f32)> = None;
+    for (i, agenda) in agendas.iter().enumerate() {
+        let score = agenda_score(agenda, region, entry.boost(i));
+        if best.is_none_or(|(_, s)| score > s) {
+            best = Some((i, score));
+        }
+    }
+    best.filter(|&(_, score)| score >= threshold)
+        .map(|(i, _)| i)
+}

@@ -26,7 +26,7 @@ pub use bet::{quote_event, Bet};
 pub use building::Building;
 pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind, WorldEvent};
-pub use civilization::{agenda_score, RegionAgendas};
+pub use civilization::{agenda_score, dominant_agenda, RegionAgendas};
 pub use era::{compute_scores, generate_era_name, EraRecord, EraState};
 pub use hero::Hero;
 pub use landmark::Landmark;

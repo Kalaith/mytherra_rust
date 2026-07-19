@@ -1,9 +1,9 @@
-//! Per-tick civilization behaviour (GDD 5.6): each region's six agendas are
-//! scored live, and those above the threshold nudge the region. Player boosts
-//! decay over time. Deterministic: no RNG.
+//! Per-tick civilization behaviour (GDD 5.6): each region pursues its single
+//! dominant agenda — the highest-scoring one that clears the threshold — which
+//! nudges the region. Player boosts decay over time. Deterministic: no RNG.
 
 use crate::data::{Agenda, CivStat, CivilizationBalance, RegionBalance};
-use crate::world::{agenda_score, Region, RegionAgendas};
+use crate::world::{dominant_agenda, Region, RegionAgendas};
 
 /// Advance every region's agendas by one tick.
 pub fn tick_civilization(
@@ -22,12 +22,10 @@ pub fn tick_civilization(
         let Some(idx) = regions.iter().position(|r| r.id == entry.region_id) else {
             continue;
         };
-        for (i, agenda) in agendas.iter().enumerate() {
-            let score = agenda_score(agenda, &regions[idx], entry.boost(i));
-            if score >= balance.apply_threshold {
-                let (dp, dc, dd, dm) = stat_deltas(agenda.effect_stat, agenda.effect_amount);
-                regions[idx].apply_deltas(dp, dc, dd, dm, region_balance);
-            }
+        if let Some(a) = dominant_agenda(agendas, &regions[idx], entry, balance.apply_threshold) {
+            let agenda = &agendas[a];
+            let (dp, dc, dd, dm) = stat_deltas(agenda.effect_stat, agenda.effect_amount);
+            regions[idx].apply_deltas(dp, dc, dd, dm, region_balance);
         }
     }
 }
@@ -64,14 +62,43 @@ mod tests {
     }
 
     #[test]
-    fn boosting_an_agenda_can_push_it_active() {
+    fn a_boost_makes_an_agenda_the_regions_dominant_course() {
         let data = GameData::load().unwrap();
         let world = WorldState::new(&data);
-        // A large boost guarantees the first agenda crosses the threshold.
         let region = &world.regions[0];
-        let base_score = agenda_score(&data.agendas[0], region, 0.0);
-        let boosted = agenda_score(&data.agendas[0], region, 100.0);
-        assert!(boosted > base_score);
-        assert!(boosted >= data.balance.civilization.apply_threshold);
+        let threshold = data.balance.civilization.apply_threshold;
+
+        // Massively boosting one agenda makes it the region's dominant course,
+        // regardless of which one naturally led.
+        let mut entry = RegionAgendas::new(region.id.clone(), data.agendas.len());
+        let target = data.agendas.len() - 1;
+        entry.boosts[target] = 500.0;
+        assert_eq!(
+            dominant_agenda(&data.agendas, region, &entry, threshold),
+            Some(target)
+        );
+    }
+
+    #[test]
+    fn only_the_dominant_agenda_applies_its_effect() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        // Force Rivalry (raises danger) to dominate region 0.
+        let rivalry = data.agendas.iter().position(|a| a.id == "rivalry").unwrap();
+        world.civilization[0].boosts[rivalry] = 500.0;
+        let danger_before = world.regions[0].danger;
+
+        tick_civilization(
+            &mut world.civilization,
+            &mut world.regions,
+            &data.agendas,
+            &data.balance.civilization,
+            &data.balance.region,
+        );
+
+        assert!(
+            world.regions[0].danger > danger_before,
+            "the dominant Rivalry agenda should raise danger"
+        );
     }
 }
