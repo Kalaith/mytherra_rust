@@ -70,9 +70,10 @@ fn resolve_rivalry(
     let threat =
         region.pressure() + region.danger * r.threat_danger + region.chaos / r.threat_chaos_div;
 
-    let (template, prosperity, chaos, danger, magic) = if strength >= threat {
+    let (template, prosperity, chaos, danger, magic, strife) = if strength >= threat {
         // A successful champion also stamps its focus on the region: Valor cuts
-        // danger, Wisdom kindles magic, Devotion lifts prosperity.
+        // danger, Wisdom kindles magic, Devotion lifts prosperity. It further
+        // holds the region together, bleeding off secession pressure.
         let focus = balance.focuses.get(champion.focus);
         (
             &text.champion_resolved,
@@ -80,17 +81,21 @@ fn resolve_rivalry(
             r.resolved_chaos,
             r.resolved_danger + focus.resolve_danger,
             focus.resolve_magic,
+            r.resolved_strife,
         )
     } else {
+        // A defeated champion emboldens unrest, feeding secession pressure.
         (
             &text.champion_escalated,
             0.0,
             r.escalated_chaos,
             r.escalated_danger,
             0.0,
+            r.escalated_strife,
         )
     };
     region.apply_deltas(prosperity, chaos, danger, magic, region_balance);
+    region.adjust_strife(strife);
     chronicle.push(
         year,
         EventKind::Hero,
@@ -175,6 +180,43 @@ mod tests {
         assert!(
             world.regions[region_idx].magic_affinity > magic_before,
             "wisdom focus should kindle magic on a resolved rivalry"
+        );
+    }
+
+    #[test]
+    fn a_resolving_champion_bleeds_secession_pressure() {
+        // A strong champion holding a region should quell not just the rivalry
+        // but the strife feeding the genesis fracture system (GDD 5.4 ↔ 5.2).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let hero = world.heroes[0].clone();
+        let region_idx = world
+            .regions
+            .iter()
+            .position(|r| r.id == hero.region_id)
+            .unwrap();
+        world.regions[region_idx].strife = 60.0;
+
+        let mut champion = Champion::designate(hero.id.clone(), ChampionFocus::Devotion);
+        champion.bond = 300.0;
+        champion.rank = 10;
+        champion.quest_progress = data.balance.champion.quest.goal;
+        let mut champions = vec![champion];
+
+        tick_champions(
+            &mut champions,
+            &world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert!(
+            world.regions[region_idx].strife < 60.0,
+            "a resolved rivalry should bleed secession pressure"
         );
     }
 }

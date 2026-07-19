@@ -150,6 +150,12 @@ impl Region {
         self.cultural_influence = clamp_stat(self.cultural_influence + amount);
     }
 
+    /// Nudge secession pressure, clamped at zero. Champions holding a region
+    /// bleed strife; a champion's defeat feeds it (GDD 5.4 ↔ 5.2).
+    pub fn adjust_strife(&mut self, amount: f32) {
+        self.strife = (self.strife + amount).max(0.0);
+    }
+
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {

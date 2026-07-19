@@ -132,8 +132,10 @@
       "resolved_danger": -5.0,
       "resolved_chaos": -3.0,
       "resolved_prosperity": 1.0,
+      "resolved_strife": -14.0,
       "escalated_danger": 4.0,
-      "escalated_chaos": 3.0
+      "escalated_chaos": 3.0,
+      "escalated_strife": 9.0
     },
     "focuses": {
       "valor": { "cost_modifier": 4, "quest_bonus": 2.0, "resolve_prosperity": 0.0, "resolve_danger": -4.0, "resolve_magic": 0.0 },

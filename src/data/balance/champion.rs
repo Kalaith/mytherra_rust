@@ -40,8 +40,12 @@ pub struct RivalryParams {
     pub resolved_danger: f32,
     pub resolved_chaos: f32,
     pub resolved_prosperity: f32,
+    /// Secession pressure a resolved rivalry bleeds off (champion holds the
+    /// region together) vs. what an escalation feeds it (GDD 5.4 ↔ 5.2).
+    pub resolved_strife: f32,
     pub escalated_danger: f32,
     pub escalated_chaos: f32,
+    pub escalated_strife: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
