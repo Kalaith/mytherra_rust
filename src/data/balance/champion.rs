@@ -12,6 +12,9 @@ pub struct ChampionBalance {
     pub rank_per_bond: f32,
     pub rank_per_quests: f32,
     pub rank_cap: u32,
+    /// Renown a champion's hero gains each time it completes a quest — a patron's
+    /// attention spreads their fame, carrying them toward legend (GDD 5.4).
+    pub renown_per_quest: f32,
     pub quest: QuestParams,
     pub rivalry: RivalryParams,
     pub focuses: ChampionFocuses,

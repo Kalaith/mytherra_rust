@@ -116,7 +116,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     champion::tick_champions(
         &mut player.champions,
-        &world.heroes,
+        &mut world.heroes,
         &mut world.regions,
         &data.balance.champion,
         &data.balance.region,

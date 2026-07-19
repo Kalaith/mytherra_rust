@@ -10,7 +10,7 @@ use crate::world::{Champion, Chronicle, EventKind, Hero, Region};
 #[allow(clippy::too_many_arguments)]
 pub fn tick_champions(
     champions: &mut [Champion],
-    heroes: &[Hero],
+    heroes: &mut [Hero],
     regions: &mut [Region],
     balance: &ChampionBalance,
     region_balance: &RegionBalance,
@@ -19,14 +19,14 @@ pub fn tick_champions(
     year: u32,
 ) {
     for champion in champions.iter_mut() {
-        let Some(hero) = heroes
+        let Some(idx) = heroes
             .iter()
-            .find(|h| h.id == champion.hero_id && h.is_alive)
+            .position(|h| h.id == champion.hero_id && h.is_alive)
         else {
             continue; // dormant while the hero is dead or missing
         };
 
-        champion.quest_progress += champion.quest_step(hero.level, balance);
+        champion.quest_progress += champion.quest_step(heroes[idx].level, balance);
         if champion.quest_progress < balance.quest.goal {
             continue;
         }
@@ -37,7 +37,7 @@ pub fn tick_champions(
 
         resolve_rivalry(
             champion,
-            hero,
+            &heroes[idx],
             regions,
             balance,
             region_balance,
@@ -45,6 +45,9 @@ pub fn tick_champions(
             text,
             year,
         );
+        // A completed quest is a deed that spreads the champion's fame; a patron's
+        // attention carries them toward legend (GDD 5.4 -> the renown web).
+        heroes[idx].renown += balance.renown_per_quest;
     }
 }
 
@@ -113,6 +116,41 @@ mod tests {
     use crate::world::WorldState;
 
     #[test]
+    fn a_champions_completed_quest_earns_its_hero_renown() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let hero_id = world.heroes[0].id.clone();
+        let before = world.heroes[0].renown;
+
+        let mut champion = Champion::designate(hero_id.clone(), ChampionFocus::Valor);
+        champion.quest_progress = data.balance.champion.quest.goal; // completes this tick
+        let mut champions = vec![champion];
+
+        tick_champions(
+            &mut champions,
+            &mut world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert_eq!(champions[0].quests, 1);
+        let after = world
+            .heroes
+            .iter()
+            .find(|h| h.id == hero_id)
+            .unwrap()
+            .renown;
+        assert!(
+            (after - before - data.balance.champion.renown_per_quest).abs() < 0.001,
+            "a completed quest should grant exactly renown_per_quest"
+        );
+    }
+
+    #[test]
     fn strong_champion_calms_its_region() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
@@ -133,7 +171,7 @@ mod tests {
 
         tick_champions(
             &mut champions,
-            &world.heroes,
+            &mut world.heroes,
             &mut world.regions,
             &data.balance.champion,
             &data.balance.region,
@@ -168,7 +206,7 @@ mod tests {
 
         tick_champions(
             &mut champions,
-            &world.heroes,
+            &mut world.heroes,
             &mut world.regions,
             &data.balance.champion,
             &data.balance.region,
@@ -205,7 +243,7 @@ mod tests {
 
         tick_champions(
             &mut champions,
-            &world.heroes,
+            &mut world.heroes,
             &mut world.regions,
             &data.balance.champion,
             &data.balance.region,

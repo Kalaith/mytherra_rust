@@ -157,6 +157,7 @@
     "rank_per_bond": 25.0,
     "rank_per_quests": 3.0,
     "rank_cap": 10,
+    "renown_per_quest": 4.0,
     "quest": {
       "base": 7.0,
       "rank_mult": 3.0,
