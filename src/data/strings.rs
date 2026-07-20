@@ -207,6 +207,8 @@ pub struct DivineText {
     pub omen_deepening: String,
     pub omen_easing: String,
     pub omen_holding: String,
+    pub omen_coming_scar: String,
+    pub omen_coming_harvest: String,
     pub tool_todo: String,
     pub new_artifact_name: String,
     pub weather_panel: String,

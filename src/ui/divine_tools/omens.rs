@@ -67,12 +67,37 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
         } else {
             &strings.omen_holding
         };
+        // A scheduled consequence is the most concrete omen of all: fold the
+        // soonest one bound for this region into the horizon, foretelling a
+        // coming scar or harvest by name and timing (GDD 5.6).
+        let coming = ctx
+            .world
+            .pending_consequences
+            .iter()
+            .filter(|c| c.region_id == region.id)
+            .min_by_key(|c| c.delay)
+            .map(|c| {
+                let tmpl = if c.effect.is_boon() {
+                    &strings.omen_coming_harvest
+                } else {
+                    &strings.omen_coming_scar
+                };
+                fill(
+                    tmpl,
+                    &[
+                        ("source", c.source.clone()),
+                        ("years", c.delay.max(0).to_string()),
+                    ],
+                )
+            })
+            .unwrap_or_default();
         draw_ui_text_ex(
             &fill(
                 &strings.omen_horizon,
                 &[
                     ("outlook", outlook.clone()),
                     ("tier", tier(projected, strings).to_owned()),
+                    ("coming", coming),
                 ],
             ),
             content.x,
