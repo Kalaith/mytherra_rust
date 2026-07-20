@@ -86,4 +86,9 @@ pub struct AftermathDelta {
     pub death_mult: f32,
     /// Multiplier on the number of descendant heroes that rise.
     pub descendant_mult: f32,
+    /// Fraction of every settlement's population claimed as the age ends — the
+    /// human toll reaching the towns, not just the heroes (GDD 5.7). A violent
+    /// end guts them; a quiet one barely touches them. A town emptied below the
+    /// abandonment floor passes from the map next tick.
+    pub settlement_toll: f32,
 }

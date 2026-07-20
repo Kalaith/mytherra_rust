@@ -199,6 +199,17 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             &data.balance.region,
         );
     }
+
+    // The toll falls on the towns as well as the heroes (GDD 5.7): the age's end
+    // claims a share of every settlement's souls. A town gutted below the
+    // abandonment floor empties out entirely on the next tick.
+    let toll = aftermath.settlement_toll.clamp(0.0, 1.0);
+    if toll > 0.0 {
+        for settlement in world.settlements.iter_mut() {
+            settlement.population = (settlement.population * (1.0 - toll)).max(0.0);
+        }
+    }
+
     world.weather.clear();
 
     // A new era dawns.
@@ -265,6 +276,39 @@ mod tests {
             record.heroes_lost <= world.heroes.len() as u32,
             "the fallen can't exceed the roster"
         );
+    }
+
+    #[test]
+    fn an_ages_end_tolls_the_towns() {
+        // The transition's human toll reaches the settlements, not just the
+        // heroes (GDD 5.7): every town loses a share of its souls.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        for region in &mut world.regions {
+            region.danger = 100.0;
+            region.chaos = 100.0;
+            region.prosperity = 0.0;
+            region.refresh_status(&data.balance.region);
+        }
+        let before: Vec<(String, f32)> = world
+            .settlements
+            .iter()
+            .map(|s| (s.id.clone(), s.population))
+            .collect();
+
+        tick_era(&mut world, &mut player, &data);
+
+        assert!(world.era.number > 1, "the age should have ended");
+        for (id, was) in &before {
+            let now = world
+                .settlements
+                .iter()
+                .find(|s| &s.id == id)
+                .map(|s| s.population)
+                .expect("settlements are not removed during the transition itself");
+            assert!(now < *was, "the age's end should claim souls from {id}");
+        }
     }
 
     #[test]

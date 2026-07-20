@@ -23,7 +23,7 @@
       "prosperity_target_base": 92.0,
       "prosperity_chaos_weight": 0.5,
       "prosperity_danger_weight": 0.4,
-      "prosperity_reversion_rate": 0.1,
+      "prosperity_reversion_rate": 0.15,
       "chaos_target": 35.0,
       "chaos_rate": 1.0,
       "danger_target": 30.0,
@@ -397,7 +397,8 @@
         "danger": 5.0,
         "magic": 0.0,
         "death_mult": 1.6,
-        "descendant_mult": 0.7
+        "descendant_mult": 0.7,
+        "settlement_toll": 0.35
       },
       "collapse": {
         "prosperity": 9.0,
@@ -405,7 +406,8 @@
         "danger": 0.0,
         "magic": 0.0,
         "death_mult": 1.1,
-        "descendant_mult": 0.6
+        "descendant_mult": 0.6,
+        "settlement_toll": 0.1
       },
       "conquest": {
         "prosperity": 0.0,
@@ -413,7 +415,8 @@
         "danger": 6.0,
         "magic": 0.0,
         "death_mult": 1.4,
-        "descendant_mult": 1.2
+        "descendant_mult": 1.2,
+        "settlement_toll": 0.15
       },
       "rupture": {
         "prosperity": 0.0,
@@ -421,7 +424,8 @@
         "danger": 0.0,
         "magic": 9.0,
         "death_mult": 1.2,
-        "descendant_mult": 1.1
+        "descendant_mult": 1.1,
+        "settlement_toll": 0.08
       },
       "divine_war": {
         "prosperity": 0.0,
@@ -429,7 +433,8 @@
         "danger": 0.0,
         "magic": 0.0,
         "death_mult": 1.8,
-        "descendant_mult": 1.3
+        "descendant_mult": 1.3,
+        "settlement_toll": 0.25
       }
     },
     "cultural_heir_chance": 0.55
