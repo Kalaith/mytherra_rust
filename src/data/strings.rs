@@ -298,6 +298,7 @@ pub struct UiText {
     pub page_next: String,
     /// Region-detail warning of scheduled backlash/weather aftermaths; `{count}`.
     pub aftermath_looms: String,
+    pub boon_ripens: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

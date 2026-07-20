@@ -61,7 +61,8 @@
     "page_label": "Page {page} / {pages}",
     "page_prev": "< Prev",
     "page_next": "Next >",
-    "aftermath_looms": "Omens warn of aftermath — {count} looming here."
+    "aftermath_looms": "Omens warn of aftermath — {count} looming here.",
+    "boon_ripens": "Omens promise a harvest to come — {count} ripening here."
   },
   "divine": {
     "artifacts_panel": "Artifacts ({count}/{max})",

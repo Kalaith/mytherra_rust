@@ -170,23 +170,36 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         y += 22.0;
     }
 
-    // Scheduled aftermaths (artifact backlash / harmful weather) that will strike
-    // this region — surfaced so the player can foresee and answer them (GDD 5.6).
-    let looming = ctx
+    // Scheduled consequences bound for this region, surfaced so the player can
+    // foresee them (GDD 5.6). A coming harvest (bloom) is foretold apart from a
+    // coming scar (blight/backlash) — the two shouldn't read alike.
+    let (boons, banes): (usize, usize) = ctx
         .world
         .pending_consequences
         .iter()
         .filter(|c| c.region_id == region.id)
-        .count();
-    if looming > 0 {
+        .fold((0, 0), |(b, m), c| {
+            if c.effect.is_boon() {
+                (b + 1, m)
+            } else {
+                (b, m + 1)
+            }
+        });
+    if banes > 0 {
         draw_ui_text_ex(
-            &fill(
-                &strings.ui.aftermath_looms,
-                &[("count", looming.to_string())],
-            ),
+            &fill(&strings.ui.aftermath_looms, &[("count", banes.to_string())]),
             content.x,
             y,
             TextStyle::new(14.0, dark::NEGATIVE).params(),
+        );
+        y += 22.0;
+    }
+    if boons > 0 {
+        draw_ui_text_ex(
+            &fill(&strings.ui.boon_ripens, &[("count", boons.to_string())]),
+            content.x,
+            y,
+            TextStyle::new(14.0, dark::POSITIVE).params(),
         );
         y += 22.0;
     }
