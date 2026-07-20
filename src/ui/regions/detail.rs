@@ -217,10 +217,10 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
             ctx,
             region,
             def,
-            Rect::new(content.x, y, content.w, 54.0),
+            Rect::new(content.x, y, content.w, 48.0),
             actions,
         );
-        y += 60.0;
+        y += 54.0;
     }
 
     // Holdings: the region's settlements and resource nodes.
@@ -278,63 +278,41 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         .map(|b| b.name.clone())
         .collect();
 
-    if towns.is_empty()
-        && nodes.is_empty()
-        && marks.is_empty()
-        && trades.is_empty()
-        && builds.is_empty()
-    {
+    let ui = &strings.ui;
+    let lines: Vec<String> = [
+        (!towns.is_empty()).then(|| fill(&ui.settlements_line, &[("list", towns.join(",  "))])),
+        (!nodes.is_empty()).then(|| fill(&ui.resources_line, &[("list", nodes.join(",  "))])),
+        (!marks.is_empty()).then(|| fill(&ui.landmarks_line, &[("list", marks.join(",  "))])),
+        (!trades.is_empty()).then(|| fill(&ui.trade_line, &[("list", trades.join(",  "))])),
+        (!builds.is_empty()).then(|| fill(&ui.buildings_line, &[("list", builds.join(",  "))])),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+
+    if lines.is_empty() {
         draw_ui_text_ex(
-            &strings.ui.no_holdings,
+            &ui.no_holdings,
             content.x,
             y + 14.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),
         );
         return;
     }
-    if !towns.is_empty() {
+    // Draw only the holdings lines that fit above the panel's bottom edge, so a
+    // region weighed down by looming aftermaths never spills its holdings over
+    // the status bar below (GDD 10).
+    for line in lines {
+        if y + 18.0 > content.bottom() {
+            break;
+        }
         draw_ui_text_ex(
-            &fill(&strings.ui.settlements_line, &[("list", towns.join(",  "))]),
+            &line,
             content.x,
-            y + 14.0,
+            y + 13.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),
         );
-        y += 20.0;
-    }
-    if !nodes.is_empty() {
-        draw_ui_text_ex(
-            &fill(&strings.ui.resources_line, &[("list", nodes.join(",  "))]),
-            content.x,
-            y + 14.0,
-            TextStyle::new(13.0, dark::TEXT_DIM).params(),
-        );
-        y += 20.0;
-    }
-    if !marks.is_empty() {
-        draw_ui_text_ex(
-            &fill(&strings.ui.landmarks_line, &[("list", marks.join(",  "))]),
-            content.x,
-            y + 14.0,
-            TextStyle::new(13.0, dark::TEXT_DIM).params(),
-        );
-        y += 20.0;
-    }
-    if !trades.is_empty() {
-        draw_ui_text_ex(
-            &fill(&strings.ui.trade_line, &[("list", trades.join(",  "))]),
-            content.x,
-            y + 14.0,
-            TextStyle::new(13.0, dark::TEXT_DIM).params(),
-        );
-        y += 20.0;
-    }
-    if !builds.is_empty() {
-        draw_ui_text_ex(
-            &fill(&strings.ui.buildings_line, &[("list", builds.join(",  "))]),
-            content.x,
-            y + 14.0,
-            TextStyle::new(13.0, dark::TEXT_DIM).params(),
-        );
+        y += 18.0;
     }
 }
 
