@@ -100,6 +100,10 @@ pub struct WorldState {
     #[serde(default)]
     pub secession_momentum: f32,
     pub settlements: Vec<Settlement>,
+    /// Monotonic counter for unique ids of towns founded mid-run (GDD 5.3), so no
+    /// two founded settlements ever collide.
+    #[serde(default)]
+    pub settlement_seq: u64,
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
     pub trade_routes: Vec<TradeRoute>,
@@ -187,6 +191,7 @@ impl WorldState {
             trade_routes,
             buildings,
             heroes,
+            settlement_seq: 0,
             hero_seq: 0,
             artifacts,
             artifact_seq: 0,

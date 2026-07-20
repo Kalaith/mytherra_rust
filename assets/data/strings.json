@@ -297,6 +297,7 @@
     "culture_shift": "{region} takes on a {culture} character.",
     "settlement_built": "{settlement} raises a {building}.",
     "settlement_abandoned": "{settlement} is abandoned, its last souls scattered from {region}.",
+    "settlement_founded": "Settlers raise a new town, {settlement}, in {region}.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
     "region_founded": "{founder} leads settlers out of {parent} to found the frontier of {frontier}.",

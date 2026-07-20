@@ -70,6 +70,16 @@ pub struct SettlementBalance {
     /// dry by an age of war and famine finally empties out, rather than lingering
     /// forever as a near-empty ghost town (GDD 5.3).
     pub abandon_population: f32,
+    /// A prosperous, populous region founds a new town over time (GDD 5.3): each
+    /// tick an eligible region rolls `found_chance`; it must be at least
+    /// `found_status_min` prosperity and hold more than `found_min_region_pop`
+    /// souls, and never grows past `found_max_per_region` towns. A new town starts
+    /// with `found_population` settlers, drawn from the region's people.
+    pub found_chance: f32,
+    pub found_status_min: f32,
+    pub found_min_region_pop: f32,
+    pub found_max_per_region: usize,
+    pub found_population: f32,
     pub prosperity_drift_rate: f32,
     pub region_contribution: f32,
     /// A settlement builds a new building only once its prosperity and

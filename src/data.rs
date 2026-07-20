@@ -46,7 +46,7 @@ pub use myth::{MythStat, MythTheme};
 pub use pantheon::{DeitySeed, PantheonStat};
 pub use region::{ClimateType, Culture, RegionSeed};
 pub use resource::{ResourceNodeSeed, ResourceStatus, ResourceType};
-pub use settlement::SettlementSeed;
+pub use settlement::{SettlementNameBank, SettlementSeed};
 pub use strings::{fill, Strings};
 pub use trade::TradeRouteSeed;
 pub use weather::{WeatherIntensity, WeatherPattern};
@@ -60,6 +60,7 @@ const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
 const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
 const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
 const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
+const SETTLEMENT_NAMES_JSON: &str = include_str!("../assets/data/settlement_names.json");
 const RESOURCE_NODES_JSON: &str = include_str!("../assets/data/resource_nodes.json");
 const LANDMARKS_JSON: &str = include_str!("../assets/data/landmarks.json");
 const TRADE_ROUTES_JSON: &str = include_str!("../assets/data/trade_routes.json");
@@ -88,6 +89,7 @@ pub struct GameData {
     pub region_actions: DataRegistry<RegionActionDef>,
     pub heroes: Vec<HeroSeed>,
     pub settlements: Vec<SettlementSeed>,
+    pub settlement_names: SettlementNameBank,
     pub resource_nodes: Vec<ResourceNodeSeed>,
     pub landmarks: Vec<LandmarkSeed>,
     pub trade_routes: Vec<TradeRouteSeed>,
@@ -117,6 +119,8 @@ impl GameData {
         let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
         let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
         let settlements: Vec<SettlementSeed> = load_embedded_json(SETTLEMENTS_JSON)?;
+        let settlement_names: SettlementNameBank =
+            load_embedded_json_labeled("settlement_names", SETTLEMENT_NAMES_JSON)?;
         let resource_nodes: Vec<ResourceNodeSeed> = load_embedded_json(RESOURCE_NODES_JSON)?;
         let landmarks: Vec<LandmarkSeed> = load_embedded_json(LANDMARKS_JSON)?;
         let trade_routes: Vec<TradeRouteSeed> = load_embedded_json(TRADE_ROUTES_JSON)?;
@@ -155,6 +159,7 @@ impl GameData {
             region_actions,
             heroes,
             settlements,
+            settlement_names,
             resource_nodes,
             landmarks,
             trade_routes,

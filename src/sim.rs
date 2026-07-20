@@ -75,6 +75,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.year,
     );
 
+    settlement::tick_settlement_founding(
+        &mut world.settlements,
+        &world.regions,
+        &mut world.settlement_seq,
+        &data.settlement_names,
+        &data.balance.settlement,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
     settlement::tick_construction(
         &world.settlements,
         &world.regions,

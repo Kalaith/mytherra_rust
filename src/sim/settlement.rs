@@ -6,7 +6,10 @@
 //! the one settlement effect that draws on the world RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, BuildingType, Culture, RegionBalance, SettlementBalance};
+use crate::data::{
+    fill, BuildingType, Culture, RegionBalance, SettlementBalance, SettlementNameBank,
+    SettlementSeed,
+};
 use crate::world::{Building, Chronicle, EventKind, Region, Settlement};
 use macroquad_toolkit::data_loader::DataRegistry;
 use macroquad_toolkit::math::approach;
@@ -86,6 +89,91 @@ pub fn tick_settlement_abandonment(
     }
     settlements.retain(|s| !abandoned_ids.contains(&s.id));
     buildings.retain(|b| !abandoned_ids.contains(&b.settlement_id));
+}
+
+/// A prosperous, populous region raises a new town over time (GDD 5.3), the
+/// mirror of abandonment — so a flourishing land grows fresh settlements and a
+/// frontier region born townless comes to be settled. The town starts small and
+/// grows through the settlement system like any other.
+#[allow(clippy::too_many_arguments)]
+pub fn tick_settlement_founding(
+    settlements: &mut Vec<Settlement>,
+    regions: &[Region],
+    seq: &mut u64,
+    names: &SettlementNameBank,
+    balance: &SettlementBalance,
+    rng: &mut SeededRng,
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    year: u32,
+) {
+    for region in regions.iter() {
+        if region.prosperity < balance.found_status_min
+            || region.population < balance.found_min_region_pop
+        {
+            continue;
+        }
+        let town_count = settlements
+            .iter()
+            .filter(|s| s.region_id == region.id)
+            .count();
+        if town_count >= balance.found_max_per_region {
+            continue;
+        }
+        if !rng.chance(balance.found_chance) {
+            continue;
+        }
+
+        *seq += 1;
+        let name = unique_settlement_name(settlements, names, rng);
+        settlements.push(Settlement::from_seed(&SettlementSeed {
+            id: format!("{}-town-{}", region.id, *seq),
+            name: name.clone(),
+            region_id: region.id.clone(),
+            population: balance.found_population,
+            prosperity: region.prosperity,
+        }));
+        chronicle.push(
+            year,
+            EventKind::Region,
+            fill(
+                &text.settlement_founded,
+                &[("settlement", name), ("region", region.name.clone())],
+            ),
+        );
+    }
+}
+
+/// A town name from the bank (prefix + suffix), unique among existing towns.
+/// Deterministic given the RNG state.
+fn unique_settlement_name(
+    settlements: &[Settlement],
+    names: &SettlementNameBank,
+    rng: &mut SeededRng,
+) -> String {
+    if names.prefixes.is_empty() || names.suffixes.is_empty() {
+        return "New Town".to_owned();
+    }
+    let draw = |rng: &mut SeededRng| {
+        format!(
+            "{}{}",
+            names.prefixes[rng.below(names.prefixes.len())],
+            names.suffixes[rng.below(names.suffixes.len())],
+        )
+    };
+    // A handful of draws almost always lands a free name (hundreds of combos);
+    // if the map is somehow saturated, an ordinal guarantees uniqueness.
+    for _ in 0..16 {
+        let candidate = draw(rng);
+        if settlements.iter().all(|s| s.name != candidate) {
+            return candidate;
+        }
+    }
+    let base = draw(rng);
+    (2..)
+        .map(|n| format!("{base} {n}"))
+        .find(|c| settlements.iter().all(|s| &s.name != c))
+        .unwrap_or(base)
 }
 
 /// Prosperous, populous settlements raise new buildings over time (GDD 6). A
@@ -261,6 +349,60 @@ mod tests {
             biggest > 20_000.0,
             "a long-prosperous settlement should still have grown well past its seed: {biggest}"
         );
+    }
+
+    #[test]
+    fn a_thriving_region_founds_a_new_town() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut balance = data.balance.settlement.clone();
+        balance.found_chance = 1.0; // guaranteed this tick
+        balance.found_max_per_region = 100; // don't cap in the test
+
+        let region_id = world.regions[0].id.clone();
+        world.regions[0].prosperity = 90.0;
+        world.regions[0].population = 50_000.0;
+        let before = world
+            .settlements
+            .iter()
+            .filter(|s| s.region_id == region_id)
+            .count();
+        let mut seq = 0;
+
+        tick_settlement_founding(
+            &mut world.settlements,
+            &world.regions,
+            &mut seq,
+            &data.settlement_names,
+            &balance,
+            &mut world.rng,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        let founded: Vec<&Settlement> = world
+            .settlements
+            .iter()
+            .filter(|s| s.region_id == region_id && s.id.contains("-town-"))
+            .collect();
+        assert_eq!(founded.len(), 1, "a thriving region should found one town");
+        assert_eq!(
+            founded[0].population, balance.found_population,
+            "a new town starts with the founding population"
+        );
+        let after = world
+            .settlements
+            .iter()
+            .filter(|s| s.region_id == region_id)
+            .count();
+        assert_eq!(after, before + 1);
+        // Every settlement name stays unique across the map.
+        let mut names: Vec<&str> = world.settlements.iter().map(|s| s.name.as_str()).collect();
+        let total = names.len();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(total, names.len(), "no two settlements share a name");
     }
 
     #[test]
