@@ -5,7 +5,9 @@
 
 use crate::data::strings::{ChronicleText, GenesisText};
 use crate::data::{fill, ArtifactFocus, Culture, GenesisBalance, RegionBalance, RegionSeed};
-use crate::world::{Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, Settlement};
+use crate::world::{
+    Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, Settlement, TradeRoute,
+};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Build or bleed a region's secession pressure for this tick (deterministic).
@@ -71,6 +73,7 @@ pub(super) fn run(
     settlements: &mut [Settlement],
     heroes: &mut [Hero],
     civ: &mut Vec<RegionAgendas>,
+    trade_routes: &mut Vec<TradeRoute>,
     region_seq: &mut u64,
     secession_momentum: &mut f32,
     agenda_count: usize,
@@ -145,7 +148,19 @@ pub(super) fn run(
 
     let child = Region::from_seed(&child_seed, region_balance);
     regions.push(child);
-    civ.push(RegionAgendas::new(child_id, agenda_count));
+    civ.push(RegionAgendas::new(child_id.clone(), agenda_count));
+
+    // Even a bitter breakaway keeps a road to the land it revolted from — a
+    // strained, low-volume one, but enough that the new region isn't marooned
+    // from trade, and enough that its former ruler can march back down it to
+    // reconquer, a trade link being conquest's precondition (GDD 5.2).
+    trade_routes.push(TradeRoute {
+        id: format!("route-{parent_id}-{child_id}"),
+        name: format!("{child_name} Road"),
+        region_a: parent_id.clone(),
+        region_b: child_id,
+        volume: balance.child_trade_volume,
+    });
 
     // Feed the world's secession momentum, which drives Collapse-era pressure.
     *secession_momentum = (*secession_momentum + balance.momentum_gain).min(balance.momentum_cap);

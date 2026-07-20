@@ -7,7 +7,9 @@
 
 use crate::data::strings::{ChronicleText, GenesisText};
 use crate::data::{fill, ArtifactFocus, FrontierBalance, RegionBalance, RegionSeed};
-use crate::world::{Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, RegionStatus};
+use crate::world::{
+    Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, RegionStatus, TradeRoute,
+};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Founding-chance bonus a region draws from Prosperity artifacts bound to it —
@@ -59,6 +61,7 @@ pub(super) fn run(
     heroes: &mut [Hero],
     artifacts: &[Artifact],
     civ: &mut Vec<RegionAgendas>,
+    trade_routes: &mut Vec<TradeRoute>,
     region_seq: &mut u64,
     agenda_count: usize,
     rng: &mut SeededRng,
@@ -111,7 +114,19 @@ pub(super) fn run(
 
     let child = Region::from_seed(&child_seed, region_balance);
     regions.push(child);
-    civ.push(RegionAgendas::new(frontier_id, agenda_count));
+    civ.push(RegionAgendas::new(frontier_id.clone(), agenda_count));
+
+    // Wire the colony into the trade network with a busy road home, so it isn't
+    // born economically marooned: it shares in trade wealth and culture at once,
+    // and — a trade link being conquest's precondition — remains part of the
+    // geopolitics rather than an untouchable island (GDD 5.2).
+    trade_routes.push(TradeRoute {
+        id: format!("route-{parent_id}-{frontier_id}"),
+        name: format!("{frontier_name} Road"),
+        region_a: parent_id.clone(),
+        region_b: frontier_id,
+        volume: balance.child_trade_volume,
+    });
 
     chronicle.push(
         year,

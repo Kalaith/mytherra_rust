@@ -52,6 +52,12 @@ fn sustained_turmoil_fractures_a_region() {
     assert!(world.regions.len() > start);
     assert!(world.civilization.iter().any(|c| c.region_id == child_id));
     assert!(world.heroes.iter().any(|h| h.region_id == child_id));
+    // The breakaway is wired into the trade network with a road home, not born
+    // marooned — so it shares in trade and can later be reconquered (GDD 5.2).
+    assert!(
+        world.trade_routes.iter().any(|r| r.touches(&child_id)),
+        "a new region should be linked into the trade network"
+    );
     // The secession fed the world's momentum (drives Collapse-era pressure).
     assert!(world.secession_momentum > 0.0);
 }
@@ -457,6 +463,11 @@ fn a_veteran_in_a_thriving_land_founds_a_frontier() {
         .iter()
         .any(|c| c.region_id == frontier_id));
     assert!(world.heroes.iter().any(|h| h.region_id == frontier_id));
+    // The colony is linked to its motherland by a trade road from birth.
+    assert!(
+        world.trade_routes.iter().any(|r| r.touches(&frontier_id)),
+        "a founded frontier should have a trade route home"
+    );
     assert!(world
         .chronicle
         .iter_newest()

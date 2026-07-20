@@ -56,6 +56,7 @@
     "child_danger_carry": 0.9,
     "child_resonance": 40.0,
     "child_cultural_influence": 35.0,
+    "child_trade_volume": 0.4,
     "parent_chaos_relief": 18.0,
     "parent_danger_relief": 12.0,
     "parent_prosperity_hit": 8.0,
@@ -97,7 +98,8 @@
     "child_danger": 32.0,
     "child_magic_carry": 0.6,
     "child_resonance": 45.0,
-    "child_cultural_influence": 40.0
+    "child_cultural_influence": 40.0,
+    "child_trade_volume": 1.0
   },
   "hero": {
     "life_expectancy_base": 70.0,

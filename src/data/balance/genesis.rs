@@ -39,6 +39,11 @@ pub struct GenesisBalance {
     /// Breakaway starting divine resonance and cultural influence.
     pub child_resonance: f32,
     pub child_cultural_influence: f32,
+    /// Volume of the trade route linking a breakaway to the land it revolted from
+    /// (GDD 5.2): kept low, since a bitter secession leaves strained ties — but
+    /// nonzero, so the new region isn't born marooned from the trade network (and
+    /// so it can, in time, be reconquered along that very road).
+    pub child_trade_volume: f32,
     /// Relief the parent feels once the pressure vents into a new region.
     pub parent_chaos_relief: f32,
     pub parent_danger_relief: f32,
@@ -134,4 +139,9 @@ pub struct FrontierBalance {
     pub child_magic_carry: f32,
     pub child_resonance: f32,
     pub child_cultural_influence: f32,
+    /// Volume of the trade route linking a frontier to its motherland (GDD 5.2):
+    /// kept high — an amicable expansion keeps warm, busy ties home, far more
+    /// than a bitter breakaway does — so the colony shares in trade wealth and
+    /// culture from birth.
+    pub child_trade_volume: f32,
 }
