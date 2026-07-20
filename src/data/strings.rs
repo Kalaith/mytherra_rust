@@ -349,7 +349,6 @@ pub struct Notifications {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChronicleText {
     pub world_awakens: String,
-    pub year_dawns: String,
     pub crisis: String,
     pub divine_action: String,
     pub hero_level_up: String,

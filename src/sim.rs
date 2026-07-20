@@ -236,21 +236,12 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     era::tick_era(world, player, data);
 
-    let recovered = player.favor_recovery(&data.config, &data.balance.player);
     player.recover(&data.config, &data.balance.player);
 
+    // The chronicle records notable events, not the passing of each year — the
+    // year and favor already live in the HUD, so no per-tick heartbeat clutters
+    // the Event Log and drowns the deity's own actions (GDD 10).
     let text = &data.strings.chronicle;
-    world.chronicle.push(
-        world.year,
-        EventKind::Tick,
-        fill(
-            &text.year_dawns,
-            &[
-                ("year", world.year.to_string()),
-                ("favor", recovered.to_string()),
-            ],
-        ),
-    );
     for name in newly_in_crisis {
         world.chronicle.push(
             world.year,

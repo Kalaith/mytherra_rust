@@ -273,7 +273,6 @@
   },
   "chronicle": {
     "world_awakens": "The world awakens.",
-    "year_dawns": "Year {year} dawns. Favor +{favor}.",
     "crisis": "{region} has slipped into crisis.",
     "divine_action": "A deity used {action} on {region}.",
     "hero_level_up": "{hero} of {region} rises to level {level}.",

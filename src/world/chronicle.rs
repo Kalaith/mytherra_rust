@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EventKind {
-    /// A tick advanced the world.
-    Tick,
     /// A divine nudge by the player (visible manipulation, GDD Pillar 4).
     Divine,
     /// An emergent region change (status shift, crisis).
@@ -20,8 +18,7 @@ pub enum EventKind {
 }
 
 impl EventKind {
-    pub const ALL: [EventKind; 5] = [
-        EventKind::Tick,
+    pub const ALL: [EventKind; 4] = [
         EventKind::Divine,
         EventKind::Region,
         EventKind::Hero,
@@ -32,7 +29,6 @@ impl EventKind {
     /// formatting stays in code; authored copy lives in `strings.json`.
     pub fn label(self) -> &'static str {
         match self {
-            EventKind::Tick => "Ticks",
             EventKind::Divine => "Divine",
             EventKind::Region => "Regions",
             EventKind::Hero => "Heroes",
@@ -100,8 +96,8 @@ mod tests {
     #[test]
     fn recent_returns_newest_first() {
         let mut chronicle = Chronicle::default();
-        chronicle.push(1, EventKind::Tick, "first");
-        chronicle.push(2, EventKind::Tick, "second");
+        chronicle.push(1, EventKind::System, "first");
+        chronicle.push(2, EventKind::System, "second");
         let recent: Vec<&str> = chronicle.recent(2).map(|e| e.message.as_str()).collect();
         assert_eq!(recent, vec!["second", "first"]);
     }

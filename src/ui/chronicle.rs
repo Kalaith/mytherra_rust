@@ -18,7 +18,7 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let active = ctx.chronicle_filter;
     draw_filter_chips(ctx, content, active, actions);
 
-    // Filter 0 means "all"; 1..=5 map onto EventKind::ALL.
+    // Filter 0 means "all"; 1..=4 map onto EventKind::ALL.
     let kind = active
         .checked_sub(1)
         .and_then(|i| EventKind::ALL.get(i).copied());
@@ -157,7 +157,6 @@ fn filter_name(ctx: &UiContext<'_>, kind: Option<EventKind>) -> String {
 
 fn kind_color(kind: EventKind) -> Color {
     match kind {
-        EventKind::Tick => dark::TEXT_DIM,
         EventKind::Divine => dark::ACCENT,
         EventKind::Region => dark::WARNING,
         EventKind::Hero => Color::new(0.7, 0.55, 0.9, 1.0),

@@ -349,7 +349,6 @@ fn tenor_color(tier: usize, count: usize) -> Color {
 
 fn kind_color(kind: EventKind) -> Color {
     match kind {
-        EventKind::Tick => dark::TEXT_DIM,
         EventKind::Divine => dark::ACCENT,
         EventKind::Region => dark::WARNING,
         EventKind::Hero => Color::new(0.7, 0.55, 0.9, 1.0),
