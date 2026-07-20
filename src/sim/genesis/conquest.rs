@@ -36,7 +36,12 @@ fn conquest_might(
         .filter(|a| a.focus == ArtifactFocus::War && a.region_id == region.id)
         .map(|a| a.power as f32 * balance.artifact_war_might)
         .sum();
-    let heroic = crate::world::resident_might(heroes, &region.id, balance.might_per_hero_level);
+    let heroic = crate::world::resident_might(
+        heroes,
+        &region.id,
+        balance.might_per_hero_level,
+        &balance.hero_might_weights,
+    );
     region.might(balance) + war + heroic
 }
 

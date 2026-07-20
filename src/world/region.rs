@@ -1,7 +1,8 @@
 //! Runtime region state: the mutable, simulated form of a `RegionSeed`.
 
 use crate::data::{
-    ClimateType, ConquestBalance, Culture, RegionActionDef, RegionBalance, RegionSeed,
+    ClimateType, ConquestBalance, Culture, HeroMightWeights, RegionActionDef, RegionBalance,
+    RegionSeed,
 };
 use crate::world::Hero;
 use serde::{Deserialize, Serialize};
@@ -190,16 +191,23 @@ impl Region {
 }
 
 /// The military might a region's resident heroes lend it (GDD 5.2): the summed
-/// levels of its living heroes, scaled — a land guarded by many capable heroes is
-/// mightier than its bare wealth and numbers imply, and one whose champions have
-/// all fallen is easier to overrun. A free function because heroes live outside
-/// the region, shared by the conquest sim and the region-detail readout so the
-/// shown might is exactly the might that decides wars.
-pub fn resident_might(heroes: &[Hero], region_id: &str, per_level: f32) -> f32 {
+/// levels of its living heroes, each weighted by how martial its role is (a
+/// warrior counts full, a loremaster barely) and scaled — a land guarded by many
+/// capable *fighters* is mightier than its bare wealth and numbers imply, while
+/// one held only by scholars and merchants, or whose champions have all fallen, is
+/// easier to overrun. A free function because heroes live outside the region,
+/// shared by the conquest sim and the region-detail readout so the shown might is
+/// exactly the might that decides wars.
+pub fn resident_might(
+    heroes: &[Hero],
+    region_id: &str,
+    per_level: f32,
+    weights: &HeroMightWeights,
+) -> f32 {
     heroes
         .iter()
         .filter(|h| h.is_alive && h.region_id == region_id)
-        .map(|h| h.level as f32 * per_level)
+        .map(|h| h.level as f32 * per_level * weights.get(h.role))
         .sum()
 }
 
@@ -271,26 +279,60 @@ mod tests {
         }
     }
 
-    #[test]
-    fn resident_might_counts_only_living_heroes_at_home() {
-        let hero = |region_id: &str, level: u32, alive: bool| Hero {
+    fn even_weights(w: f32) -> HeroMightWeights {
+        HeroMightWeights {
+            warrior: w,
+            mage: w,
+            scholar: w,
+            ranger: w,
+            merchant: w,
+            cleric: w,
+        }
+    }
+
+    fn hero_of(region_id: &str, role: crate::data::HeroRole, level: u32, alive: bool) -> Hero {
+        Hero {
             id: "h".to_owned(),
             name: "H".to_owned(),
-            role: crate::data::HeroRole::Warrior,
+            role,
             region_id: region_id.to_owned(),
             level,
             age: 30,
             is_alive: alive,
             renown: 0.0,
-        };
+        }
+    }
+
+    #[test]
+    fn resident_might_counts_only_living_heroes_at_home() {
+        use crate::data::HeroRole::Warrior;
         let heroes = vec![
-            hero("home", 10, true),
-            hero("home", 4, true),    // 14 living levels at home
-            hero("home", 100, false), // dead: lends no might
-            hero("away", 50, true),   // elsewhere: lends no might here
+            hero_of("home", Warrior, 10, true),
+            hero_of("home", Warrior, 4, true), // 14 living levels at home
+            hero_of("home", Warrior, 100, false), // dead: lends no might
+            hero_of("away", Warrior, 50, true), // elsewhere: lends no might here
         ];
-        assert_eq!(resident_might(&heroes, "home", 0.5), 7.0); // (10 + 4) * 0.5
-        assert_eq!(resident_might(&heroes, "nowhere", 0.5), 0.0);
+        // Warrior weight 1.0 here, so (10 + 4) * 0.5 * 1.0 = 7.0.
+        let w = even_weights(1.0);
+        assert_eq!(resident_might(&heroes, "home", 0.5, &w), 7.0);
+        assert_eq!(resident_might(&heroes, "nowhere", 0.5, &w), 0.0);
+    }
+
+    #[test]
+    fn martial_roles_lend_more_might_than_scholarly_ones() {
+        use crate::data::HeroRole::{Scholar, Warrior};
+        let weights = HeroMightWeights {
+            warrior: 1.0,
+            scholar: 0.2,
+            ..even_weights(0.5)
+        };
+        let warrior_land = vec![hero_of("r", Warrior, 10, true)];
+        let scholar_land = vec![hero_of("r", Scholar, 10, true)];
+        assert!(
+            resident_might(&warrior_land, "r", 1.0, &weights)
+                > resident_might(&scholar_land, "r", 1.0, &weights),
+            "a warrior should lend more military might than a scholar of equal level"
+        );
     }
 
     #[test]

@@ -1,7 +1,36 @@
 //! Region-genesis tuning (GDD 5.2): the three ways the map reshapes at runtime —
 //! fracture, conquest, and frontier founding. See `sim/genesis/`.
 
+use crate::data::HeroRole;
 use serde::{Deserialize, Serialize};
+
+/// How much each hero role contributes to its region's military might, as a
+/// fraction of a warrior's full share (GDD 5.2): a land of warriors and rangers
+/// stands far stronger against invasion than one of scholars and merchants of the
+/// same renown, so a region's martial weight depends on *who* defends it, not just
+/// how many. Mirrors the per-enum tables elsewhere (`ChampionFocuses`, etc.).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HeroMightWeights {
+    pub warrior: f32,
+    pub mage: f32,
+    pub scholar: f32,
+    pub ranger: f32,
+    pub merchant: f32,
+    pub cleric: f32,
+}
+
+impl HeroMightWeights {
+    pub fn get(&self, role: HeroRole) -> f32 {
+        match role {
+            HeroRole::Warrior => self.warrior,
+            HeroRole::Mage => self.mage,
+            HeroRole::Scholar => self.scholar,
+            HeroRole::Ranger => self.ranger,
+            HeroRole::Merchant => self.merchant,
+            HeroRole::Cleric => self.cleric,
+        }
+    }
+}
 
 /// Region-fracture tuning: when a region is torn by sustained chaos and danger,
 /// secession pressure ("strife") builds until a hero leads part of it to break
@@ -90,10 +119,14 @@ pub struct ConquestBalance {
     /// into a conqueror (or a militarised holdout).
     pub artifact_war_might: f32,
     /// Conquest might each level of a living resident hero adds to a region (GDD
-    /// 5.2): a land defended by many capable heroes is a stronger aggressor and a
-    /// harder target, and one whose heroes have all fallen is ripe for the taking
-    /// — distinct from the lone-legend shield, which blocks conquest outright.
+    /// 5.2), before its role weight: a land defended by many capable heroes is a
+    /// stronger aggressor and a harder target, and one whose heroes have all
+    /// fallen is ripe for the taking — distinct from the lone-legend shield, which
+    /// blocks conquest outright.
     pub might_per_hero_level: f32,
+    /// Per-role share of that per-level might: warriors count full, loremasters
+    /// barely, so a region's martial weight reflects who defends it.
+    pub hero_might_weights: HeroMightWeights,
     /// If true, conquest only follows an existing trade route between the pair.
     pub require_trade_link: bool,
     /// Fraction of the loser's population the winner absorbs (the rest is lost).

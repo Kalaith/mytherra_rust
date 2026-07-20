@@ -152,8 +152,12 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         .filter(|a| a.focus == crate::data::ArtifactFocus::War && a.region_id == region.id)
         .map(|a| a.power as f32 * conquest.artifact_war_might)
         .sum();
-    let hero_might =
-        crate::world::resident_might(&ctx.world.heroes, &region.id, conquest.might_per_hero_level);
+    let hero_might = crate::world::resident_might(
+        &ctx.world.heroes,
+        &region.id,
+        conquest.might_per_hero_level,
+        &conquest.hero_might_weights,
+    );
     draw_ui_text_ex(
         &fill(
             &gtext.might_line,
