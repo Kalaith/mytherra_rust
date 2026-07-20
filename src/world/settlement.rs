@@ -44,6 +44,12 @@ impl Settlement {
         (self.prosperity - 50.0) * balance.region_contribution
     }
 
+    /// This settlement's size tier — the index into `strings.ui.settlement_tiers`
+    /// (0 = the smallest) for its current population (GDD 5.3).
+    pub fn tier(&self, thresholds: &[f32]) -> usize {
+        tier_of(self.population, thresholds)
+    }
+
     /// An intrinsic growth rate limited by carrying capacity (GDD 5.3): positive
     /// growth eases to zero as population nears capacity and never carries a
     /// settlement past it, while decline from hardship still bites in full — so
@@ -55,6 +61,12 @@ impl Settlement {
             rate
         }
     }
+}
+
+/// The size tier a population falls into: the count of ascending thresholds it
+/// meets or exceeds. Pure so both the sim (milestone detection) and UI agree.
+pub fn tier_of(population: f32, thresholds: &[f32]) -> usize {
+    thresholds.iter().filter(|t| population >= **t).count()
 }
 
 #[cfg(test)]
@@ -122,5 +134,28 @@ mod tests {
         let b = balance();
         assert!(settlement(80.0).region_contribution(&b) > 0.0);
         assert!(settlement(20.0).region_contribution(&b) < 0.0);
+    }
+
+    #[test]
+    fn tier_climbs_with_population_and_is_bounded() {
+        let thresholds = [1_000.0, 5_000.0, 15_000.0, 35_000.0];
+        assert_eq!(
+            tier_of(300.0, &thresholds),
+            0,
+            "a hamlet is the smallest tier"
+        );
+        assert_eq!(
+            tier_of(1_000.0, &thresholds),
+            1,
+            "meeting a threshold enters the next tier"
+        );
+        assert_eq!(tier_of(9_000.0, &thresholds), 2);
+        assert_eq!(tier_of(20_000.0, &thresholds), 3);
+        // The top tier is the highest index, never past the name count.
+        assert_eq!(
+            tier_of(1_000_000.0, &thresholds),
+            thresholds.len(),
+            "an enormous city tops out at the last tier"
+        );
     }
 }

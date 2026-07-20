@@ -15,12 +15,17 @@ use macroquad_toolkit::data_loader::DataRegistry;
 use macroquad_toolkit::math::approach;
 use macroquad_toolkit::rng::SeededRng;
 
+#[allow(clippy::too_many_arguments)]
 pub fn tick_settlements(
     settlements: &mut [Settlement],
     buildings: &[Building],
     regions: &mut [Region],
     balance: &SettlementBalance,
     region_balance: &RegionBalance,
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    tier_names: &[String],
+    year: u32,
 ) {
     for settlement in settlements.iter_mut() {
         let Some(idx) = regions.iter().position(|r| r.id == settlement.region_id) else {
@@ -43,10 +48,37 @@ pub fn tick_settlements(
         let capacity = balance.capacity_per_prosperity * supporting;
         let rate = settlement.growth_rate(region_prosperity, region_chaos, balance);
         let growth = settlement.capacity_limited_growth(rate, capacity);
+        let tier_before = settlement.tier(&balance.tier_thresholds);
         settlement.population = (settlement.population * (1.0 + growth)).max(0.0);
         settlement.prosperity =
             approach(settlement.prosperity, target, balance.prosperity_drift_rate)
                 .clamp(0.0, 100.0);
+
+        // A settlement crossing a size threshold is a chronicled milestone: a
+        // village swelling into a town, or a city dwindling as its people leave.
+        // Growth is gradual, so at most one tier is crossed per tick.
+        let tier_after = settlement.tier(&balance.tier_thresholds);
+        if tier_after != tier_before {
+            if let Some(name) = tier_names.get(tier_after) {
+                let (line, kind) = if tier_after > tier_before {
+                    (&text.settlement_ascends, EventKind::Region)
+                } else {
+                    (&text.settlement_declines, EventKind::Region)
+                };
+                chronicle.push(
+                    year,
+                    kind,
+                    fill(
+                        line,
+                        &[
+                            ("settlement", settlement.name.clone()),
+                            ("tier", name.clone()),
+                            ("region", regions[idx].name.clone()),
+                        ],
+                    ),
+                );
+            }
+        }
 
         let contribution = settlement.region_contribution(balance);
         regions[idx].apply_deltas(contribution, 0.0, 0.0, 0.0, region_balance);
@@ -308,6 +340,10 @@ mod tests {
             &mut world.regions,
             &data.balance.settlement,
             &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            &data.strings.ui.settlement_tiers,
+            world.year,
         );
         for (s, was) in world.settlements.iter().zip(before) {
             assert!(s.population > was);
@@ -334,6 +370,10 @@ mod tests {
                 &mut world.regions,
                 &data.balance.settlement,
                 &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                &data.strings.ui.settlement_tiers,
+                world.year,
             );
         }
         let biggest = world
@@ -477,6 +517,10 @@ mod tests {
                 &mut world.regions,
                 &data.balance.settlement,
                 &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                &data.strings.ui.settlement_tiers,
+                world.year,
             );
         }
         let aldervale = world

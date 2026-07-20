@@ -91,4 +91,10 @@ pub struct SettlementBalance {
     /// Extra selection weight a building type gets when it matches its region's
     /// dominant culture, so a martial land forges and a mercantile one trades.
     pub culture_affinity_weight: f32,
+    /// Ascending population thresholds that sort a settlement into a size tier
+    /// (GDD 5.3): with N thresholds there are N+1 tiers, named by
+    /// `strings.ui.settlement_tiers`. A settlement's tier is the count of
+    /// thresholds its population meets or exceeds, so crossing one — a village
+    /// swelling into a town, or a city dwindling back — is a chronicled milestone.
+    pub tier_thresholds: Vec<f32>,
 }

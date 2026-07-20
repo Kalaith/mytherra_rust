@@ -239,13 +239,21 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         .iter()
         .filter(|s| s.region_id == region.id)
         .count();
+    let tier_thresholds = &ctx.data.balance.settlement.tier_thresholds;
+    let tier_names = &ctx.data.strings.ui.settlement_tiers;
     let towns: Vec<String> = ctx
         .world
         .settlements
         .iter()
         .filter(|s| s.region_id == region.id)
         .take(3)
-        .map(|s| format!("{} {:.1}k", s.name, s.population / 1000.0))
+        .map(|s| {
+            let tier = tier_names
+                .get(s.tier(tier_thresholds))
+                .map(String::as_str)
+                .unwrap_or_default();
+            format!("{} ({}, {:.1}k)", s.name, tier, s.population / 1000.0)
+        })
         .collect();
     let node_total = ctx
         .world

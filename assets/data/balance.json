@@ -467,7 +467,8 @@
     "construction_prosperity_min": 60.0,
     "construction_population_min": 4000.0,
     "construction_chance": 0.04,
-    "culture_affinity_weight": 2.0
+    "culture_affinity_weight": 2.0,
+    "tier_thresholds": [1000.0, 5000.0, 15000.0, 35000.0]
   },
   "culture": {
     "inertia": 3.0,

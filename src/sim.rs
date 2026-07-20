@@ -64,6 +64,10 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.regions,
         &data.balance.settlement,
         &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        &data.strings.ui.settlement_tiers,
+        world.year,
     );
 
     settlement::tick_settlement_abandonment(

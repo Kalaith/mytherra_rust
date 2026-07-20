@@ -73,7 +73,14 @@
       "A Turbulent Age",
       "A Dark Age"
     ],
-    "tenor_line": "The world lives through {tenor}."
+    "tenor_line": "The world lives through {tenor}.",
+    "settlement_tiers": [
+      "Hamlet",
+      "Village",
+      "Town",
+      "City",
+      "Metropolis"
+    ]
   },
   "divine": {
     "artifacts_panel": "Artifacts ({count}/{max})",
@@ -301,6 +308,8 @@
     "settlement_built": "{settlement} raises a {building}.",
     "settlement_abandoned": "{settlement} is abandoned, its last souls scattered from {region}.",
     "settlement_founded": "Settlers raise a new town, {settlement}, in {region}.",
+    "settlement_ascends": "{settlement} swells into a {tier}, the pride of {region}.",
+    "settlement_declines": "{settlement} dwindles to a {tier} as {region} empties around it.",
     "landmark_raised": "{landmark} is raised in {region}, a wonder of the age.",
     "landmark_razed": "{landmark} is thrown down as the age ends, a wonder lost to the ages.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
