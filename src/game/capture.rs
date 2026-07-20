@@ -79,6 +79,13 @@ impl Game {
                 self.run_tick();
             }
         }
+        if scene == "regions" {
+            // Let the selected region grow thick with towns and wonders, so its
+            // detail panel shows a matured holdings list (GDD 5.2/5.3).
+            for _ in 0..90 {
+                self.run_tick();
+            }
+        }
         if scene == "eras" {
             // Run past a century so at least one era transition is recorded.
             for _ in 0..110 {

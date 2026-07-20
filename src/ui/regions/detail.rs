@@ -233,6 +233,12 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
     );
     y += 12.0;
 
+    let town_total = ctx
+        .world
+        .settlements
+        .iter()
+        .filter(|s| s.region_id == region.id)
+        .count();
     let towns: Vec<String> = ctx
         .world
         .settlements
@@ -241,6 +247,12 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         .take(3)
         .map(|s| format!("{} {:.1}k", s.name, s.population / 1000.0))
         .collect();
+    let node_total = ctx
+        .world
+        .resource_nodes
+        .iter()
+        .filter(|n| n.region_id == region.id)
+        .count();
     let nodes: Vec<String> = ctx
         .world
         .resource_nodes
@@ -249,6 +261,12 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         .take(3)
         .map(|n| format!("{} ({})", n.name, n.status.label()))
         .collect();
+    let mark_total = ctx
+        .world
+        .landmarks
+        .iter()
+        .filter(|l| l.region_id == region.id)
+        .count();
     let marks: Vec<String> = ctx
         .world
         .landmarks
@@ -264,27 +282,46 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         .filter_map(|t| t.other(&region.id))
         .map(|id| ctx.world.region_name(id).unwrap_or(id).to_owned())
         .collect();
+    let in_region = |b: &&crate::world::Building| {
+        ctx.world
+            .settlements
+            .iter()
+            .any(|s| s.id == b.settlement_id && s.region_id == region.id)
+    };
+    let build_total = ctx.world.buildings.iter().filter(in_region).count();
     let builds: Vec<String> = ctx
         .world
         .buildings
         .iter()
-        .filter(|b| {
-            ctx.world
-                .settlements
-                .iter()
-                .any(|s| s.id == b.settlement_id && s.region_id == region.id)
-        })
+        .filter(in_region)
         .take(3)
         .map(|b| b.name.clone())
         .collect();
 
     let ui = &strings.ui;
+    // A holdings line names up to three, then notes how many more it holds, so a
+    // region grown thick with towns and wonders shows its full weight (GDD 10).
+    let more = |items: &[String], total: usize| -> String {
+        let mut s = items.join(",  ");
+        if total > items.len() {
+            s.push_str(&fill(
+                &ui.holdings_more,
+                &[("count", (total - items.len()).to_string())],
+            ));
+        }
+        s
+    };
     let lines: Vec<String> = [
-        (!towns.is_empty()).then(|| fill(&ui.settlements_line, &[("list", towns.join(",  "))])),
-        (!nodes.is_empty()).then(|| fill(&ui.resources_line, &[("list", nodes.join(",  "))])),
-        (!marks.is_empty()).then(|| fill(&ui.landmarks_line, &[("list", marks.join(",  "))])),
-        (!trades.is_empty()).then(|| fill(&ui.trade_line, &[("list", trades.join(",  "))])),
-        (!builds.is_empty()).then(|| fill(&ui.buildings_line, &[("list", builds.join(",  "))])),
+        (!towns.is_empty())
+            .then(|| fill(&ui.settlements_line, &[("list", more(&towns, town_total))])),
+        (!nodes.is_empty())
+            .then(|| fill(&ui.resources_line, &[("list", more(&nodes, node_total))])),
+        (!marks.is_empty())
+            .then(|| fill(&ui.landmarks_line, &[("list", more(&marks, mark_total))])),
+        (!trades.is_empty())
+            .then(|| fill(&ui.trade_line, &[("list", more(&trades, trades.len()))])),
+        (!builds.is_empty())
+            .then(|| fill(&ui.buildings_line, &[("list", more(&builds, build_total))])),
     ]
     .into_iter()
     .flatten()

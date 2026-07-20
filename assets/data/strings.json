@@ -57,6 +57,7 @@
     "landmarks_line": "Landmarks:  {list}",
     "trade_line": "Trade:  {list}",
     "buildings_line": "Buildings:  {list}",
+    "holdings_more": "  (+{count} more)",
     "no_holdings": "No holdings here.",
     "page_label": "Page {page} / {pages}",
     "page_prev": "< Prev",
