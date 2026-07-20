@@ -15,6 +15,11 @@ pub struct ChampionBalance {
     /// Renown a champion's hero gains each time it completes a quest — a patron's
     /// attention spreads their fame, carrying them toward legend (GDD 5.4).
     pub renown_per_quest: f32,
+    /// Per-tick share of a champion's focus effect its region feels just from its
+    /// presence, scaled by rank (GDD 5.4): a cultivated champion continuously
+    /// guards or enriches its home, not only when a quest resolves — so the
+    /// player's investment pays off every tick, not just at rivalry moments.
+    pub passive_scale: f32,
     pub quest: QuestParams,
     pub rivalry: RivalryParams,
     pub focuses: ChampionFocuses,

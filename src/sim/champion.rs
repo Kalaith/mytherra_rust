@@ -26,6 +26,22 @@ pub fn tick_champions(
             continue; // dormant while the hero is dead or missing
         };
 
+        // A cultivated champion continuously shapes its home by its focus (GDD
+        // 5.4) — a Valor champion holds back danger, Wisdom kindles magic,
+        // Devotion lifts prosperity — scaled by rank, so a deeper investment
+        // guards or enriches the land more, every tick, not just at resolution.
+        let focus = balance.focuses.get(champion.focus);
+        let scale = balance.passive_scale * champion.rank as f32;
+        if let Some(region) = regions.iter_mut().find(|r| r.id == heroes[idx].region_id) {
+            region.apply_deltas(
+                focus.resolve_prosperity * scale,
+                0.0,
+                focus.resolve_danger * scale,
+                focus.resolve_magic * scale,
+                region_balance,
+            );
+        }
+
         champion.quest_progress += champion.quest_step(heroes[idx].level, balance);
         if champion.quest_progress < balance.quest.goal {
             continue;
@@ -178,6 +194,47 @@ mod tests {
         assert!(
             (after - before - data.balance.champion.renown_per_quest).abs() < 0.001,
             "a completed quest should grant exactly renown_per_quest"
+        );
+    }
+
+    #[test]
+    fn a_champion_passively_guards_its_home() {
+        // A cultivated Valor champion holds back its region's danger every tick,
+        // even without completing a quest (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let hero = world.heroes[0].clone();
+        let region_idx = world
+            .regions
+            .iter()
+            .position(|r| r.id == hero.region_id)
+            .unwrap();
+        world.regions[region_idx].danger = 60.0;
+        let danger_before = world.regions[region_idx].danger;
+
+        let mut champion = Champion::designate(hero.id.clone(), ChampionFocus::Valor);
+        champion.rank = 5; // deeply cultivated
+        champion.quest_progress = 0.0; // nowhere near completing a quest this tick
+        let mut champions = vec![champion];
+
+        tick_champions(
+            &mut champions,
+            &mut world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert_eq!(
+            champions[0].quests, 0,
+            "the champion completed no quest this tick"
+        );
+        assert!(
+            world.regions[region_idx].danger < danger_before,
+            "a Valor champion's presence should still hold back danger"
         );
     }
 
