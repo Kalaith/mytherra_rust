@@ -89,6 +89,12 @@ pub struct CultureBalance {
     pub landmark_weight: f32,
     pub resource_weight: f32,
     pub settlement_weight: f32,
+    /// How much a settlement's *size tier* amplifies its Mercantile pull (GDD
+    /// 5.2): each tier above a hamlet adds this fraction, so a great city is a
+    /// far stronger engine of commerce than a village of the same prosperity —
+    /// urbanization erodes a region's older, rural identity. At 0 size is
+    /// ignored (the old tier-blind behaviour).
+    pub settlement_tier_weight: f32,
     /// Mercantile score per trade route touching a region (weighted by volume).
     pub trade_weight: f32,
     /// Cultural-influence baseline and per-landmark bonus (the reversion target).

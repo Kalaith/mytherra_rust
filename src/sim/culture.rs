@@ -21,6 +21,7 @@ pub fn tick_culture(
     trade_routes: &[TradeRoute],
     balance: &CultureBalance,
     region_balance: &RegionBalance,
+    tier_thresholds: &[f32],
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
@@ -50,8 +51,13 @@ pub fn tick_culture(
             scores[resource_culture(node.resource_type).index()] += balance.resource_weight;
         }
         for settlement in settlements.iter().filter(|s| s.region_id == region.id) {
+            // A settlement drives commerce by both its prosperity and its size: a
+            // great city is a far stronger mercantile engine than a village of
+            // equal wealth (GDD 5.2).
+            let urban =
+                1.0 + settlement.tier(tier_thresholds) as f32 * balance.settlement_tier_weight;
             scores[Culture::Mercantile.index()] +=
-                balance.settlement_weight * (settlement.prosperity / 50.0);
+                balance.settlement_weight * (settlement.prosperity / 50.0) * urban;
         }
         for route in trade_routes.iter().filter(|t| t.touches(&region.id)) {
             scores[Culture::Mercantile.index()] += balance.trade_weight * route.volume;
@@ -186,6 +192,7 @@ mod tests {
             &world.trade_routes,
             &data.balance.culture,
             &data.balance.region,
+            &data.balance.settlement.tier_thresholds,
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
@@ -220,6 +227,7 @@ mod tests {
             &world.trade_routes,
             &data.balance.culture,
             &data.balance.region,
+            &data.balance.settlement.tier_thresholds,
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
@@ -246,12 +254,64 @@ mod tests {
             &world.trade_routes,
             &data.balance.culture,
             &data.balance.region,
+            &data.balance.settlement.tier_thresholds,
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
         );
         let kharzul = world.regions.iter().find(|r| r.id == "kharzul").unwrap();
         assert_ne!(kharzul.culture, Culture::Pastoral);
+    }
+
+    #[test]
+    fn a_great_city_pulls_mercantile_where_a_village_would_not() {
+        // One settlement of prosperity 80 is the region's only culture signal.
+        // A village's commerce is too weak to overcome the flip inertia, but a
+        // metropolis of the same wealth is a strong enough mercantile engine to
+        // turn a pastoral land over to commerce (GDD 5.2 — urbanization).
+        let data = GameData::load().unwrap();
+        let thresholds = &data.balance.settlement.tier_thresholds;
+        let run = |population: f32| -> Culture {
+            let mut world = WorldState::new(&data);
+            let mut region = world.regions[0].clone();
+            region.culture = Culture::Pastoral;
+            let region_id = region.id.clone();
+            let mut regions = vec![region];
+            let settlements = vec![Settlement {
+                id: "c".to_owned(),
+                name: "City".to_owned(),
+                region_id,
+                population,
+                prosperity: 80.0,
+            }];
+            for _ in 0..5 {
+                tick_culture(
+                    &mut regions,
+                    &[],
+                    &[],
+                    &[],
+                    &settlements,
+                    &[],
+                    &data.balance.culture,
+                    &data.balance.region,
+                    thresholds,
+                    &mut world.chronicle,
+                    &data.strings.chronicle,
+                    world.year,
+                );
+            }
+            regions[0].culture
+        };
+        assert_eq!(
+            run(2_000.0),
+            Culture::Pastoral,
+            "a village's commerce is too weak to flip the region"
+        );
+        assert_eq!(
+            run(40_000.0),
+            Culture::Mercantile,
+            "a metropolis is a strong enough engine of commerce to flip it"
+        );
     }
 
     #[test]
@@ -271,6 +331,7 @@ mod tests {
                 &world.trade_routes,
                 &data.balance.culture,
                 &data.balance.region,
+                &data.balance.settlement.tier_thresholds,
                 &mut world.chronicle,
                 &data.strings.chronicle,
                 world.year,

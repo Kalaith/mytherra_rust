@@ -476,6 +476,7 @@
     "landmark_weight": 3.0,
     "resource_weight": 1.5,
     "settlement_weight": 1.0,
+    "settlement_tier_weight": 0.25,
     "trade_weight": 1.5,
     "influence_base": 50.0,
     "influence_per_landmark": 12.0,
