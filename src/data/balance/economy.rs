@@ -66,6 +66,10 @@ pub struct SettlementBalance {
     /// (region prosperity + its buildings): the land feeds only so many, so
     /// growth eases to nothing as population nears capacity (GDD 5.3).
     pub capacity_per_prosperity: f32,
+    /// Population below which a settlement is abandoned and removed — a town bled
+    /// dry by an age of war and famine finally empties out, rather than lingering
+    /// forever as a near-empty ghost town (GDD 5.3).
+    pub abandon_population: f32,
     pub prosperity_drift_rate: f32,
     pub region_contribution: f32,
     /// A settlement builds a new building only once its prosperity and

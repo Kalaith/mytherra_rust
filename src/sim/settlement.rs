@@ -50,6 +50,44 @@ pub fn tick_settlements(
     }
 }
 
+/// Remove settlements whose population has collapsed below the abandonment floor
+/// (GDD 5.3), and with them the buildings they held — a town emptied by war and
+/// famine finally passes from the map rather than lingering as a ghost town.
+pub fn tick_settlement_abandonment(
+    settlements: &mut Vec<Settlement>,
+    buildings: &mut Vec<Building>,
+    balance: &SettlementBalance,
+    regions: &[Region],
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    year: u32,
+) {
+    let mut abandoned_ids: Vec<String> = Vec::new();
+    for settlement in settlements.iter() {
+        if settlement.population < balance.abandon_population {
+            abandoned_ids.push(settlement.id.clone());
+            let region = regions
+                .iter()
+                .find(|r| r.id == settlement.region_id)
+                .map(|r| r.name.clone())
+                .unwrap_or_else(|| settlement.region_id.clone());
+            chronicle.push(
+                year,
+                EventKind::Region,
+                fill(
+                    &text.settlement_abandoned,
+                    &[("settlement", settlement.name.clone()), ("region", region)],
+                ),
+            );
+        }
+    }
+    if abandoned_ids.is_empty() {
+        return;
+    }
+    settlements.retain(|s| !abandoned_ids.contains(&s.id));
+    buildings.retain(|b| !abandoned_ids.contains(&b.settlement_id));
+}
+
 /// Prosperous, populous settlements raise new buildings over time (GDD 6). A
 /// settlement holds at most one of each building type; the chosen type is drawn
 /// deterministically from the world RNG (candidates sorted for determinism, as
@@ -222,6 +260,62 @@ mod tests {
         assert!(
             biggest > 20_000.0,
             "a long-prosperous settlement should still have grown well past its seed: {biggest}"
+        );
+    }
+
+    #[test]
+    fn a_collapsed_settlement_is_abandoned_with_its_buildings() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        // Bleed one settlement dry; it and its buildings should pass from the map,
+        // while a healthy neighbour endures.
+        let doomed = world.settlements[0].id.clone();
+        let doomed_region = world.settlements[0].region_id.clone();
+        world.settlements[0].population = data.balance.settlement.abandon_population - 1.0;
+        let survivor = world.settlements[1].id.clone();
+        let before_buildings = world.buildings.len();
+        let doomed_buildings = world
+            .buildings
+            .iter()
+            .filter(|b| b.settlement_id == doomed)
+            .count();
+
+        tick_settlement_abandonment(
+            &mut world.settlements,
+            &mut world.buildings,
+            &data.balance.settlement,
+            &world.regions,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert!(
+            !world.settlements.iter().any(|s| s.id == doomed),
+            "the collapsed settlement should be abandoned"
+        );
+        assert!(
+            world.settlements.iter().any(|s| s.id == survivor),
+            "a healthy settlement should endure"
+        );
+        assert_eq!(
+            world.buildings.len(),
+            before_buildings - doomed_buildings,
+            "the abandoned settlement's buildings should be gone"
+        );
+        // The passing is chronicled with the region it emptied from.
+        let region_name = world
+            .regions
+            .iter()
+            .find(|r| r.id == doomed_region)
+            .map(|r| r.name.as_str())
+            .unwrap_or_default();
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains("abandoned") && e.message.contains(region_name)),
+            "abandonment should be chronicled"
         );
     }
 
