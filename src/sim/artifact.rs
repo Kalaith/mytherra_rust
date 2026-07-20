@@ -24,7 +24,14 @@ pub fn tick_artifacts(
 
     for artifact in artifacts.iter_mut() {
         apply_focus(artifact, regions, balance, region_balance);
-        artifact.instability += artifact.instability_growth(balance);
+        // Turbulent magic frays a relic faster: its region's chaos accelerates
+        // the slide toward backlash (GDD 5.6).
+        let region_chaos = regions
+            .iter()
+            .find(|r| r.id == artifact.region_id)
+            .map(|r| r.chaos)
+            .unwrap_or(0.0);
+        artifact.instability += artifact.instability_growth(region_chaos, balance);
 
         if artifact.instability >= balance.backlash_threshold {
             let region_id = artifact.region_id.clone();
@@ -134,6 +141,45 @@ mod tests {
             );
         }
         assert!(world.artifacts.len() < before, "an artifact should shatter");
+    }
+
+    #[test]
+    fn a_relic_frays_faster_in_a_chaotic_land() {
+        // The same relic in the same tick gains more instability where its region
+        // seethes with chaos than where it is calm (GDD 5.6).
+        let data = GameData::load().unwrap();
+        let instability_after = |chaos: f32| {
+            let mut world = WorldState::new(&data);
+            world.artifacts.clear();
+            world.pending_consequences.clear();
+            world.regions.truncate(1);
+            world.regions[0].chaos = chaos;
+            world.regions[0].magic_affinity = 50.0;
+            world.artifacts.push(Artifact {
+                id: "relic".to_owned(),
+                name: "Test Relic".to_owned(),
+                focus: ArtifactFocus::Protection,
+                power: 4,
+                instability: 0.0,
+                region_id: world.regions[0].id.clone(),
+            });
+            tick_artifacts(
+                &mut world.artifacts,
+                &mut world.regions,
+                &mut world.pending_consequences,
+                &data.balance.artifact,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            // Survives one tick either way; read its accrued instability.
+            world.artifacts[0].instability
+        };
+        assert!(
+            instability_after(90.0) > instability_after(10.0),
+            "a relic in a chaotic land should destabilize faster than one at peace"
+        );
     }
 
     #[test]

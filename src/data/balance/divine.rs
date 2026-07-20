@@ -65,6 +65,11 @@ pub struct ArtifactBalance {
     pub empower_instability_gain: f32,
     pub instability_per_tick: f32,
     pub instability_power_mult: f32,
+    /// Extra instability a relic accrues per point of its region's chaos (GDD
+    /// 5.6): turbulent magic frays a relic faster, so one left in a war-torn or
+    /// unruly land shatters sooner than the same relic in a calm one — a reason
+    /// to keep a relic's region ordered, and a doom-spiral risk as chaos climbs.
+    pub instability_chaos_coeff: f32,
     pub backlash_threshold: f32,
     pub backlash_chaos: f32,
     pub backlash_danger: f32,

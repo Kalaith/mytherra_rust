@@ -40,8 +40,10 @@ impl Artifact {
     }
 
     /// How much instability the artifact accrues per tick.
-    pub fn instability_growth(&self, balance: &ArtifactBalance) -> f32 {
-        balance.instability_per_tick + self.power as f32 * balance.instability_power_mult
+    pub fn instability_growth(&self, region_chaos: f32, balance: &ArtifactBalance) -> f32 {
+        balance.instability_per_tick
+            + self.power as f32 * balance.instability_power_mult
+            + region_chaos.max(0.0) * balance.instability_chaos_coeff
     }
 }
 

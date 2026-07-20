@@ -272,6 +272,7 @@
     "empower_instability_gain": 12.0,
     "instability_per_tick": 3.0,
     "instability_power_mult": 0.6,
+    "instability_chaos_coeff": 0.05,
     "backlash_threshold": 100.0,
     "backlash_chaos": 10.0,
     "backlash_danger": 8.0,

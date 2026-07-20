@@ -421,31 +421,42 @@ mod tests {
         let mut player = PlayerState::new(&data.config);
         // Plant a capable would-be founder in the doomed region.
         let doomed = world.regions[0].id.clone();
+        let founder = world.heroes[0].id.clone();
         world.heroes[0].region_id = doomed.clone();
         world.heroes[0].level = 20;
 
-        let start = world.regions.len();
-        let mut fractured = false;
+        let mut revolted = false;
         for _ in 0..400 {
             // Keep the region violently unstable, the way relentless corruption
-            // or a divine-war era would; drift alone would otherwise calm it.
+            // or a divine-war era would; drift alone would otherwise calm it. Keep
+            // its capable founder in place and alive too, so it always has someone
+            // to lead the revolt and a defender against being conquered out from
+            // under the test.
             if let Some(r) = world.regions.iter_mut().find(|r| r.id == doomed) {
                 r.chaos = 95.0;
                 r.danger = 95.0;
             }
+            if let Some(h) = world.heroes.iter_mut().find(|h| h.id == founder) {
+                h.region_id = doomed.clone();
+                h.is_alive = true;
+                h.level = 20;
+            }
             tick_world(&mut world, &mut player, &data);
-            if world.regions.len() > start {
-                fractured = true;
+            // Break on the revolt itself — other genesis events (a frontier
+            // founding elsewhere) may grow the map first, but the thing under test
+            // is that sustained turmoil sparks a *revolt*.
+            if world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains("revolt"))
+            {
+                revolted = true;
                 break;
             }
         }
-        assert!(fractured, "sustained turmoil never fractured the region");
         assert!(
-            world
-                .chronicle
-                .iter_newest()
-                .any(|e| e.message.contains("revolt")),
-            "the fracture was not chronicled"
+            revolted,
+            "sustained turmoil never sparked a chronicled revolt"
         );
     }
 
