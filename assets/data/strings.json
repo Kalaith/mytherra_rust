@@ -141,7 +141,7 @@
     "challenge": "Challenge {cost}",
     "deity_meta": "{domain}  ·  ally {ally}  ·  rival {rival}",
     "deity_pressure": "{mood}  ({pressure})",
-    "deity_effect": "Roused: {verb} {stat}",
+    "deity_effect": "{verb} {stat}",
     "verb_raises": "raises",
     "verb_lowers": "lowers",
     "pantheon_cooldown": "resting {years}y",
