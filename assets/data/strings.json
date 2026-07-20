@@ -237,7 +237,7 @@
     "quest": "Quest {progress}/{goal}",
     "roster_label": "Roster",
     "filter_all": "All",
-    "focus_line": "{focus}  ·  on victory, {effect}",
+    "focus_line": "{focus}  ·  {effect} at home, more on victory",
     "focus_effect_valor": "eases danger",
     "focus_effect_wisdom": "kindles magic",
     "focus_effect_devotion": "lifts prosperity",

@@ -108,7 +108,7 @@ fn draw_champion_card(
         TextStyle::new(13.0, dark::TEXT_DIM).params(),
     );
 
-    // What this focus does when the champion resolves a rivalry.
+    // What this focus does for its region — continuously at home, more on victory.
     draw_ui_text_ex(
         &fill(
             &strings.focus_line,
