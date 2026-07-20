@@ -478,6 +478,8 @@
     "corrupt_base": 0.14,
     "corrupt_danger": 0.003,
     "region_output_scale": 0.5,
+    "corrupted_chaos": 0.8,
+    "unstable_danger": 0.8,
     "outputs": {
       "active": 1.0,
       "blessed": 1.25,

@@ -16,6 +16,12 @@ pub struct ResourceBalance {
     pub corrupt_base: f32,
     pub corrupt_danger: f32,
     pub region_output_scale: f32,
+    /// A hazardous node poisons its region, not just its ledger (GDD 5.3): a
+    /// corrupted node bleeds chaos as the taint spreads, an unstable one bleeds
+    /// danger. This feeds the very stress that degraded it, so a neglected node
+    /// can drag its region down with it until the region is calmed.
+    pub corrupted_chaos: f32,
+    pub unstable_danger: f32,
     pub outputs: ResourceOutputs,
 }
 

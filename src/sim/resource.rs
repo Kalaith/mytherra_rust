@@ -21,10 +21,23 @@ pub fn tick_resources(
         };
         node.status = next_status(node.status, &regions[idx], rng, balance);
 
-        // A healthy node lifts its region; a degraded one drags it down.
+        // A healthy node lifts its region; a degraded one drags it down. A
+        // hazardous node poisons the land besides: a corrupted node bleeds chaos,
+        // an unstable one danger (GDD 5.3).
         let output = node.output(&balance.outputs);
         let contribution = (output - 1.0) * balance.region_output_scale;
-        regions[idx].apply_deltas(contribution, 0.0, 0.0, 0.0, region_balance);
+        let (chaos, danger) = status_hazard(node.status, balance);
+        regions[idx].apply_deltas(contribution, chaos, danger, 0.0, region_balance);
+    }
+}
+
+/// The chaos / danger a node bleeds into its region purely by its status: a
+/// corrupted node spreads chaos, an unstable one danger, all others nothing.
+fn status_hazard(status: ResourceStatus, balance: &ResourceBalance) -> (f32, f32) {
+    match status {
+        ResourceStatus::Corrupted => (balance.corrupted_chaos, 0.0),
+        ResourceStatus::Unstable => (0.0, balance.unstable_danger),
+        _ => (0.0, 0.0),
     }
 }
 
@@ -133,6 +146,58 @@ mod tests {
         let flourishing = (data.balance.resource.outputs.flourishing - 1.0)
             * data.balance.resource.region_output_scale;
         assert!(flourishing > 0.0);
+    }
+
+    #[test]
+    fn only_hazardous_nodes_poison_their_region() {
+        let b = GameData::load().unwrap().balance.resource;
+        assert_eq!(
+            status_hazard(ResourceStatus::Corrupted, &b),
+            (b.corrupted_chaos, 0.0)
+        );
+        assert_eq!(
+            status_hazard(ResourceStatus::Unstable, &b),
+            (0.0, b.unstable_danger)
+        );
+        assert_eq!(status_hazard(ResourceStatus::Flourishing, &b), (0.0, 0.0));
+        assert_eq!(status_hazard(ResourceStatus::Active, &b), (0.0, 0.0));
+    }
+
+    #[test]
+    fn a_corrupted_node_bleeds_chaos_into_its_region() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        // Freeze the state machine (no degrade/recover) so the node stays
+        // Corrupted this tick, isolating the hazard bleed.
+        let mut balance = data.balance.resource.clone();
+        balance.degrade_base = 0.0;
+        balance.degrade_stress = 0.0;
+        balance.recover_base = 0.0;
+
+        world.resource_nodes.truncate(1);
+        world.resource_nodes[0].status = ResourceStatus::Corrupted;
+        let region_id = world.resource_nodes[0].region_id.clone();
+        let ridx = world
+            .regions
+            .iter()
+            .position(|r| r.id == region_id)
+            .unwrap();
+        world.regions[ridx].chaos = 30.0;
+        let chaos_before = world.regions[ridx].chaos;
+
+        tick_resources(
+            &mut world.resource_nodes,
+            &mut world.regions,
+            &mut world.rng,
+            &balance,
+            &data.balance.region,
+        );
+
+        assert_eq!(world.resource_nodes[0].status, ResourceStatus::Corrupted);
+        assert!(
+            world.regions[ridx].chaos > chaos_before,
+            "a corrupted node should spread chaos into its region"
+        );
     }
 
     #[test]
