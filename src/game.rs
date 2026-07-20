@@ -49,6 +49,7 @@ pub struct Game {
     hero_page: usize,
     /// Region roster page (0-based); clamped by the view as regions come and go.
     region_page: usize,
+    omens_page: usize,
     /// Eras chronicle page (0-based); clamped by the view as ages accrue.
     eras_page: usize,
     /// Auto-tick cadence (index into `balance.settings.tick_speed_presets`).
@@ -129,6 +130,7 @@ impl Game {
             chronicle_page: 0,
             hero_page: 0,
             region_page: 0,
+            omens_page: 0,
             eras_page: 0,
             hero_filter: 0,
             tick_speed_index,
@@ -195,6 +197,7 @@ impl Game {
             chronicle_page: self.chronicle_page,
             hero_page: self.hero_page,
             region_page: self.region_page,
+            omens_page: self.omens_page,
             eras_page: self.eras_page,
             hero_filter: self.hero_filter,
             tick_speed_index: self.tick_speed_index,
@@ -277,6 +280,7 @@ impl Game {
                 }
             }
             UiAction::SetRegionPage(page) => self.region_page = page,
+            UiAction::SetOmensPage(page) => self.omens_page = page,
             UiAction::SetErasPage(page) => self.eras_page = page,
             UiAction::RegionAction(id) => self.apply_region_action(&id),
             UiAction::DesignateChampion(id) => self.designate_champion(&id),

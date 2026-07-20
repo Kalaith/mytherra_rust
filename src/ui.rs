@@ -71,6 +71,8 @@ pub enum UiAction {
     SetRegionPage(usize),
     /// Jump the eras chronicle to the given (already-clamped) page.
     SetErasPage(usize),
+    /// Jump the Omens region forecast to the given (already-clamped) page.
+    SetOmensPage(usize),
     /// Apply a region action (by id) to the currently selected region.
     RegionAction(String),
     /// Designate the given hero (by id) as a champion.
@@ -161,6 +163,7 @@ pub struct UiContext<'a> {
     pub hero_page: usize,
     /// Region roster page (0-based); the view clamps it to the current page count.
     pub region_page: usize,
+    pub omens_page: usize,
     /// Eras chronicle page (0-based); the view clamps it to the current page count.
     pub eras_page: usize,
     /// Selected auto-tick cadence (index into `balance.settings.tick_speed_presets`).

@@ -63,7 +63,7 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     match DivineTool::ALL[active] {
         DivineTool::Artifacts => artifacts::draw(ctx, body, actions),
         DivineTool::Weather => weather::draw(ctx, body, actions),
-        DivineTool::Omens => omens::draw(ctx, body),
+        DivineTool::Omens => omens::draw(ctx, body, actions),
         DivineTool::Magic => magic::draw(ctx, body, actions),
         DivineTool::Myths => myths::draw(ctx, body, actions),
         DivineTool::Civilization => civilization::draw(ctx, body, actions),

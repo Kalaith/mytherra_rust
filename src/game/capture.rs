@@ -99,26 +99,21 @@ impl Game {
             }
         }
         if scene == "omens" {
-            // Seed a few divine works so the forces read-out is meaningful.
+            // Run long enough that region genesis grows the map past one page, so
+            // the forecast's pagination shows, and seed a fresh divine work or two.
             self.create_artifact();
-            self.selected_region = 2;
-            self.weather_intensity = 2;
-            self.shape_weather();
-            self.selected_region = 0;
-            self.weather_intensity = 0;
-            for _ in 0..2 {
+            for _ in 0..120 {
                 self.run_tick();
             }
-            let ids: Vec<String> = self
-                .world
-                .myth_candidates
-                .iter()
-                .take(1)
-                .map(|c| c.id.clone())
-                .collect();
-            for id in ids {
-                self.promote_myth(&id);
-            }
+            // A scheduled consequence so the horizon's coming-scar forecast shows.
+            self.world
+                .pending_consequences
+                .push(crate::world::DelayedConsequence {
+                    region_id: self.world.regions[0].id.clone(),
+                    source: "The Sunken Storm".to_owned(),
+                    delay: 42,
+                    effect: crate::world::ConsequenceEffect::SettlementBlight(6.0),
+                });
         }
         if scene == "settings" {
             // Demonstrate the paused state (Resume control + "Paused" header).

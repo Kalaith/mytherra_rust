@@ -5,13 +5,13 @@
 use crate::data::fill;
 use crate::data::strings::DivineText;
 use crate::ui::divine_tools::draw_panel;
-use crate::ui::widgets::bad_stat_color;
-use crate::ui::UiContext;
+use crate::ui::widgets::{bad_stat_color, page_controls, paginate};
+use crate::ui::{UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
 
-pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
+pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
     let strings = &ctx.data.strings.divine;
     draw_panel(rect, &strings.omens_panel);
     let content = rect.inset(18.0);
@@ -32,9 +32,18 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
         TextStyle::new(15.0, dark::TEXT_DIM).params(),
     );
 
+    // Page the region forecasts: region genesis grows the map past what one panel
+    // can hold, so drawing every block would spill off the bottom (GDD 5.2 <-> 10).
     let omens = &ctx.data.balance.omens;
-    let mut y = content.y + 52.0;
-    for region in &ctx.world.regions {
+    let list_top = content.y + 52.0;
+    let stride = 102.0;
+    let pager_row = Rect::new(content.x, content.bottom() - 26.0, content.w, 24.0);
+    let page_size = (((pager_row.y - 6.0 - list_top) / stride).floor() as usize).max(1);
+    let (page, start, end, total_pages) =
+        paginate(ctx.world.regions.len(), page_size, ctx.omens_page);
+
+    let mut y = list_top;
+    for region in ctx.world.regions.iter().take(end).skip(start) {
         let pressure = region.pressure();
         draw_ui_text_ex(
             &region.name,
@@ -143,7 +152,29 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect) {
             y + 86.0,
             TextStyle::new(14.0, dark::TEXT_DIM).params(),
         );
-        y += 102.0;
+        y += stride;
+    }
+
+    if total_pages > 1 {
+        let ui = &ctx.data.strings.ui;
+        let label = fill(
+            &ui.page_label,
+            &[
+                ("page", (page + 1).to_string()),
+                ("pages", total_pages.to_string()),
+            ],
+        );
+        if let Some(target) = page_controls(
+            pager_row,
+            page,
+            total_pages,
+            &ui.page_prev,
+            &ui.page_next,
+            &label,
+            ctx.mouse,
+        ) {
+            actions.push(UiAction::SetOmensPage(target));
+        }
     }
 }
 
