@@ -109,4 +109,10 @@ pub struct TradeBalance {
     pub culture_bonus: f32,
     /// Fraction each endpoint drifts toward the pair's average cultural influence.
     pub culture_equalize: f32,
+    /// How much the more perilous endpoint's danger throttles trade income:
+    /// a route is only as safe as its worst leg, so caravans falter where the
+    /// road runs through peril (GDD 5.2). Route safety is
+    /// `clamp(1 - peril * peril_penalty, min_safety, 1)`.
+    pub peril_penalty: f32,
+    pub min_safety: f32,
 }

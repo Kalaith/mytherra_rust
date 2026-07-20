@@ -23,7 +23,11 @@ pub fn tick_trade(
         }
 
         // Wealth: a flat bonus plus drift toward the pair's average prosperity.
-        let bonus = balance.prosperity_bonus * route.volume;
+        // The bonus is throttled by the more perilous endpoint's danger — trade
+        // falters where the road runs through a war zone (GDD 5.2).
+        let peril = regions[a].danger.max(regions[b].danger);
+        let safety = (1.0 - peril * balance.peril_penalty).clamp(balance.min_safety, 1.0);
+        let bonus = balance.prosperity_bonus * route.volume * safety;
         let (pa, pb) = (regions[a].prosperity, regions[b].prosperity);
         let avg = (pa + pb) * 0.5;
         let delta_a = bonus + (avg - pa) * balance.equalize_rate;
@@ -73,6 +77,48 @@ mod tests {
         );
         let gap_after = (world.regions[ai].prosperity - world.regions[ki].prosperity).abs();
         assert!(gap_after < gap_before);
+    }
+
+    #[test]
+    fn peril_on_a_route_throttles_its_trade_income() {
+        let data = GameData::load().unwrap();
+        // Prosperity a safe endpoint gains from the Iron Road when its partner
+        // sits at the given danger. Both endpoints start equal, so the equalize
+        // term is zero and only the throttled trade bonus moves prosperity.
+        let gain = |partner_danger: f32| {
+            let mut world = WorldState::new(&data);
+            let ai = world
+                .regions
+                .iter()
+                .position(|r| r.id == "aldermoor")
+                .unwrap();
+            let ki = world
+                .regions
+                .iter()
+                .position(|r| r.id == "kharzul")
+                .unwrap();
+            world.regions[ai].prosperity = 50.0;
+            world.regions[ki].prosperity = 50.0;
+            world.regions[ai].danger = 0.0;
+            world.regions[ki].danger = partner_danger;
+            let before = world.regions[ai].prosperity;
+            tick_trade(
+                &world.trade_routes,
+                &mut world.regions,
+                &data.balance.trade,
+                &data.balance.region,
+            );
+            world.regions[ai].prosperity - before
+        };
+
+        assert!(
+            gain(0.0) > gain(100.0),
+            "a route to a war-torn partner should carry less trade than a safe one"
+        );
+        assert!(
+            gain(100.0) > 0.0,
+            "even a perilous route still carries some trade (the min_safety floor)"
+        );
     }
 
     #[test]
