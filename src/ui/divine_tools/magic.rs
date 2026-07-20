@@ -3,6 +3,7 @@
 
 use crate::data::fill;
 use crate::data::strings::DivineText;
+use crate::data::HeroRole;
 use crate::ui::divine_tools::draw_panel;
 use crate::ui::widgets::button;
 use crate::ui::{UiAction, UiContext};
@@ -12,11 +13,45 @@ use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
 
 pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
-    draw_panel(rect, &ctx.data.strings.divine.magic_panel);
+    let strings = &ctx.data.strings.divine;
+    draw_panel(rect, &strings.magic_panel);
     let content = rect.inset(16.0);
 
     // Start below the 40px panel header so the title stays clear.
-    let mut y = content.y + 30.0;
+    let mut y = content.y + 26.0;
+    draw_ui_text_ex(
+        &strings.magic_intro,
+        content.x,
+        y,
+        TextStyle::new(13.0, dark::TEXT_DIM).params(),
+    );
+    y += 18.0;
+
+    // The scholarly momentum now driving every path (GDD 5.6 <-> 5.4): surface
+    // why research quickens, so the player can read the world's learned minds as
+    // a lever — cultivate scholars and mages to master the arcane sooner.
+    let learned = ctx
+        .world
+        .heroes
+        .iter()
+        .filter(|h| h.is_alive && matches!(h.role, HeroRole::Scholar | HeroRole::Mage))
+        .count();
+    let (momentum, momentum_color) = if learned > 0 {
+        (
+            fill(&strings.magic_scholars, &[("count", learned.to_string())]),
+            Color::new(0.6, 0.55, 0.9, 1.0),
+        )
+    } else {
+        (strings.magic_no_scholars.clone(), dark::TEXT_DIM)
+    };
+    draw_ui_text_ex(
+        &momentum,
+        content.x,
+        y,
+        TextStyle::new(14.0, momentum_color).params(),
+    );
+    y += 22.0;
+
     for path in &ctx.world.magic_paths {
         draw_path(ctx, path, Rect::new(content.x, y, content.w, 74.0), actions);
         y += 80.0;

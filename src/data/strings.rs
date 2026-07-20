@@ -241,6 +241,8 @@ pub struct DivineText {
     pub research: String,
     pub magic_progress: String,
     pub magic_evidence: String,
+    pub magic_scholars: String,
+    pub magic_no_scholars: String,
     pub magic_dormant: String,
     pub magic_emerging: String,
     pub magic_known: String,
