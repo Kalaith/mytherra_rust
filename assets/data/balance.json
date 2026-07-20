@@ -312,6 +312,8 @@
     "resonance_max": 92.0,
     "resonance_spread": 15.0,
     "resonance_scale": 1.4,
+    "resonance_decay": 0.5,
+    "forgotten_floor": 25.0,
     "region_floor": 15.0,
     "legend_theme_id": "valor"
   },

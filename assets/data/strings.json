@@ -283,6 +283,7 @@
     "aftermath_bloom": "The fair weather {source} brought ripens into a bountiful harvest in {settlement}.",
     "magic_known": "{path} passes into common knowledge.",
     "myth_echo": "{title} echoes across {region}.",
+    "myth_faded": "{title} fades from the memory of {region}.",
     "era_transition": "A new age dawns: {era}, born of {trigger}. {lost} fell, {risen} rose to meet it.",
     "culture_shift": "{region} takes on a {culture} character.",
     "settlement_built": "{settlement} raises a {building}.",

@@ -11,7 +11,7 @@ use macroquad_toolkit::rng::SeededRng;
 /// Echo mature myths and replenish candidates.
 #[allow(clippy::too_many_arguments)]
 pub fn tick_myths(
-    myths: &mut [Myth],
+    myths: &mut Vec<Myth>,
     candidates: &mut Vec<MythCandidate>,
     seq: &mut u64,
     regions: &mut [Region],
@@ -46,7 +46,34 @@ pub fn tick_myths(
             // Too faint to echo; wait another cooldown before re-checking.
             myth.echo_cooldown = balance.echo_cooldown;
         }
+
+        // Every tale fades from living memory a little each year (GDD 5.6): its
+        // resonance ebbs, so a myth first falls silent (below the echo
+        // threshold) and eventually is forgotten. How long it lasts is set by
+        // how deeply it was rooted when promoted.
+        myth.resonance = (myth.resonance - balance.resonance_decay).max(0.0);
     }
+
+    // Myths worn down past the forgotten floor pass out of memory, freeing a
+    // slot on the capped roster for a new tale to rise.
+    myths.retain(|m| {
+        if m.resonance < balance.forgotten_floor {
+            chronicle.push(
+                year,
+                EventKind::System,
+                fill(
+                    &data.strings.chronicle.myth_faded,
+                    &[
+                        ("title", m.title.clone()),
+                        ("region", m.region_name.clone()),
+                    ],
+                ),
+            );
+            false
+        } else {
+            true
+        }
+    });
 
     let mut attempts = 0;
     while candidates.len() < balance.candidate_count && attempts < balance.candidate_count * 4 {
@@ -276,6 +303,49 @@ mod tests {
         assert_eq!(
             world.myths[0].echo_cooldown,
             data.balance.myth.echo_cooldown
+        );
+    }
+
+    #[test]
+    fn a_faint_myth_fades_from_memory_and_frees_its_slot() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let floor = data.balance.myth.forgotten_floor;
+        world.myths.clear();
+        world.myths.push(Myth {
+            id: "fading".to_owned(),
+            title: "The Waning Tale".to_owned(),
+            theme_name: "Valor".to_owned(),
+            stat: MythStat::Prosperity,
+            cultural_effect: 0.0,
+            stat_effect: 0.0,
+            region_id: world.regions[0].id.clone(),
+            region_name: world.regions[0].name.clone(),
+            resonance: floor + 0.4, // one decay step from being forgotten
+            echo_cooldown: 5,
+        });
+
+        tick_myths(
+            &mut world.myths,
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            &mut world.regions,
+            &mut world.rng,
+            &mut world.chronicle,
+            &data,
+            world.year,
+        );
+
+        assert!(
+            !world.myths.iter().any(|m| m.id == "fading"),
+            "a myth worn below the forgotten floor should pass out of memory"
+        );
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains("The Waning Tale") && e.message.contains("fades")),
+            "a myth's fading should be chronicled"
         );
     }
 

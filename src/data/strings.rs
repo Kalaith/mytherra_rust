@@ -370,6 +370,7 @@ pub struct ChronicleText {
     pub aftermath_bloom: String,
     pub magic_known: String,
     pub myth_echo: String,
+    pub myth_faded: String,
     pub era_transition: String,
     pub culture_shift: String,
     pub settlement_built: String,

@@ -175,6 +175,13 @@ pub struct MythBalance {
     pub resonance_max: f32,
     pub resonance_spread: f32,
     pub resonance_scale: f32,
+    /// Resonance a living myth loses each tick as it fades from living memory; a
+    /// deeply-rooted tale (high initial resonance) endures for generations, a
+    /// marginal one is soon forgotten (GDD 5.6).
+    pub resonance_decay: f32,
+    /// Resonance below which a myth is forgotten entirely and removed, freeing a
+    /// slot on the capped roster so new tales can rise.
+    pub forgotten_floor: f32,
     /// Baseline weight every region carries when a themed myth looks for a home,
     /// so a legend can still arise where its subject is faint — just less often.
     pub region_floor: f32,
