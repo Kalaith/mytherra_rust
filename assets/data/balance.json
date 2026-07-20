@@ -260,6 +260,8 @@
     "backlash_threshold": 100.0,
     "backlash_chaos": 10.0,
     "backlash_danger": 8.0,
+    "attunement_base": 0.5,
+    "attunement_coeff": 0.01,
     "focus_effect": {
       "protection": -0.5,
       "prosperity": 0.4,

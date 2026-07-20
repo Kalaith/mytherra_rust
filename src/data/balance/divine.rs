@@ -76,6 +76,12 @@ pub struct ArtifactBalance {
     pub aftermath_unrest_delay: i32,
     pub aftermath_unrest_chaos: f32,
     pub aftermath_unrest_danger: f32,
+    /// A relic is a vessel of arcane power, so it reshapes an attuned land more
+    /// strongly than a mundane one: its focus effect is scaled by
+    /// `attunement_base + region magic * attunement_coeff` (GDD 5.6), the same
+    /// principle the Magic tool already follows.
+    pub attunement_base: f32,
+    pub attunement_coeff: f32,
     pub focus_effect: ArtifactFocusEffect,
 }
 

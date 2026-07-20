@@ -71,7 +71,10 @@ fn apply_focus(
     let Some(region) = regions.iter_mut().find(|r| r.id == artifact.region_id) else {
         return;
     };
-    let delta = artifact.focus_delta(balance);
+    // A relic bites deepest where the arcane runs strong (GDD 5.6), the same
+    // attunement scaling the Magic tool uses.
+    let attunement = balance.attunement_base + region.magic_affinity * balance.attunement_coeff;
+    let delta = artifact.focus_delta(balance) * attunement;
     let (prosperity, chaos, danger, magic) = match artifact.focus {
         ArtifactFocus::Protection => (0.0, 0.0, delta, 0.0),
         ArtifactFocus::Prosperity => (delta, 0.0, 0.0, 0.0),
@@ -131,5 +134,44 @@ mod tests {
             );
         }
         assert!(world.artifacts.len() < before, "an artifact should shatter");
+    }
+
+    #[test]
+    fn a_relic_reshapes_an_attuned_land_more_strongly() {
+        // The same Prosperity relic lifts an arcane-attuned region more than a
+        // barren one — a relic bites deepest where magic runs strong (GDD 5.6).
+        let data = GameData::load().unwrap();
+        let gain = |magic_affinity: f32| {
+            let mut world = WorldState::new(&data);
+            world.artifacts.clear();
+            world.pending_consequences.clear();
+            world.regions.truncate(1);
+            world.regions[0].magic_affinity = magic_affinity;
+            world.regions[0].prosperity = 50.0;
+            world.artifacts.push(Artifact {
+                id: "relic".to_owned(),
+                name: "Test Relic".to_owned(),
+                focus: ArtifactFocus::Prosperity,
+                power: 4,
+                instability: 0.0,
+                region_id: world.regions[0].id.clone(),
+            });
+            tick_artifacts(
+                &mut world.artifacts,
+                &mut world.regions,
+                &mut world.pending_consequences,
+                &data.balance.artifact,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.regions[0].prosperity - 50.0
+        };
+
+        assert!(
+            gain(100.0) > gain(0.0),
+            "a relic should reshape an attuned land more strongly than a barren one"
+        );
     }
 }
