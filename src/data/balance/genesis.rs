@@ -71,6 +71,11 @@ pub struct ConquestBalance {
     /// A living hero of at least this level shields its region from conquest —
     /// the same calibre of hero who would instead lead it to secede.
     pub defender_min_level: u32,
+    /// A hero of at least this renown likewise shields its region, even below the
+    /// level bar: a famous name deters invaders (GDD 5.4 <-> 5.2). Since a
+    /// cultivated champion's quests earn its hero renown, this makes the player's
+    /// investment in a champion pay off in the defence of its home.
+    pub defender_renown_min: f32,
     /// A Protection artifact of at least this power wards its region against
     /// conquest entirely (GDD 5.6 ↔ 5.2) — the player's divine lever to save a
     /// threatened region from being absorbed.

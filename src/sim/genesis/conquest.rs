@@ -10,11 +10,15 @@ use crate::world::{
     Settlement, TradeRoute, WeatherEvent,
 };
 
-/// Does a hero strong enough to hold the region against invasion live there?
+/// Does a hero strong enough to hold the region against invasion live there? A
+/// hero shields their home either by raw level or by a famous name (renown), so
+/// a cultivated champion's earned fame guards its region even below the level bar.
 fn has_defender(heroes: &[Hero], region_id: &str, balance: &ConquestBalance) -> bool {
-    heroes
-        .iter()
-        .any(|h| h.is_alive && h.region_id == region_id && h.level >= balance.defender_min_level)
+    heroes.iter().any(|h| {
+        h.is_alive
+            && h.region_id == region_id
+            && (h.level >= balance.defender_min_level || h.renown >= balance.defender_renown_min)
+    })
 }
 
 /// A region's effective conquest might: its intrinsic might plus the raw
@@ -185,4 +189,39 @@ pub(super) fn run(
             &[("winner", winner_name), ("loser", loser_name)],
         ),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data::{GameData, HeroRole};
+
+    fn hero(region: &str, level: u32, renown: f32) -> Hero {
+        Hero {
+            id: "h".to_owned(),
+            name: "H".to_owned(),
+            role: HeroRole::Warrior,
+            region_id: region.to_owned(),
+            level,
+            age: 30,
+            is_alive: true,
+            renown,
+        }
+    }
+
+    #[test]
+    fn a_famous_hero_defends_its_region_even_below_the_level_bar() {
+        let balance = GameData::load().unwrap().balance.conquest;
+        // A low-level but famous hero shields its region...
+        let famous = vec![hero("aldermoor", 1, balance.defender_renown_min + 1.0)];
+        assert!(has_defender(&famous, "aldermoor", &balance));
+        // ...an equally-low unknown does not...
+        let unknown = vec![hero("aldermoor", 1, 0.0)];
+        assert!(!has_defender(&unknown, "aldermoor", &balance));
+        // ...a seasoned hero shields regardless of renown...
+        let veteran = vec![hero("aldermoor", balance.defender_min_level, 0.0)];
+        assert!(has_defender(&veteran, "aldermoor", &balance));
+        // ...and a defender guards only its own home.
+        assert!(!has_defender(&famous, "kharzul", &balance));
+    }
 }
