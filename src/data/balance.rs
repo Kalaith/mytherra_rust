@@ -74,6 +74,11 @@ pub struct PlayerBalance {
     /// giving level-ups a mechanical payoff (GDD 5.1).
     pub max_favor_per_level: i64,
     pub favor_per_tick_per_level: i64,
+    /// Experience granted for unlocking an achievement (GDD 5.1): a milestone is a
+    /// great deed that elevates the deity, so achievements feed progression rather
+    /// than being pure vanity. Awarded as experience, not favor, so it is never
+    /// clipped by the favor ceiling and compounds into a higher standing.
+    pub achievement_experience: i64,
 }
 
 /// Settings-screen tuning (GDD 10): the selectable auto-tick cadences, in real

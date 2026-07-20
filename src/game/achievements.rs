@@ -46,6 +46,12 @@ pub fn check(world: &WorldState, player: &mut PlayerState, data: &GameData) -> V
     let mut names = Vec::new();
     for (id, name) in freshly {
         if player.achievements.unlock(&id) {
+            // A milestone elevates the deity: award experience toward its next
+            // standing, so achievements feed progression rather than being vanity.
+            player.gain_experience(
+                data.balance.player.achievement_experience,
+                &data.balance.player,
+            );
             names.push(name);
         }
     }
@@ -76,6 +82,40 @@ mod tests {
         // ...and never again, even though the condition still holds.
         let second = check(&world, &mut player, &data);
         assert!(!second.iter().any(|n| n == "First Intervention"));
+    }
+
+    #[test]
+    fn unlocking_an_achievement_awards_experience() {
+        let data = GameData::load().unwrap();
+        let world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        player
+            .achievements
+            .sync_definitions(data.achievements.clone());
+        let xp = data.balance.player.achievement_experience;
+        assert!(
+            xp > 0,
+            "the reward must be a real award to be worth testing"
+        );
+
+        let before = player.experience + player.level as i64 * 100_000; // monotone progress proxy
+        player.nudges = 1; // earns "first_nudge"
+        let unlocked = check(&world, &mut player, &data);
+        assert_eq!(unlocked.len(), 1, "exactly one milestone was reached");
+        let after = player.experience + player.level as i64 * 100_000;
+        assert!(
+            after > before,
+            "unlocking an achievement should advance the deity's standing"
+        );
+
+        // A second check with no fresh unlock awards nothing further.
+        let held = player.experience + player.level as i64 * 100_000;
+        check(&world, &mut player, &data);
+        assert_eq!(
+            player.experience + player.level as i64 * 100_000,
+            held,
+            "no double-award once the achievement is already held"
+        );
     }
 
     #[test]

@@ -194,7 +194,7 @@
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
-    "achievement_unlocked": "Achievement unlocked — {name}",
+    "achievement_unlocked": "Achievement unlocked — {name} (+{xp} divine insight)",
     "era_dawns": "A new age dawns: {era}",
     "not_enough_favor": "Not enough Divine Favor.",
     "action_success": "{action} on {region} ({cost} favor).",

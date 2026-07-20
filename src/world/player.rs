@@ -110,7 +110,10 @@ impl PlayerState {
             .min(self.max_favor(config, balance));
     }
 
-    fn gain_experience(&mut self, amount: i64, balance: &PlayerBalance) {
+    /// Award experience toward the deity's next standing, leveling up as many
+    /// times as the total clears. Used both by spending favor (§5.1) and by
+    /// unlocking achievements, whose milestones elevate the god.
+    pub fn gain_experience(&mut self, amount: i64, balance: &PlayerBalance) {
         self.experience += amount;
         while self.experience >= self.next_level_cost(balance) {
             self.experience -= self.next_level_cost(balance);
@@ -151,6 +154,7 @@ mod tests {
             level_cost_step: 60,
             max_favor_per_level: 40,
             favor_per_tick_per_level: 1,
+            achievement_experience: 60,
         }
     }
 

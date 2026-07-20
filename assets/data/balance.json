@@ -539,7 +539,8 @@
     "level_base_cost": 100,
     "level_cost_step": 60,
     "max_favor_per_level": 40,
-    "favor_per_tick_per_level": 1
+    "favor_per_tick_per_level": 1,
+    "achievement_experience": 60
   },
   "settings": {
     "tick_speed_presets": [

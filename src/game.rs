@@ -172,10 +172,11 @@ impl Game {
     /// Unlock any newly-earned achievements and toast them.
     fn check_achievements(&mut self) {
         let unlocked = achievements::check(&self.world, &mut self.player, &self.data);
+        let xp = self.data.balance.player.achievement_experience;
         for name in unlocked {
             self.notifications.success(fill(
                 &self.data.strings.notifications.achievement_unlocked,
-                &[("name", name)],
+                &[("name", name), ("xp", xp.to_string())],
             ));
         }
     }
