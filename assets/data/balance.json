@@ -440,6 +440,7 @@
     "region_chaos_div": 5000.0,
     "growth_min": -0.03,
     "growth_max": 0.08,
+    "capacity_per_prosperity": 500.0,
     "prosperity_drift_rate": 0.6,
     "region_contribution": 0.015,
     "construction_prosperity_min": 60.0,

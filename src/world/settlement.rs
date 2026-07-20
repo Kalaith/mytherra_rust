@@ -43,6 +43,18 @@ impl Settlement {
     pub fn region_contribution(&self, balance: &SettlementBalance) -> f32 {
         (self.prosperity - 50.0) * balance.region_contribution
     }
+
+    /// An intrinsic growth rate limited by carrying capacity (GDD 5.3): positive
+    /// growth eases to zero as population nears capacity and never carries a
+    /// settlement past it, while decline from hardship still bites in full — so
+    /// a town swells toward the size its land can feed, then holds.
+    pub fn capacity_limited_growth(&self, rate: f32, capacity: f32) -> f32 {
+        if rate > 0.0 && capacity > 0.0 {
+            rate * (1.0 - self.population / capacity).max(0.0)
+        } else {
+            rate
+        }
+    }
 }
 
 #[cfg(test)]
@@ -51,6 +63,33 @@ mod tests {
 
     fn balance() -> SettlementBalance {
         crate::data::GameData::load().unwrap().balance.settlement
+    }
+
+    #[test]
+    fn growth_eases_to_zero_at_carrying_capacity() {
+        let capacity = 10_000.0;
+        let mut s = settlement(80.0);
+
+        s.population = 5_000.0; // half capacity
+        let full = 0.05;
+        let damped = s.capacity_limited_growth(full, capacity);
+        assert!(
+            damped > 0.0 && damped < full,
+            "below capacity, growth is positive but eased: {damped}"
+        );
+
+        s.population = 10_000.0; // at capacity
+        assert_eq!(s.capacity_limited_growth(full, capacity), 0.0);
+
+        s.population = 12_000.0; // past capacity
+        assert_eq!(
+            s.capacity_limited_growth(full, capacity),
+            0.0,
+            "positive growth never carries a town past capacity"
+        );
+
+        s.population = 5_000.0; // decline from hardship still bites in full
+        assert_eq!(s.capacity_limited_growth(-0.02, capacity), -0.02);
     }
 
     fn settlement(prosperity: f32) -> Settlement {

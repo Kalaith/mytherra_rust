@@ -56,6 +56,10 @@ pub struct SettlementBalance {
     pub region_chaos_div: f32,
     pub growth_min: f32,
     pub growth_max: f32,
+    /// Carrying capacity per point of the settlement's supporting prosperity
+    /// (region prosperity + its buildings): the land feeds only so many, so
+    /// growth eases to nothing as population nears capacity (GDD 5.3).
+    pub capacity_per_prosperity: f32,
     pub prosperity_drift_rate: f32,
     pub region_contribution: f32,
     /// A settlement builds a new building only once its prosperity and

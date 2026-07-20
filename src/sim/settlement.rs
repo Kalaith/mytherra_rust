@@ -32,9 +32,14 @@ pub fn tick_settlements(
             .filter(|b| b.settlement_id == settlement.id)
             .map(|b| b.prosperity_bonus)
             .sum();
-        let target = (region_prosperity + building_bonus).clamp(0.0, 100.0);
+        let supporting = (region_prosperity + building_bonus).clamp(0.0, 100.0);
+        let target = supporting;
 
-        let growth = settlement.growth_rate(region_prosperity, region_chaos, balance);
+        // The land feeds only so many: population swells toward a capacity set by
+        // its supporting prosperity, then holds, rather than compounding forever.
+        let capacity = balance.capacity_per_prosperity * supporting;
+        let rate = settlement.growth_rate(region_prosperity, region_chaos, balance);
+        let growth = settlement.capacity_limited_growth(rate, capacity);
         settlement.population = (settlement.population * (1.0 + growth)).max(0.0);
         settlement.prosperity =
             approach(settlement.prosperity, target, balance.prosperity_drift_rate)
@@ -181,6 +186,43 @@ mod tests {
         for (s, was) in world.settlements.iter().zip(before) {
             assert!(s.population > was);
         }
+    }
+
+    #[test]
+    fn population_is_bounded_by_carrying_capacity() {
+        // Held at high prosperity indefinitely, a settlement swells then plateaus
+        // rather than compounding without limit (GDD 5.3). Supporting prosperity
+        // never exceeds 100, so population can never pass capacity_per_prosperity
+        // * 100 — the growth is genuinely bounded, not merely slow.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let ceiling = data.balance.settlement.capacity_per_prosperity * 100.0;
+        for _ in 0..3000 {
+            for region in &mut world.regions {
+                region.prosperity = 80.0;
+                region.chaos = 5.0;
+            }
+            tick_settlements(
+                &mut world.settlements,
+                &world.buildings,
+                &mut world.regions,
+                &data.balance.settlement,
+                &data.balance.region,
+            );
+        }
+        let biggest = world
+            .settlements
+            .iter()
+            .map(|s| s.population)
+            .fold(0.0_f32, f32::max);
+        assert!(
+            biggest < ceiling,
+            "population should stay under the carrying-capacity ceiling: {biggest} vs {ceiling}"
+        );
+        assert!(
+            biggest > 20_000.0,
+            "a long-prosperous settlement should still have grown well past its seed: {biggest}"
+        );
     }
 
     #[test]
