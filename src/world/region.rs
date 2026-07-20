@@ -3,6 +3,7 @@
 use crate::data::{
     ClimateType, ConquestBalance, Culture, RegionActionDef, RegionBalance, RegionSeed,
 };
+use crate::world::Hero;
 use serde::{Deserialize, Serialize};
 
 /// Derived, at-a-glance health of a region. Recomputed from stats each tick
@@ -186,7 +187,23 @@ impl Region {
             + self.danger * balance.might_danger
             + martial
     }
+}
 
+/// The military might a region's resident heroes lend it (GDD 5.2): the summed
+/// levels of its living heroes, scaled — a land guarded by many capable heroes is
+/// mightier than its bare wealth and numbers imply, and one whose champions have
+/// all fallen is easier to overrun. A free function because heroes live outside
+/// the region, shared by the conquest sim and the region-detail readout so the
+/// shown might is exactly the might that decides wars.
+pub fn resident_might(heroes: &[Hero], region_id: &str, per_level: f32) -> f32 {
+    heroes
+        .iter()
+        .filter(|h| h.is_alive && h.region_id == region_id)
+        .map(|h| h.level as f32 * per_level)
+        .sum()
+}
+
+impl Region {
     /// Apply raw (already-computed) stat deltas, clamp, and refresh status.
     /// Used by systems other than divine actions (champion rivalries, artifacts).
     pub fn apply_deltas(
@@ -252,6 +269,28 @@ mod tests {
             cultural_influence: 50.0,
             divine_resonance: 50.0,
         }
+    }
+
+    #[test]
+    fn resident_might_counts_only_living_heroes_at_home() {
+        let hero = |region_id: &str, level: u32, alive: bool| Hero {
+            id: "h".to_owned(),
+            name: "H".to_owned(),
+            role: crate::data::HeroRole::Warrior,
+            region_id: region_id.to_owned(),
+            level,
+            age: 30,
+            is_alive: alive,
+            renown: 0.0,
+        };
+        let heroes = vec![
+            hero("home", 10, true),
+            hero("home", 4, true),    // 14 living levels at home
+            hero("home", 100, false), // dead: lends no might
+            hero("away", 50, true),   // elsewhere: lends no might here
+        ];
+        assert_eq!(resident_might(&heroes, "home", 0.5), 7.0); // (10 + 4) * 0.5
+        assert_eq!(resident_might(&heroes, "nowhere", 0.5), 0.0);
     }
 
     #[test]

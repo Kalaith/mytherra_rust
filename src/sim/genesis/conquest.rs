@@ -25,13 +25,19 @@ fn has_defender(heroes: &[Hero], region_id: &str, balance: &ConquestBalance) -> 
 /// military power of any War artifacts bound to it — the player's offensive
 /// lever over the genesis map (GDD 5.6 ↔ 5.2). A war relic thus both empowers a
 /// region's conquests and hardens it against being conquered.
-fn conquest_might(region: &Region, artifacts: &[Artifact], balance: &ConquestBalance) -> f32 {
+fn conquest_might(
+    region: &Region,
+    heroes: &[Hero],
+    artifacts: &[Artifact],
+    balance: &ConquestBalance,
+) -> f32 {
     let war: f32 = artifacts
         .iter()
         .filter(|a| a.focus == ArtifactFocus::War && a.region_id == region.id)
         .map(|a| a.power as f32 * balance.artifact_war_might)
         .sum();
-    region.might(balance) + war
+    let heroic = crate::world::resident_might(heroes, &region.id, balance.might_per_hero_level);
+    region.might(balance) + war + heroic
 }
 
 /// Is the region warded by a Protection artifact strong enough to turn back a
@@ -59,7 +65,7 @@ fn pick(
     }
     let mut best: Option<(usize, usize, f32)> = None;
     for (ai, aggressor) in regions.iter().enumerate() {
-        let a_might = conquest_might(aggressor, artifacts, balance);
+        let a_might = conquest_might(aggressor, heroes, artifacts, balance);
         if aggressor.status.is_crisis() || a_might < balance.aggressor_min_might {
             continue;
         }
@@ -67,7 +73,7 @@ fn pick(
             if ti == ai || !target.status.is_crisis() {
                 continue;
             }
-            let gap = a_might - conquest_might(target, artifacts, balance);
+            let gap = a_might - conquest_might(target, heroes, artifacts, balance);
             if gap < balance.conquest_margin
                 || has_defender(heroes, &target.id, balance)
                 || is_warded(artifacts, &target.id, balance)

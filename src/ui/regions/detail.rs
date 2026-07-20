@@ -141,8 +141,8 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
 
     // Military might and the region's genesis outlook (GDD 5.2 — surface why the
     // map reshapes: which regions can conquer, expand, or be swallowed). Effective
-    // might folds in any War-artifact empowerment, so the shown number matches
-    // what conquest actually weighs.
+    // might folds in any War-artifact empowerment and the region's resident
+    // heroes, so the shown number matches what conquest actually weighs.
     let gtext = &strings.genesis;
     let conquest = &ctx.data.balance.conquest;
     let war_might: f32 = ctx
@@ -152,12 +152,14 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         .filter(|a| a.focus == crate::data::ArtifactFocus::War && a.region_id == region.id)
         .map(|a| a.power as f32 * conquest.artifact_war_might)
         .sum();
+    let hero_might =
+        crate::world::resident_might(&ctx.world.heroes, &region.id, conquest.might_per_hero_level);
     draw_ui_text_ex(
         &fill(
             &gtext.might_line,
             &[(
                 "might",
-                format!("{:.0}", region.might(conquest) + war_might),
+                format!("{:.0}", region.might(conquest) + war_might + hero_might),
             )],
         ),
         content.x,

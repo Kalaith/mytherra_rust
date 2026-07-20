@@ -89,6 +89,11 @@ pub struct ConquestBalance {
     /// offensive counterpart to the shield: empower a war relic to turn a region
     /// into a conqueror (or a militarised holdout).
     pub artifact_war_might: f32,
+    /// Conquest might each level of a living resident hero adds to a region (GDD
+    /// 5.2): a land defended by many capable heroes is a stronger aggressor and a
+    /// harder target, and one whose heroes have all fallen is ripe for the taking
+    /// — distinct from the lone-legend shield, which blocks conquest outright.
+    pub might_per_hero_level: f32,
     /// If true, conquest only follows an existing trade route between the pair.
     pub require_trade_link: bool,
     /// Fraction of the loser's population the winner absorbs (the rest is lost).

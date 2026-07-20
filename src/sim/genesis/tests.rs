@@ -389,8 +389,11 @@ fn a_war_relic_empowers_a_marginal_conqueror() {
         r.population = 1000.0;
         r.refresh_status(&data.balance.region);
     }
+    // Level the resident heroes of both the aggressor and its prey to 1, so the
+    // aggressor's might comes from its stats and the relic under test — not from
+    // strong heroes it happens to host, which lend their own conquest might.
     for hero in &mut world.heroes {
-        if hero.region_id == loser_id {
+        if hero.region_id == loser_id || hero.region_id == winner_id {
             hero.level = 1;
         }
     }

@@ -36,7 +36,7 @@ pub use magic::{MagicPath, MagicState};
 pub use myth::{Myth, MythCandidate};
 pub use pantheon::{adjust_pressure, PantheonDeity};
 pub use player::PlayerState;
-pub use region::{Region, RegionStatus};
+pub use region::{resident_might, Region, RegionStatus};
 pub use resource::ResourceNode;
 pub use settlement::Settlement;
 pub use speculation::SpeculationEvent;
