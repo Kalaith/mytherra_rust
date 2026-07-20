@@ -22,6 +22,21 @@ pub struct Strings {
     pub notifications: Notifications,
     pub chronicle: ChronicleText,
     pub genesis: GenesisText,
+    pub title: TitleText,
+}
+
+/// Copy for the title / main menu screen (GDD 10).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TitleText {
+    pub game_title: String,
+    pub tagline: String,
+    pub new_game: String,
+    #[serde(rename = "continue")]
+    pub continue_game: String,
+    pub settings: String,
+    pub exit: String,
+    pub main_menu: String,
+    pub no_save: String,
 }
 
 /// Copy for region genesis — breakaway naming and the region-detail strife line.

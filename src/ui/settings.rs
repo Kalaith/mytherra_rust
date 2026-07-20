@@ -127,6 +127,18 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         );
         y += 24.0;
     }
+
+    // Return to the title menu (save first from the Dashboard to keep progress).
+    y += 12.0;
+    if button(
+        Rect::new(content.x, y, 200.0, 40.0),
+        &ctx.data.strings.title.main_menu,
+        true,
+        ButtonTone::Secondary,
+        ctx.mouse,
+    ) {
+        actions.push(UiAction::SelectScreen(crate::ui::Screen::Title));
+    }
 }
 
 /// The player's achievements, listed down the panel's right column with their

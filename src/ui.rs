@@ -13,6 +13,7 @@ mod heroes;
 mod regions;
 mod settings;
 mod shell;
+mod title;
 mod widgets;
 
 use crate::data::GameData;
@@ -26,6 +27,9 @@ pub const LOGICAL_HEIGHT: f32 = 720.0;
 /// single tabbed screen rather than separate destinations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Screen {
+    /// The title / main menu, shown before (and returnable from) the game. Not a
+    /// nav tab, so it is excluded from `ALL`.
+    Title,
     Dashboard,
     Chronicle,
     Regions,
@@ -50,6 +54,7 @@ impl Screen {
 
     pub fn label(self) -> &'static str {
         match self {
+            Screen::Title => "Menu",
             Screen::Dashboard => "Dashboard",
             Screen::Chronicle => "Event Log",
             Screen::Regions => "Regions",
@@ -66,6 +71,12 @@ impl Screen {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiAction {
     SelectScreen(Screen),
+    /// Start a fresh world and enter it (from the title menu).
+    StartNewGame,
+    /// Load the saved world and enter it (from the title menu).
+    ContinueGame,
+    /// Quit the game (from the title menu).
+    ExitGame,
     SelectRegion(usize),
     /// Jump the region roster to the given (already-clamped) page.
     SetRegionPage(usize),
@@ -177,10 +188,17 @@ pub struct UiContext<'a> {
 pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
     let mut actions = Vec::new();
 
+    // The title menu stands alone — no header, nav, or footer around it.
+    if ctx.screen == Screen::Title {
+        title::draw(ctx, &mut actions);
+        return actions;
+    }
+
     shell::draw_header(ctx);
     shell::draw_nav(ctx, &mut actions);
 
     match ctx.screen {
+        Screen::Title => {}
         Screen::Dashboard => dashboard::draw(ctx, &mut actions),
         Screen::Chronicle => chronicle::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),

@@ -331,5 +331,15 @@
     "outlook_vulnerable": "Undefended in crisis — ripe for a stronger neighbour's conquest.",
     "outlook_defended": "A champion holds the line against conquest.",
     "outlook_warded": "A Protection ward turns back any conquest while it stands."
+  },
+  "title": {
+    "game_title": "MYTHERRA",
+    "tagline": "A living world — and you, the deity who watches over it.",
+    "new_game": "New Game",
+    "continue": "Continue",
+    "settings": "Settings",
+    "exit": "Exit Game",
+    "main_menu": "Main Menu",
+    "no_save": "No saved world yet"
   }
 }

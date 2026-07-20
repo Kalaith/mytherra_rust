@@ -11,6 +11,7 @@ impl Game {
     /// Seed a named screen (and some world history) for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
         self.screen = match scene {
+            "title" | "menu" => Screen::Title,
             "chronicle" | "event_log" => Screen::Chronicle,
             "regions" => Screen::Regions,
             "heroes" => Screen::Heroes,

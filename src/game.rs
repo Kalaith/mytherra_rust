@@ -58,6 +58,8 @@ pub struct Game {
     paused: bool,
     /// Tick count at the last autosave, so it fires once per interval.
     last_autosave_tick: u64,
+    /// Set when the player chooses Exit; the main loop ends on the next frame.
+    quit_requested: bool,
 }
 
 /// Rasterize every glyph the UI can draw, at every size it uses, once at
@@ -95,11 +97,8 @@ impl Game {
         let world = WorldState::new(&data);
         let player = PlayerState::new(&data.config);
 
-        let mut notifications = NotificationManager::new();
-        notifications.info(fill(
-            &data.strings.notifications.awaken,
-            &[("regions", world.regions.len().to_string())],
-        ));
+        // The world greets the player when they enter it, not on the title menu.
+        let notifications = NotificationManager::new();
 
         // Start at the tick-speed preset matching the configured default.
         let tick_speed_index = data
@@ -116,7 +115,7 @@ impl Game {
             player,
             notifications,
             events: EventBus::new(),
-            screen: Screen::Dashboard,
+            screen: Screen::Title,
             selected_region: 0,
             save_exists: false,
             tick_accum: 0.0,
@@ -136,6 +135,7 @@ impl Game {
             tick_speed_index,
             paused: false,
             last_autosave_tick: 0,
+            quit_requested: false,
         };
         game.refresh_save_state();
         game.sync_achievements();
@@ -219,6 +219,10 @@ impl Game {
     }
 
     fn handle_input(&mut self) {
+        // The world keyboard shortcuts belong to the game, not the title menu.
+        if self.screen == Screen::Title {
+            return;
+        }
         if is_key_pressed(KeyCode::S) {
             self.events.push(UiAction::Save);
         }
@@ -246,7 +250,8 @@ impl Game {
     }
 
     fn advance_tick_timer(&mut self, dt: f32) {
-        if self.paused {
+        // The world holds still behind the title menu; it only lives once played.
+        if self.paused || self.screen == Screen::Title {
             self.tick_accum = 0.0;
             return;
         }
@@ -338,7 +343,24 @@ impl Game {
             UiAction::Save => self.save_game(),
             UiAction::Load => self.load_game(),
             UiAction::NewWorld => self.new_world(),
+            UiAction::StartNewGame => {
+                self.new_world();
+                self.screen = Screen::Dashboard;
+            }
+            UiAction::ContinueGame => {
+                self.load_game();
+                // Only enter the world if the load actually restored one.
+                if self.save_exists {
+                    self.screen = Screen::Dashboard;
+                }
+            }
+            UiAction::ExitGame => self.quit_requested = true,
         }
+    }
+
+    /// Whether the player has chosen to exit; the main loop stops when set.
+    pub fn quit_requested(&self) -> bool {
+        self.quit_requested
     }
 
     fn new_world(&mut self) {
@@ -350,6 +372,10 @@ impl Game {
         self.last_autosave_tick = 0;
         self.notifications
             .info(self.data.strings.notifications.new_world.clone());
+        self.notifications.info(fill(
+            &self.data.strings.notifications.awaken,
+            &[("regions", self.world.regions.len().to_string())],
+        ));
     }
 
     /// Write the world to its save slot. Shared by manual save and autosave.
