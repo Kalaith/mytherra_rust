@@ -102,7 +102,7 @@ fn landmark_aura(culture: Culture, amount: f32) -> (f32, f32, f32, f32) {
     }
 }
 
-fn hero_culture(role: HeroRole) -> Culture {
+pub(crate) fn hero_culture(role: HeroRole) -> Culture {
     match role {
         HeroRole::Warrior => Culture::Martial,
         HeroRole::Mage => Culture::Mystical,

@@ -144,6 +144,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     hero::tick_heroes(
         &mut world.heroes,
         &world.regions,
+        &world.landmarks,
         &mut world.rng,
         &data.balance.hero,
         &mut world.chronicle,

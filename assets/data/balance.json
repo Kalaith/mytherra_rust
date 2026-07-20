@@ -120,6 +120,7 @@
     "migration": {
       "base_weight": 20.0,
       "min_weight": 0.5,
+      "wonder_pull": 8.0,
       "roles": {
         "warrior": {
           "prosperity": 0.2,

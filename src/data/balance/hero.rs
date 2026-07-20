@@ -43,6 +43,11 @@ pub struct MigrationBalance {
     pub base_weight: f32,
     /// Floor on a region's computed pull, so it is never zero or negative.
     pub min_weight: f32,
+    /// Extra pull, per wonder of the hero's own culture standing in a region:
+    /// great works draw the kind of people who raised them, so a mage is drawn to
+    /// a land of mystical wonders (GDD 5.4 <-> 5.2). This makes a region's wonders,
+    /// its heroes, and its culture reinforce one another.
+    pub wonder_pull: f32,
     pub roles: RoleMigrationWeights,
 }
 

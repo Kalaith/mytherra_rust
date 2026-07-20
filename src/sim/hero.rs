@@ -4,13 +4,16 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, HeroBalance, HeroRole, MigrationBalance};
-use crate::world::{Chronicle, EventKind, Hero, Region};
+use crate::sim::culture::hero_culture;
+use crate::world::{Chronicle, EventKind, Hero, Landmark, Region};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Advance every living hero by one world tick.
+#[allow(clippy::too_many_arguments)]
 pub fn tick_heroes(
     heroes: &mut [Hero],
     regions: &[Region],
+    landmarks: &[Landmark],
     rng: &mut SeededRng,
     balance: &HeroBalance,
     chronicle: &mut Chronicle,
@@ -71,9 +74,14 @@ pub fn tick_heroes(
         }
 
         if rng.chance(balance.move_chance) {
-            if let Some(dest) =
-                pick_destination(regions, &hero.region_id, hero.role, rng, &balance.migration)
-            {
+            if let Some(dest) = pick_destination(
+                regions,
+                landmarks,
+                &hero.region_id,
+                hero.role,
+                rng,
+                &balance.migration,
+            ) {
                 hero.region_id = dest;
             }
         }
@@ -136,14 +144,26 @@ fn region_name(regions: &[Region], region_id: &str) -> String {
 /// How strongly a region draws a hero of the given role (GDD 5.4). Each role
 /// weights the region's stats differently, floored so the pull is always
 /// positive. This is what makes warriors flow toward danger and scholars toward
-/// settled, cultured lands.
-fn attractiveness(region: &Region, role: HeroRole, mig: &MigrationBalance) -> f32 {
+/// settled, cultured lands — and wonders of the hero's own culture add their own
+/// pull, so great works draw the kind of people who raise them (GDD 5.2).
+fn attractiveness(
+    region: &Region,
+    landmarks: &[Landmark],
+    role: HeroRole,
+    mig: &MigrationBalance,
+) -> f32 {
     let w = mig.roles.get(role);
+    let kin_culture = hero_culture(role);
+    let kin_wonders = landmarks
+        .iter()
+        .filter(|l| l.region_id == region.id && l.culture == kin_culture)
+        .count() as f32;
     (mig.base_weight
         + w.prosperity * region.prosperity
         + w.danger * region.danger
         + w.magic * region.magic_affinity
-        + w.culture * region.cultural_influence)
+        + w.culture * region.cultural_influence
+        + mig.wonder_pull * kin_wonders)
         .max(mig.min_weight)
 }
 
@@ -152,6 +172,7 @@ fn attractiveness(region: &Region, role: HeroRole, mig: &MigrationBalance) -> f3
 /// single roll walks the cumulative weight.
 fn pick_destination(
     regions: &[Region],
+    landmarks: &[Landmark],
     current: &str,
     role: HeroRole,
     rng: &mut SeededRng,
@@ -160,7 +181,7 @@ fn pick_destination(
     let candidates: Vec<(&str, f32)> = regions
         .iter()
         .filter(|r| r.id != current)
-        .map(|r| (r.id.as_str(), attractiveness(r, role, mig)))
+        .map(|r| (r.id.as_str(), attractiveness(r, landmarks, role, mig)))
         .collect();
     if candidates.is_empty() {
         return None;
@@ -180,7 +201,7 @@ fn pick_destination(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::{ClimateType, Culture, GameData, HeroSeed, RegionSeed};
+    use crate::data::{ClimateType, Culture, GameData, HeroSeed, LandmarkSeed, RegionSeed};
     use crate::world::WorldState;
 
     #[test]
@@ -232,18 +253,46 @@ mod tests {
 
         // A warrior is drawn to conflict; a scholar toward settled, cultured land.
         assert!(
-            attractiveness(&dangerous, HeroRole::Warrior, mig)
-                > attractiveness(&settled, HeroRole::Warrior, mig)
+            attractiveness(&dangerous, &[], HeroRole::Warrior, mig)
+                > attractiveness(&settled, &[], HeroRole::Warrior, mig)
         );
         assert!(
-            attractiveness(&settled, HeroRole::Scholar, mig)
-                > attractiveness(&dangerous, HeroRole::Scholar, mig)
+            attractiveness(&settled, &[], HeroRole::Scholar, mig)
+                > attractiveness(&dangerous, &[], HeroRole::Scholar, mig)
         );
         // A mage follows magic.
         let arcane = region("spire", 50.0, 30.0, 95.0, 40.0);
         assert!(
-            attractiveness(&arcane, HeroRole::Mage, mig)
-                > attractiveness(&settled, HeroRole::Mage, mig)
+            attractiveness(&arcane, &[], HeroRole::Mage, mig)
+                > attractiveness(&settled, &[], HeroRole::Mage, mig)
+        );
+    }
+
+    #[test]
+    fn wonders_of_a_kin_culture_draw_their_heroes() {
+        let data = GameData::load().unwrap();
+        let mig = &data.balance.hero.migration;
+        let land = region("aldervale", 60.0, 20.0, 40.0, 60.0);
+        let scholarly_wonder = Landmark::from_seed(&LandmarkSeed {
+            id: "w".to_owned(),
+            name: "The Grand Athenaeum".to_owned(),
+            region_id: "aldervale".to_owned(),
+            culture: Culture::Scholarly,
+            influence: 2.0,
+        });
+        let wonders = std::slice::from_ref(&scholarly_wonder);
+
+        // A scholar is drawn more strongly to a land bearing a scholarly wonder...
+        assert!(
+            attractiveness(&land, wonders, HeroRole::Scholar, mig)
+                > attractiveness(&land, &[], HeroRole::Scholar, mig),
+            "a scholarly wonder should draw scholars"
+        );
+        // ...but a warrior, of a different culture, feels no such pull from it.
+        assert_eq!(
+            attractiveness(&land, wonders, HeroRole::Warrior, mig),
+            attractiveness(&land, &[], HeroRole::Warrior, mig),
+            "a scholarly wonder is no draw to a warrior"
         );
     }
 
@@ -281,6 +330,7 @@ mod tests {
             tick_heroes(
                 &mut world.heroes,
                 &world.regions,
+                &world.landmarks,
                 &mut world.rng,
                 &balance,
                 &mut world.chronicle,
@@ -328,6 +378,7 @@ mod tests {
             tick_heroes(
                 &mut world.heroes,
                 &world.regions,
+                &world.landmarks,
                 &mut world.rng,
                 &data.balance.hero,
                 &mut world.chronicle,
@@ -349,6 +400,7 @@ mod tests {
         tick_heroes(
             &mut world.heroes,
             &world.regions,
+            &world.landmarks,
             &mut world.rng,
             &data.balance.hero,
             &mut world.chronicle,
@@ -371,6 +423,7 @@ mod tests {
                 tick_heroes(
                     &mut world.heroes,
                     &world.regions,
+                    &world.landmarks,
                     &mut world.rng,
                     &data.balance.hero,
                     &mut world.chronicle,
