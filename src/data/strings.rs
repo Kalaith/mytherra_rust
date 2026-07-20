@@ -382,6 +382,7 @@ pub struct ChronicleText {
     pub deity_ascendant: String,
     pub champion_resolved: String,
     pub champion_escalated: String,
+    pub champion_retired: String,
     pub bet_won: String,
     pub bet_lost: String,
     pub artifact_backlash: String,

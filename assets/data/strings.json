@@ -294,6 +294,7 @@
     "deity_ascendant": "{deity} rises to the height of wrath, and the world feels the gaze.",
     "champion_resolved": "{hero} quells a rivalry in {region}.",
     "champion_escalated": "{hero}'s rivalry in {region} escalates.",
+    "champion_retired": "Your champion {hero} is no more; the bond you nurtured passes into memory.",
     "bet_won": "Your wager on {target} pays out {payout} favor.",
     "bet_lost": "Your wager on {target} lapses unfulfilled.",
     "artifact_backlash": "{artifact} shatters, scarring {region}.",

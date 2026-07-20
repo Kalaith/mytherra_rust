@@ -9,7 +9,7 @@ use crate::world::{Champion, Chronicle, EventKind, Hero, Region};
 /// Advance every champion whose hero is alive by one tick.
 #[allow(clippy::too_many_arguments)]
 pub fn tick_champions(
-    champions: &mut [Champion],
+    champions: &mut Vec<Champion>,
     heroes: &mut [Hero],
     regions: &mut [Region],
     balance: &ChampionBalance,
@@ -18,12 +18,35 @@ pub fn tick_champions(
     text: &ChronicleText,
     year: u32,
 ) {
+    // The patron-bond ends with the hero: a champion whose hero has died (or
+    // passed from the world) is retired at once, freeing its roster slot so the
+    // player can raise a successor, and its passing is marked — the close of an
+    // arc the player invested favor to build (GDD 5.4).
+    champions.retain(|champion| {
+        let living = heroes
+            .iter()
+            .any(|h| h.id == champion.hero_id && h.is_alive);
+        if !living {
+            let name = heroes
+                .iter()
+                .find(|h| h.id == champion.hero_id)
+                .map(|h| h.name.clone())
+                .unwrap_or_else(|| champion.hero_id.clone());
+            chronicle.push(
+                year,
+                EventKind::Hero,
+                fill(&text.champion_retired, &[("hero", name)]),
+            );
+        }
+        living
+    });
+
     for champion in champions.iter_mut() {
         let Some(idx) = heroes
             .iter()
             .position(|h| h.id == champion.hero_id && h.is_alive)
         else {
-            continue; // dormant while the hero is dead or missing
+            continue; // defensive: retirement above already dropped these
         };
 
         // A cultivated champion continuously shapes its home by its focus (GDD
@@ -194,6 +217,42 @@ mod tests {
         assert!(
             (after - before - data.balance.champion.renown_per_quest).abs() < 0.001,
             "a completed quest should grant exactly renown_per_quest"
+        );
+    }
+
+    #[test]
+    fn a_champion_is_retired_when_its_hero_dies() {
+        // A champion whose hero has fallen is dropped from the roster (freeing a
+        // slot for a successor) and its passing is chronicled (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let hero_id = world.heroes[0].id.clone();
+        let hero_name = world.heroes[0].name.clone();
+        let mut champions = vec![Champion::designate(hero_id, ChampionFocus::Valor)];
+
+        world.heroes[0].is_alive = false; // the hero falls
+
+        tick_champions(
+            &mut champions,
+            &mut world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert!(
+            champions.is_empty(),
+            "a dead hero's champion should be retired, freeing the roster slot"
+        );
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains(&hero_name)),
+            "the champion's passing should be chronicled"
         );
     }
 

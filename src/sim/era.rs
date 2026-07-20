@@ -107,10 +107,9 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         );
     }
 
-    // Champions of the departed pass with them.
-    player
-        .champions
-        .retain(|c| world.heroes.iter().any(|h| h.id == c.hero_id && h.is_alive));
+    // Champions of the departed are retired (with a chronicled farewell) by
+    // `tick_champions` on the next tick — a single retirement path, not a silent
+    // cull here.
 
     // Descendant heroes rise.
     // Region id + culture, so an heir's role can echo the land that bore them.
