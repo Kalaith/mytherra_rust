@@ -4,7 +4,7 @@
 //! legend grow in attuned lands. Deterministic: no RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, MagicBalance, MagicStat, RegionBalance};
+use crate::data::{fill, HeroRole, MagicBalance, MagicStat, RegionBalance};
 use crate::world::{Chronicle, EventKind, Hero, MagicPath, MagicState, Region};
 
 /// Advance every research path by one tick and apply mature paths' effects.
@@ -21,11 +21,22 @@ pub fn tick_magic(
 ) {
     let avg_magic = average_magic(regions);
 
+    // Evidence of the arcane builds fastest where minds study it: living scholars
+    // and mages hasten every path's maturation, so a learned age masters magic
+    // sooner than an unlettered one (GDD 5.6 <-> 5.4). Counted once, applied to
+    // all paths.
+    let learned = heroes
+        .iter()
+        .filter(|h| h.is_alive && matches!(h.role, HeroRole::Scholar | HeroRole::Mage))
+        .count();
+    let scholar_evidence = learned as f32 * balance.evidence_per_scholar;
+
     for path in paths.iter_mut() {
         path.progress =
             (path.progress + balance.progress_per_tick + avg_magic * balance.magic_affinity_coeff)
                 .min(balance.stat_cap);
-        path.evidence = (path.evidence + balance.evidence_per_tick).min(balance.stat_cap);
+        path.evidence =
+            (path.evidence + balance.evidence_per_tick + scholar_evidence).min(balance.stat_cap);
         path.recompute_state(balance);
 
         if path.state == MagicState::Known && !path.announced_known {
@@ -198,6 +209,61 @@ mod tests {
             "legends grow faster in an arcane-attuned land"
         );
         assert_eq!(renown("fallen"), 0.0, "the dead win no new renown");
+    }
+
+    #[test]
+    fn scholars_and_mages_hasten_the_discovery_of_magic() {
+        use crate::data::HeroRole;
+        let data = GameData::load().unwrap();
+        // Evidence a fresh Dormant path accrues in one tick, given a hero roster.
+        let evidence_after = |roles: &[HeroRole]| {
+            let mut world = WorldState::new(&data);
+            let region_id = world.regions[0].id.clone();
+            world.heroes = roles
+                .iter()
+                .enumerate()
+                .map(|(i, &role)| Hero {
+                    id: format!("h{i}"),
+                    name: format!("h{i}"),
+                    role,
+                    region_id: region_id.clone(),
+                    level: 1,
+                    age: 20,
+                    is_alive: true,
+                    renown: 0.0,
+                })
+                .collect();
+            world.magic_paths.clear();
+            world.magic_paths.push(MagicPath {
+                id: "p".to_owned(),
+                name: "Test Art".to_owned(),
+                description: String::new(),
+                effect_stat: MagicStat::Magic,
+                effect_per_tick: 0.0,
+                progress: 0.0,
+                evidence: 0.0,
+                state: MagicState::Dormant,
+                announced_known: false,
+            });
+            tick_magic(
+                &mut world.magic_paths,
+                &mut world.regions,
+                &mut world.heroes,
+                &data.balance.magic,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.magic_paths[0].evidence
+        };
+
+        let learned = evidence_after(&[HeroRole::Scholar, HeroRole::Mage, HeroRole::Scholar]);
+        let unlettered = evidence_after(&[HeroRole::Warrior, HeroRole::Ranger]);
+        assert!(
+            learned > unlettered,
+            "a learned society should uncover magic faster ({learned} vs {unlettered})"
+        );
     }
 
     #[test]

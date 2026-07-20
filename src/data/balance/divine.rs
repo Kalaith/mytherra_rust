@@ -226,4 +226,9 @@ pub struct MagicBalance {
     /// the hero's region attunement. Magic reaches living things too, not just
     /// the land (GDD 5.6): an age of mastered arcana breeds legends.
     pub known_renown_per_tick: f32,
+    /// Extra evidence each living scholar or mage adds to every path per tick
+    /// (GDD 5.6 <-> 5.4): the arcane is understood fastest where minds study it,
+    /// so a learned age masters magic sooner than an unlettered one — giving
+    /// scholars and mages a hand in research, not only in their land's culture.
+    pub evidence_per_scholar: f32,
 }
