@@ -88,8 +88,9 @@ impl Game {
             }
         }
         if scene == "eras" {
-            // Run past a century so at least one era transition is recorded.
-            for _ in 0..110 {
+            // Run through a few ages so the chronicle of eras fills — long enough
+            // that wonders arise and some are thrown down at a transition.
+            for _ in 0..240 {
                 self.run_tick();
             }
         }

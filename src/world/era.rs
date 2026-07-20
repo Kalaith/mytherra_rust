@@ -31,6 +31,9 @@ pub struct EraRecord {
     pub heroes_lost: u32,
     #[serde(default)]
     pub heroes_risen: u32,
+    /// Wonders thrown down as the age ended (GDD 5.7 <-> 5.2).
+    #[serde(default)]
+    pub wonders_razed: u32,
 }
 
 /// The five trigger scores, highest of which is the era pressure (GDD 5.7).

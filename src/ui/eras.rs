@@ -173,12 +173,23 @@ fn draw_history(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
             y + 19.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),
         );
+        // The toll of the age's end: heroes lost and risen, and any wonders
+        // thrown down (shown only when some fell, to keep calm ages uncluttered).
+        let wonders = if record.wonders_razed > 0 {
+            fill(
+                &strings.record_wonders,
+                &[("razed", record.wonders_razed.to_string())],
+            )
+        } else {
+            String::new()
+        };
         draw_ui_text_ex(
             &fill(
                 &strings.record_toll,
                 &[
                     ("lost", record.heroes_lost.to_string()),
                     ("risen", record.heroes_risen.to_string()),
+                    ("wonders", wonders),
                 ],
             ),
             content.x,

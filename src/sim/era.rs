@@ -170,6 +170,8 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         pressure: world.era.pressure,
         heroes_lost,
         heroes_risen: count,
+        // Filled in below, once the razing has run.
+        wonders_razed: 0,
     });
     if world.era_history.len() > 20 {
         world.era_history.remove(0);
@@ -229,6 +231,10 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             i += 1;
             keep
         });
+        // Record the razing on the age just sealed into the chronicle.
+        if let Some(record) = world.era_history.last_mut() {
+            record.wonders_razed = fallen.len() as u32;
+        }
         for name in fallen {
             world.chronicle.push(
                 world.year,

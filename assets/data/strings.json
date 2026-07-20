@@ -28,7 +28,8 @@
     "trending": "Portents point toward {trigger}.",
     "record_line": "Era {number}: {name}",
     "record_span": "years {start}-{end}  ·  {trigger}  ·  pressure {pressure}",
-    "record_toll": "{lost} fell  ·  {risen} rose to the new age"
+    "record_toll": "{lost} fell  ·  {risen} rose to the new age{wonders}",
+    "record_wonders": "   ·   {razed} wonders lost"
   },
   "ui": {
     "footer_hint": "The world advances on its own. {regions} regions watched  |  S save  L load  N new world  Space advance tick",

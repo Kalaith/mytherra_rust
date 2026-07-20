@@ -131,6 +131,7 @@ pub struct EraText {
     pub record_span: String,
     /// The age's human toll, shown beneath each chronicle record.
     pub record_toll: String,
+    pub record_wonders: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
