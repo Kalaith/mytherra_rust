@@ -186,11 +186,21 @@ impl SpeculationEvent {
             // already-absent one has certainly fallen.
             BetPredicate::RegionConquered => match self.region(regions) {
                 None => 1.0,
-                Some(r) => clamp01(
-                    if r.status.is_crisis() { 0.4 } else { 0.05 }
+                Some(r) => {
+                    let raw = if r.status.is_crisis() { 0.4 } else { 0.05 }
                         + (100.0 - r.prosperity) / 100.0 * 0.3
-                        + r.danger / 100.0 * 0.2,
-                ),
+                        + r.danger / 100.0 * 0.2;
+                    // The crowd knows a region held by a strong, famous hero
+                    // rarely falls: such a defender turns invaders back entirely
+                    // (GDD 5.4 <-> 5.2), so the odds of conquest collapse when one
+                    // guards it. The level/renown rule of thumb mirrors the
+                    // conquest defender bars, and it rewards a player whose
+                    // cultivated champion earned its home this shield.
+                    let guarded = heroes.iter().any(|h| {
+                        h.is_alive && h.region_id == r.id && (h.level >= 5 || h.renown >= 100.0)
+                    });
+                    clamp01(if guarded { raw * 0.15 } else { raw })
+                }
             },
             BetPredicate::SettlementPopulationAtLeast => self
                 .settlement(settlements)
@@ -376,6 +386,35 @@ mod tests {
         let vulnerable = event.likelihood(&[], &weak, &[], 0.0);
         assert!(vulnerable > 0.0 && vulnerable < 1.0);
         assert_eq!(event.likelihood(&[], &[], &[], 0.0), 1.0);
+    }
+
+    #[test]
+    fn the_crowd_prices_in_a_strong_defender() {
+        // The same crisis-stricken region reads as far less likely to be
+        // conquered once a strong, living hero holds it — the crowd knows a
+        // guarded region rarely falls (GDD 5.5 <-> 5.4). A frail nobody does not
+        // move the odds, so the crowd distinguishes a real defender.
+        let event = usurpation_event("kharzul");
+        let weak = vec![region("kharzul")];
+        let undefended = event.likelihood(&[], &weak, &[], 0.0);
+
+        let champion = hero("guardian", 0.0, true); // level 10, home is kharzul
+        let defended = event.likelihood(&[champion], &weak, &[], 0.0);
+        assert!(
+            defended < undefended * 0.5,
+            "a guarded region should read as far less likely to fall: {defended} vs {undefended}"
+        );
+
+        let nobody = Hero {
+            level: 1,
+            renown: 0.0,
+            ..hero("nobody", 0.0, true)
+        };
+        let still_open = event.likelihood(&[nobody], &weak, &[], 0.0);
+        assert!(
+            (still_open - undefended).abs() < 1e-6,
+            "a frail hero is no shield, so the odds are unchanged"
+        );
     }
 
     #[test]
