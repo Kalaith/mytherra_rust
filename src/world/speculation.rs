@@ -126,7 +126,15 @@ impl SpeculationEvent {
                     if !h.is_alive {
                         1.0
                     } else {
-                        clamp01(h.age as f32 / 90.0)
+                        // Age, a perilous home, and frailty all sway the odds,
+                        // mirroring the danger-scaled, level-mitigated death roll
+                        // rather than reading age alone (GDD 5.4 <-> 5.5).
+                        let danger = regions
+                            .iter()
+                            .find(|r| r.id == h.region_id)
+                            .map(|r| r.danger)
+                            .unwrap_or(0.0);
+                        clamp01(h.age as f32 / 90.0 + danger / 250.0 - h.level as f32 / 100.0)
                     }
                 })
                 .unwrap_or(0.5),
@@ -293,6 +301,40 @@ mod tests {
             is_alive: alive,
             renown,
         }
+    }
+
+    #[test]
+    fn a_heros_death_odds_rise_with_peril_and_fall_with_might() {
+        let mut event = usurpation_event("h");
+        event.predicate = BetPredicate::HeroDies;
+        event.target_kind = TargetKind::Hero;
+
+        let mut safe = region("aldermoor");
+        safe.danger = 0.0;
+        let mut perilous = region("kharzul");
+        perilous.danger = 100.0;
+        let regions = vec![safe, perilous];
+
+        let hero_in = |region_id: &str, level: u32| Hero {
+            id: "h".to_owned(),
+            name: "H".to_owned(),
+            role: crate::data::HeroRole::Warrior,
+            region_id: region_id.to_owned(),
+            level,
+            age: 40,
+            is_alive: true,
+            renown: 0.0,
+        };
+        let odds = |h: Hero| event.likelihood(&[h], &regions, &[], 0.0);
+
+        assert!(
+            odds(hero_in("kharzul", 10)) > odds(hero_in("aldermoor", 10)),
+            "a hero in a war-torn land is likelier to die than one at peace"
+        );
+        assert!(
+            odds(hero_in("kharzul", 1)) > odds(hero_in("kharzul", 40)),
+            "a frail hero is likelier to die than a mighty one in the same peril"
+        );
     }
 
     fn legend_event(target_id: &str, threshold: f32) -> SpeculationEvent {
