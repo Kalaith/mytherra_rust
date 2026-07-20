@@ -59,8 +59,34 @@ pub struct Game {
     last_autosave_tick: u64,
 }
 
+/// Rasterize every glyph the UI can draw, at every size it uses, once at
+/// startup. Macroquad grows the font's glyph atlas lazily, and a growth
+/// triggered mid-session — when some interaction first renders a new glyph or
+/// size — can corrupt already-cached glyphs, leaving the entire interface in
+/// unreadable garbled text. Forcing all atlas growth up front keeps it stable
+/// for the whole session.
+fn prewarm_font_atlas() {
+    use macroquad_toolkit::ui::{default_ui_font, ensure_default_ui_font};
+    let _ = ensure_default_ui_font();
+    let Some(font) = default_ui_font() else {
+        return;
+    };
+    // Printable ASCII plus the only two non-ASCII marks the UI draws (the
+    // middle dot and em dash used throughout the copy).
+    let mut chars: Vec<char> = (0x20u32..=0x7E).filter_map(char::from_u32).collect();
+    chars.push('\u{00B7}');
+    chars.push('\u{2014}');
+    // Every logical font size the UI (12-28) and toolkit widgets render, with
+    // margin, so no draw ever grows the atlas again.
+    for size in 8u16..=40 {
+        font.populate_font_cache(&chars, size);
+    }
+}
+
 impl Game {
     pub async fn new() -> Self {
+        prewarm_font_atlas();
+
         let data = GameData::load().unwrap_or_else(|err| {
             panic!("Mytherra content failed to load: {err}");
         });
