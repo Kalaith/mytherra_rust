@@ -100,6 +100,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &world.settlements,
         &world.trade_routes,
         &data.balance.culture,
+        &data.balance.region,
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,

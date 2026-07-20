@@ -5,7 +5,7 @@
 //! Deterministic: no RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, Culture, CultureBalance, HeroRole, ResourceType};
+use crate::data::{fill, Culture, CultureBalance, HeroRole, RegionBalance, ResourceType};
 use crate::world::{
     Chronicle, EventKind, Hero, Landmark, Region, ResourceNode, Settlement, TradeRoute,
 };
@@ -20,6 +20,7 @@ pub fn tick_culture(
     settlements: &[Settlement],
     trade_routes: &[TradeRoute],
     balance: &CultureBalance,
+    region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
@@ -35,10 +36,16 @@ pub fn tick_culture(
                 balance.hero_weight * (1.0 + hero.level as f32 / 20.0);
         }
         let mut landmark_count = 0;
+        let mut aura = (0.0, 0.0, 0.0, 0.0);
         for landmark in landmarks.iter().filter(|l| l.region_id == region.id) {
             scores[landmark.culture.index()] += balance.landmark_weight * landmark.influence;
             landmark_count += 1;
+            let (dp, dc, dd, dm) =
+                landmark_aura(landmark.culture, landmark.influence * balance.landmark_aura);
+            aura = (aura.0 + dp, aura.1 + dc, aura.2 + dd, aura.3 + dm);
         }
+        // A notable place radiates its character into the land it stands on.
+        region.apply_deltas(aura.0, aura.1, aura.2, aura.3, region_balance);
         for node in resources.iter().filter(|n| n.region_id == region.id) {
             scores[resource_culture(node.resource_type).index()] += balance.resource_weight;
         }
@@ -81,6 +88,17 @@ pub fn tick_culture(
             .clamp(0.0, 100.0);
         region.cultural_influence =
             approach(region.cultural_influence, target, balance.influence_rate);
+    }
+}
+
+/// The stat deltas (prosperity, chaos, danger, magic) a landmark radiates, by
+/// its culture: scholarly and mystical sites deepen the arcane, mercantile and
+/// pastoral ones enrich the land, a martial one makes it more perilous.
+fn landmark_aura(culture: Culture, amount: f32) -> (f32, f32, f32, f32) {
+    match culture {
+        Culture::Scholarly | Culture::Mystical => (0.0, 0.0, 0.0, amount),
+        Culture::Mercantile | Culture::Pastoral => (amount, 0.0, 0.0, 0.0),
+        Culture::Martial => (0.0, 0.0, amount, 0.0),
     }
 }
 
@@ -147,6 +165,47 @@ mod tests {
     }
 
     #[test]
+    fn a_landmark_radiates_its_character_into_its_region() {
+        // Kharzul's martial cairns and gates make the land more perilous, while
+        // Sylvenmar's mystical groves deepen its magic (GDD 5.2).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        for r in &mut world.regions {
+            if r.id == "kharzul" || r.id == "sylvenmar" {
+                r.danger = 40.0;
+                r.magic_affinity = 40.0;
+            }
+        }
+
+        tick_culture(
+            &mut world.regions,
+            &world.heroes,
+            &world.landmarks,
+            &world.resource_nodes,
+            &world.settlements,
+            &world.trade_routes,
+            &data.balance.culture,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        let kharzul = world.regions.iter().find(|r| r.id == "kharzul").unwrap();
+        let sylvenmar = world.regions.iter().find(|r| r.id == "sylvenmar").unwrap();
+        assert!(
+            kharzul.danger > 40.0,
+            "martial landmarks should make Kharzul more perilous: {}",
+            kharzul.danger
+        );
+        assert!(
+            sylvenmar.magic_affinity > 40.0,
+            "mystical landmarks should deepen Sylvenmar's magic: {}",
+            sylvenmar.magic_affinity
+        );
+    }
+
+    #[test]
     fn scholarly_landmark_and_scholar_hold_aldermoor_scholarly() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
@@ -160,6 +219,7 @@ mod tests {
             &world.settlements,
             &world.trade_routes,
             &data.balance.culture,
+            &data.balance.region,
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
@@ -185,6 +245,7 @@ mod tests {
             &world.settlements,
             &world.trade_routes,
             &data.balance.culture,
+            &data.balance.region,
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
@@ -209,6 +270,7 @@ mod tests {
                 &world.settlements,
                 &world.trade_routes,
                 &data.balance.culture,
+                &data.balance.region,
                 &mut world.chronicle,
                 &data.strings.chronicle,
                 world.year,

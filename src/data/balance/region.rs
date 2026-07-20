@@ -95,6 +95,12 @@ pub struct CultureBalance {
     pub influence_base: f32,
     pub influence_per_landmark: f32,
     pub influence_rate: f32,
+    /// Per-tick stat aura a landmark radiates into its region, per point of its
+    /// influence (GDD 5.2): a scholarly or mystical site deepens the arcane, a
+    /// mercantile or pastoral one enriches, a martial one makes the land more
+    /// perilous — so a notable place shapes its region's character, not just its
+    /// culture.
+    pub landmark_aura: f32,
 }
 
 /// Trade-route tuning (GDD 5.2).
