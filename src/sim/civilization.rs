@@ -2,16 +2,23 @@
 //! dominant agenda — the highest-scoring one that clears the threshold — which
 //! nudges the region. Player boosts decay over time. Deterministic: no RNG.
 
-use crate::data::{Agenda, CivStat, CivilizationBalance, RegionBalance};
-use crate::world::{dominant_agenda, spillover_target, Region, RegionAgendas};
+use crate::data::strings::ChronicleText;
+use crate::data::{fill, Agenda, CivStat, CivilizationBalance, RegionBalance};
+use crate::world::{
+    dominant_agenda, spillover_target, Chronicle, EventKind, Region, RegionAgendas,
+};
 
 /// Advance every region's agendas by one tick.
+#[allow(clippy::too_many_arguments)]
 pub fn tick_civilization(
     civ: &mut [RegionAgendas],
     regions: &mut [Region],
     agendas: &[Agenda],
     balance: &CivilizationBalance,
     region_balance: &RegionBalance,
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    year: u32,
 ) {
     for entry in civ.iter_mut() {
         entry.cooldown = (entry.cooldown - 1).max(0);
@@ -24,6 +31,28 @@ pub fn tick_civilization(
         };
         if let Some(a) = dominant_agenda(agendas, &regions[idx], entry, balance.apply_threshold) {
             let agenda = &agendas[a];
+
+            // A change of prevailing course is a moment in the region's history:
+            // chronicle it once when a *different* agenda takes hold (whether the
+            // world's drift or the player's boost redirected it), so the
+            // civilization system reads in the chronicle instead of nudging in
+            // silence (GDD 5.6). Lapses back to no dominant course leave the last
+            // course recorded, so re-adopting it isn't re-announced.
+            if entry.current_agenda.as_deref() != Some(agenda.id.as_str()) {
+                entry.current_agenda = Some(agenda.id.clone());
+                chronicle.push(
+                    year,
+                    EventKind::Region,
+                    fill(
+                        &text.agenda_shift,
+                        &[
+                            ("region", regions[idx].name.clone()),
+                            ("agenda", agenda.name.clone()),
+                        ],
+                    ),
+                );
+            }
+
             let (dp, dc, dd, dm) = stat_deltas(agenda.effect_stat, agenda.effect_amount);
             regions[idx].apply_deltas(dp, dc, dd, dm, region_balance);
 
@@ -69,6 +98,9 @@ mod tests {
             &data.agendas,
             &data.balance.civilization,
             &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
         );
         assert!(world.civilization[0].boosts[0] < 20.0);
     }
@@ -106,6 +138,9 @@ mod tests {
             &data.agendas,
             &data.balance.civilization,
             &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
         );
 
         assert!(
@@ -142,6 +177,56 @@ mod tests {
     }
 
     #[test]
+    fn a_change_of_course_is_chronicled_once() {
+        // Boosting Rivalry to dominance sets the region's course and chronicles
+        // it; a second tick under the same course adds no new line (GDD 5.6).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let rivalry = data.agendas.iter().position(|a| a.id == "rivalry").unwrap();
+        let rivalry_name = data.agendas[rivalry].name.clone();
+        world.civilization[0].boosts[rivalry] = 500.0;
+
+        let tick = |world: &mut WorldState| {
+            tick_civilization(
+                &mut world.civilization,
+                &mut world.regions,
+                &data.agendas,
+                &data.balance.civilization,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        };
+
+        tick(&mut world);
+        assert_eq!(
+            world.civilization[0].current_agenda.as_deref(),
+            Some("rivalry"),
+            "the region should have taken up the Rivalry course"
+        );
+        let shifts = |world: &WorldState| {
+            world
+                .chronicle
+                .iter_newest()
+                .filter(|e| {
+                    e.message.contains(&rivalry_name) && e.message.contains("sets its course")
+                })
+                .count()
+        };
+        assert_eq!(shifts(&world), 1, "the change of course is chronicled once");
+
+        // Re-boost so it stays dominant, then tick again: no second announcement.
+        world.civilization[0].boosts[rivalry] = 500.0;
+        tick(&mut world);
+        assert_eq!(
+            shifts(&world),
+            1,
+            "holding the same course should not re-announce it"
+        );
+    }
+
+    #[test]
     fn a_rivalrous_region_destabilizes_the_neighbour_it_envies() {
         // Rivalry now reaches beyond its own borders, pressing danger onto the
         // most prosperous *other* region (GDD 5.6).
@@ -158,6 +243,9 @@ mod tests {
             &data.agendas,
             &data.balance.civilization,
             &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
         );
 
         assert!(

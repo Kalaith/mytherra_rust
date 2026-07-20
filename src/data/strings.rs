@@ -398,6 +398,7 @@ pub struct ChronicleText {
     pub myth_faded: String,
     pub era_transition: String,
     pub culture_shift: String,
+    pub agenda_shift: String,
     pub settlement_built: String,
     pub settlement_abandoned: String,
     pub settlement_founded: String,

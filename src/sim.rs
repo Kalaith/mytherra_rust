@@ -231,6 +231,9 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.agendas,
         &data.balance.civilization,
         &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
     );
 
     // With every stat-mover settled for this tick, let the map reshape: regions

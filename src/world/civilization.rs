@@ -14,6 +14,11 @@ pub struct RegionAgendas {
     pub boosts: Vec<f32>,
     /// Years until another agenda may be advanced here.
     pub cooldown: i32,
+    /// The agenda id this region was last seen pursuing, so a *change* of course
+    /// can be chronicled once rather than re-announced every tick. `None` until a
+    /// course first takes hold; `serde(default)` keeps older saves loadable.
+    #[serde(default)]
+    pub current_agenda: Option<String>,
 }
 
 impl RegionAgendas {
@@ -22,6 +27,7 @@ impl RegionAgendas {
             region_id,
             boosts: vec![0.0; agenda_count],
             cooldown: 0,
+            current_agenda: None,
         }
     }
 
