@@ -288,6 +288,7 @@ pub struct UiText {
     pub empty_chronicle: String,
     pub no_region: String,
     pub world_summary: String,
+    pub world_works: String,
     pub standing_summary: String,
     pub tenor_labels: Vec<String>,
     pub tenor_line: String,

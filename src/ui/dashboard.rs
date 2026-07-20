@@ -96,7 +96,39 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         y + 6.0,
         TextStyle::new(15.0, dark::TEXT_DIM).params(),
     );
-    y += 34.0;
+    y += 20.0;
+
+    // The world's accumulated works: the towns and wonders it holds, and the
+    // heroes who have risen into living legend (GDD 10 — a world with a history).
+    let legend_bar = ctx
+        .data
+        .balance
+        .hero
+        .renown
+        .thresholds
+        .last()
+        .copied()
+        .unwrap_or(f32::INFINITY);
+    let legends = ctx
+        .world
+        .heroes
+        .iter()
+        .filter(|h| h.is_alive && h.renown >= legend_bar)
+        .count();
+    draw_ui_text_ex(
+        &fill(
+            &strings.ui.world_works,
+            &[
+                ("towns", ctx.world.settlements.len().to_string()),
+                ("wonders", ctx.world.landmarks.len().to_string()),
+                ("legends", legends.to_string()),
+            ],
+        ),
+        content.x,
+        y + 6.0,
+        TextStyle::new(15.0, dark::TEXT_DIM).params(),
+    );
+    y += 22.0;
 
     // Player standing.
     draw_ui_text_ex(
@@ -154,7 +186,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         y,
         TextStyle::new(15.0, dark::TEXT_DIM).params(),
     );
-    y += 36.0;
+    y += 18.0;
 
     // Era panel (GDD 10): the present age and its pressure.
     let era = &ctx.world.era;

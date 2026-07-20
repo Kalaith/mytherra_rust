@@ -36,6 +36,7 @@
     "empty_chronicle": "Nothing has happened yet.",
     "no_region": "No region",
     "world_summary": "{regions} regions  |  {crisis} in crisis  |  {souls} souls",
+    "world_works": "{towns} towns  ·  {wonders} wonders  ·  {legends} living legends",
     "standing_summary": "{nudges} divine nudges  |  {spent} favor spent  |  {goals}/{total} goals",
     "region_meta": "Population {pop}   Resonance x{effect} effect, x{cost} cost",
     "region_subtitle": "{status}  |  {culture}",
