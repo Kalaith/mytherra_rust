@@ -344,6 +344,7 @@
     "strife_seething": "seething",
     "strife_breaking": "at the breaking point",
     "might_line": "Military might: {might}",
+    "course_line": "Prevailing course: {agenda}",
     "outlook_frontier": "Frontier-ready — settlers may strike out to found new lands.",
     "outlook_vulnerable": "Undefended in crisis — ripe for a stronger neighbour's conquest.",
     "outlook_defended": "A champion holds the line against conquest.",

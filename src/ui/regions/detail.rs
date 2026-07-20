@@ -167,6 +167,35 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         TextStyle::new(14.0, dark::TEXT_DIM).params(),
     );
     y += 22.0;
+
+    // The region's prevailing course — its dominant civilization agenda — so a
+    // region's character is legible here, not only in the divine tool that steers
+    // it and the chronicle line when it turns (GDD 5.6).
+    if let Some(entry) = ctx
+        .world
+        .civilization
+        .iter()
+        .find(|c| c.region_id == region.id)
+    {
+        if let Some(a) = crate::world::dominant_agenda(
+            &ctx.data.agendas,
+            region,
+            entry,
+            ctx.data.balance.civilization.apply_threshold,
+        ) {
+            draw_ui_text_ex(
+                &fill(
+                    &gtext.course_line,
+                    &[("agenda", ctx.data.agendas[a].name.clone())],
+                ),
+                content.x,
+                y,
+                TextStyle::new(14.0, dark::TEXT_DIM).params(),
+            );
+            y += 22.0;
+        }
+    }
+
     if let Some((text, color)) = genesis_outlook(ctx, region) {
         draw_ui_text_ex(&text, content.x, y, TextStyle::new(14.0, color).params());
         y += 22.0;
