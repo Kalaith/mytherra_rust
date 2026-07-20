@@ -486,6 +486,18 @@ mod tests {
                 assert!(s.population.is_finite() && s.population >= 0.0);
             }
             assert!(player.favor >= 0, "favor went negative");
+
+            // Genesis must never mint two regions sharing a name (GDD 5.2).
+            let mut names: Vec<&str> = world.regions.iter().map(|r| r.name.as_str()).collect();
+            let total = names.len();
+            names.sort_unstable();
+            names.dedup();
+            assert_eq!(
+                total,
+                names.len(),
+                "two regions share a name at year {}",
+                world.year
+            );
         }
         assert!(world.year >= 350);
     }

@@ -90,7 +90,7 @@ pub(super) fn run(
 
     let hero_name = heroes[hero_idx].name.clone();
     let frontier_id = format!("{parent_id}-frontier-{seq}");
-    let frontier_name = frontier_name(&parent_name, &hero_name, genesis_text, rng);
+    let frontier_name = frontier_name(&parent_name, &hero_name, regions, genesis_text, rng);
     let child_seed = RegionSeed {
         id: frontier_id.clone(),
         name: frontier_name.clone(),
@@ -127,14 +127,117 @@ pub(super) fn run(
     );
 }
 
-/// Choose a frontier's name from the data-driven templates.
-fn frontier_name(parent: &str, hero: &str, text: &GenesisText, rng: &mut SeededRng) -> String {
+/// Choose a frontier's name from the data-driven templates, disambiguated so no
+/// two regions on the map ever share a name.
+fn frontier_name(
+    parent: &str,
+    hero: &str,
+    regions: &[Region],
+    text: &GenesisText,
+    rng: &mut SeededRng,
+) -> String {
     let template = rng
         .choose(&text.frontier_names)
         .cloned()
         .unwrap_or_else(|| "{parent} Colony".to_owned());
-    fill(
+    let base = fill(
         &template,
         &[("parent", parent.to_owned()), ("hero", hero.to_owned())],
-    )
+    );
+    make_unique(base, regions)
+}
+
+/// Ensure a name is unique on the map: a name a prior region already claimed
+/// gets an ascending ordinal, so two "Aldermoor Frontier"s become that and
+/// "Aldermoor Frontier II". Deterministic — no RNG. Shared with the fracture
+/// path, which faces the same collision.
+pub(super) fn make_unique(base: String, regions: &[Region]) -> String {
+    if regions.iter().all(|r| r.name != base) {
+        return base;
+    }
+    (2..)
+        .map(|n| format!("{base} {}", roman(n)))
+        .find(|candidate| regions.iter().all(|r| &r.name != candidate))
+        .expect("an unused ordinal always exists")
+}
+
+/// A Roman numeral for a small ordinal (frontiers of one parent stay few).
+fn roman(mut n: u32) -> String {
+    const VALS: [(u32, &str); 13] = [
+        (1000, "M"),
+        (900, "CM"),
+        (500, "D"),
+        (400, "CD"),
+        (100, "C"),
+        (90, "XC"),
+        (50, "L"),
+        (40, "XL"),
+        (10, "X"),
+        (9, "IX"),
+        (5, "V"),
+        (4, "IV"),
+        (1, "I"),
+    ];
+    let mut s = String::new();
+    for (v, sym) in VALS {
+        while n >= v {
+            s.push_str(sym);
+            n -= v;
+        }
+    }
+    s
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data::{ClimateType, Culture, GameData};
+
+    fn named(name: &str) -> Region {
+        Region::from_seed(
+            &RegionSeed {
+                id: name.to_owned(),
+                name: name.to_owned(),
+                climate: ClimateType::Temperate,
+                culture: Culture::Pastoral,
+                prosperity: 50.0,
+                chaos: 20.0,
+                danger: 20.0,
+                magic_affinity: 40.0,
+                population: 1000.0,
+                cultural_influence: 40.0,
+                divine_resonance: 50.0,
+            },
+            &GameData::load().unwrap().balance.region,
+        )
+    }
+
+    #[test]
+    fn roman_numerals_render() {
+        assert_eq!(roman(2), "II");
+        assert_eq!(roman(4), "IV");
+        assert_eq!(roman(9), "IX");
+        assert_eq!(roman(14), "XIV");
+    }
+
+    #[test]
+    fn make_unique_appends_an_ordinal_only_on_collision() {
+        let regions = vec![named("Aldermoor Frontier")];
+        // A free name is left as-is.
+        assert_eq!(
+            make_unique("Sylvan Reach".to_owned(), &regions),
+            "Sylvan Reach"
+        );
+        // A taken name gains an ordinal...
+        assert_eq!(
+            make_unique("Aldermoor Frontier".to_owned(), &regions),
+            "Aldermoor Frontier II"
+        );
+        // ...and climbs past further collisions.
+        let regions = vec![named("Aldermoor Frontier"), named("Aldermoor Frontier II")];
+        assert_eq!(
+            make_unique("Aldermoor Frontier".to_owned(), &regions),
+            "Aldermoor Frontier III"
+        );
+    }
 }

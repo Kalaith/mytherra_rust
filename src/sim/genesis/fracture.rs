@@ -93,29 +93,35 @@ pub(super) fn run(
     *region_seq += 1;
     let seq = *region_seq;
 
-    let parent = &mut regions[parent_idx];
-    let parent_id = parent.id.clone();
-    let parent_name = parent.name.clone();
+    // Read the parent's traits before naming the child (which borrows the whole
+    // region list) and before venting the parent (which borrows it mutably).
+    let parent_id = regions[parent_idx].id.clone();
+    let parent_name = regions[parent_idx].name.clone();
+    let parent_climate = regions[parent_idx].climate;
+    let parent_danger = regions[parent_idx].danger;
+    let parent_magic = regions[parent_idx].magic_affinity;
+    let parent_population = regions[parent_idx].population;
 
     let child_id = format!("{parent_id}-rift-{seq}");
-    let child_name = breakaway_name(&parent_name, genesis_text, rng);
-    let child_population = parent.population * balance.population_split;
+    let child_name = breakaway_name(&parent_name, regions, genesis_text, rng);
+    let child_population = parent_population * balance.population_split;
     let child_seed = RegionSeed {
         id: child_id.clone(),
         name: child_name.clone(),
-        climate: parent.climate,
+        climate: parent_climate,
         // Born of revolt: a breakaway takes on a martial character.
         culture: Culture::Martial,
         prosperity: balance.child_prosperity,
         chaos: balance.child_chaos,
-        danger: parent.danger * balance.child_danger_carry,
-        magic_affinity: parent.magic_affinity,
+        danger: parent_danger * balance.child_danger_carry,
+        magic_affinity: parent_magic,
         population: child_population,
         cultural_influence: balance.child_cultural_influence,
         divine_resonance: balance.child_resonance,
     };
 
     // Vent the parent: it loses the seceding population and the pressure eases.
+    let parent = &mut regions[parent_idx];
     parent.population = (parent.population - child_population).max(0.0);
     parent.strife = 0.0;
     parent.apply_deltas(
@@ -159,10 +165,16 @@ pub(super) fn run(
 }
 
 /// Choose a breakaway's name from the data-driven templates.
-fn breakaway_name(parent: &str, text: &GenesisText, rng: &mut SeededRng) -> String {
+fn breakaway_name(
+    parent: &str,
+    regions: &[Region],
+    text: &GenesisText,
+    rng: &mut SeededRng,
+) -> String {
     let template = rng
         .choose(&text.breakaway_names)
         .cloned()
         .unwrap_or_else(|| "Free {parent}".to_owned());
-    fill(&template, &[("parent", parent.to_owned())])
+    let base = fill(&template, &[("parent", parent.to_owned())]);
+    super::frontier::make_unique(base, regions)
 }
