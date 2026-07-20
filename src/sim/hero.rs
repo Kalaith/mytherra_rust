@@ -28,18 +28,22 @@ pub fn tick_heroes(
         if rng.chance(hero.level_up_chance_in(danger, balance)) {
             hero.level += 1;
             hero.renown += balance.renown.per_level;
-            chronicle.push(
-                year,
-                EventKind::Hero,
-                fill(
-                    &text.hero_level_up,
-                    &[
-                        ("hero", hero.name.clone()),
-                        ("region", region_name(regions, &hero.region_id)),
-                        ("level", hero.level.to_string()),
-                    ],
-                ),
-            );
+            // Chronicle only milestone levels, so a hero's steady climb marks the
+            // Event Log at intervals rather than on every step (GDD 10).
+            if hero.level % balance.level_up.chronicle_interval.max(1) == 0 {
+                chronicle.push(
+                    year,
+                    EventKind::Hero,
+                    fill(
+                        &text.hero_level_up,
+                        &[
+                            ("hero", hero.name.clone()),
+                            ("region", region_name(regions, &hero.region_id)),
+                            ("level", hero.level.to_string()),
+                        ],
+                    ),
+                );
+            }
         }
 
         hero.age += 1;

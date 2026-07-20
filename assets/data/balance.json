@@ -107,7 +107,8 @@
       "mid_tier_mult": 1.5,
       "high_tier_mult": 0.3,
       "decay": 0.95,
-      "crucible_coeff": 0.006
+      "crucible_coeff": 0.006,
+      "chronicle_interval": 5
     },
     "death": {
       "elder_roll": 0.2,

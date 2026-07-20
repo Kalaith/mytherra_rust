@@ -93,6 +93,10 @@ pub struct LevelUpCurve {
     /// Level-up chance is scaled by `1 + region danger * crucible_coeff`, so a
     /// warrior who flows toward peril is tempered by it.
     pub crucible_coeff: f32,
+    /// Only levels that are a multiple of this are worth a chronicle line, so the
+    /// Event Log marks a hero's milestones rather than every step of a steady
+    /// climb (GDD 10). Heroes still gain every level and its renown silently.
+    pub chronicle_interval: u32,
 }
 
 /// Per-tick death roll parameters (GDD 5.4).
