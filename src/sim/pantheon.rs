@@ -37,8 +37,15 @@ pub fn tick_pantheon(
 
         let scale = deity.tier_multiplier(balance);
         if scale > 0.0 {
-            let (dp, dc, dd, dm) = stat_deltas(deity.effect_stat, deity.effect_amount * scale);
             for region in regions.iter_mut() {
+                // The gods reshape the faithful lands more than the faithless
+                // ones: a deity's pressure lands scaled by the region's divine
+                // resonance — the same receptiveness the player's own nudges obey
+                // (GDD 5.6 <-> 5.2), so one rule governs how divine will takes
+                // hold, whoever wields it.
+                let resonance = region.effect_multiplier(region_balance);
+                let (dp, dc, dd, dm) =
+                    stat_deltas(deity.effect_stat, deity.effect_amount * scale * resonance);
                 region.apply_deltas(dp, dc, dd, dm, region_balance);
             }
         }
@@ -152,6 +159,39 @@ mod tests {
             &data.balance.region,
         );
         assert!(world.regions[0].prosperity >= before);
+    }
+
+    #[test]
+    fn the_gods_press_a_faithful_region_harder_than_a_faithless_one() {
+        // Two regions identical but for their divine resonance; a roused deity of
+        // prosperity should lift the high-resonance land more than the deaf one
+        // (GDD 5.6 <-> 5.2).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let idx = world.pantheon.iter().position(|d| d.id == "aurex").unwrap();
+        world.pantheon[idx].pressure = 100.0;
+
+        // Isolate two regions with the same starting prosperity, opposite faith.
+        world.regions.truncate(2);
+        for r in &mut world.regions {
+            r.prosperity = 50.0;
+        }
+        world.regions[0].divine_resonance = 100.0; // steeped in the divine
+        world.regions[1].divine_resonance = 0.0; // deaf to the gods
+
+        tick_pantheon(
+            &mut world.pantheon,
+            &mut world.regions,
+            &data.balance.pantheon,
+            &data.balance.region,
+        );
+
+        let faithful_gain = world.regions[0].prosperity - 50.0;
+        let faithless_gain = world.regions[1].prosperity - 50.0;
+        assert!(
+            faithful_gain > faithless_gain,
+            "the divine should shape the faithful land more: {faithful_gain} vs {faithless_gain}"
+        );
     }
 
     #[test]
