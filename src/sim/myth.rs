@@ -24,6 +24,15 @@ pub fn tick_myths(
 
     for myth in myths.iter_mut() {
         myth.echo_cooldown -= 1;
+
+        // How vividly the myth's theme still lives in its home region (0 if the
+        // region has been lost), read before the echo may nudge that stat.
+        let region_fit = regions
+            .iter()
+            .find(|r| r.id == myth.region_id)
+            .map(|r| region_stat(r, myth.stat))
+            .unwrap_or(0.0);
+
         if myth.can_echo(balance.echo_threshold) {
             if let Some(region) = regions.iter_mut().find(|r| r.id == myth.region_id) {
                 let (dp, dc, dd, dm) = stat_deltas(myth.stat, myth.stat_effect);
@@ -50,8 +59,13 @@ pub fn tick_myths(
         // Every tale fades from living memory a little each year (GDD 5.6): its
         // resonance ebbs, so a myth first falls silent (below the echo
         // threshold) and eventually is forgotten. How long it lasts is set by
-        // how deeply it was rooted when promoted.
-        myth.resonance = (myth.resonance - balance.resonance_decay).max(0.0);
+        // how deeply it was rooted when promoted — and by whether its subject
+        // still thrives: a legend whose theme runs vivid in its land is kept
+        // alive by a people who see it around them, while one whose region has
+        // faded or fallen is forgotten fastest. Sustain never fully halts decay,
+        // so every tale eventually passes.
+        let sustain = 1.0 - (region_fit / 100.0).clamp(0.0, 1.0) * balance.resonance_sustain;
+        myth.resonance = (myth.resonance - balance.resonance_decay * sustain).max(0.0);
     }
 
     // Myths worn down past the forgotten floor pass out of memory, freeing a
@@ -307,10 +321,73 @@ mod tests {
     }
 
     #[test]
+    fn a_myth_endures_longer_where_its_theme_still_thrives() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        // Two regions: one drenched in magic, one barren of it — both hosting an
+        // identical magic-myth. Silence their echoes (huge cooldown) so we
+        // isolate the decay path, and hold the region stats fixed.
+        world.regions.truncate(2);
+        world.regions[0].magic_affinity = 100.0;
+        world.regions[1].magic_affinity = 0.0;
+        let vivid_id = world.regions[0].id.clone();
+        let barren_id = world.regions[1].id.clone();
+        let make = |region_id: &str, region_name: &str| Myth {
+            id: format!("m-{region_id}"),
+            title: "A Tale of Magic".to_owned(),
+            theme_name: "Mystery".to_owned(),
+            stat: MythStat::Magic,
+            cultural_effect: 0.0,
+            stat_effect: 0.0,
+            region_id: region_id.to_owned(),
+            region_name: region_name.to_owned(),
+            resonance: 80.0,
+            echo_cooldown: 1_000_000,
+        };
+        world.myths.clear();
+        world.myths.push(make(&vivid_id, "Vivid"));
+        world.myths.push(make(&barren_id, "Barren"));
+
+        // Barren decays 0.5/tick (80→25 in ~110 ticks); vivid decays at 40% of
+        // that, so at 150 ticks the barren tale is gone and the vivid one holds.
+        for _ in 0..150 {
+            // Re-pin stats each tick in case any incidental drift occurs.
+            world.regions[0].magic_affinity = 100.0;
+            world.regions[1].magic_affinity = 0.0;
+            tick_myths(
+                &mut world.myths,
+                &mut world.myth_candidates,
+                &mut world.myth_seq,
+                &mut world.regions,
+                &mut world.rng,
+                &mut world.chronicle,
+                &data,
+                world.year,
+            );
+        }
+
+        let vivid = world.myths.iter().find(|m| m.region_id == vivid_id);
+        let barren = world.myths.iter().find(|m| m.region_id == barren_id);
+        // The barren-land tale should have been forgotten first; the vivid one
+        // still lingers in memory.
+        assert!(
+            barren.is_none(),
+            "a tale whose theme has faded from its land should be forgotten sooner"
+        );
+        assert!(
+            vivid.is_some(),
+            "a tale whose theme still runs vivid should endure longer"
+        );
+    }
+
+    #[test]
     fn a_faint_myth_fades_from_memory_and_frees_its_slot() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
         let floor = data.balance.myth.forgotten_floor;
+        // A barren home (fit 0) so the tale gets no sustain and decays at full
+        // rate — this test isolates the forgotten-floor removal, not sustain.
+        world.regions[0].prosperity = 0.0;
         world.myths.clear();
         world.myths.push(Myth {
             id: "fading".to_owned(),
@@ -321,7 +398,7 @@ mod tests {
             stat_effect: 0.0,
             region_id: world.regions[0].id.clone(),
             region_name: world.regions[0].name.clone(),
-            resonance: floor + 0.4, // one decay step from being forgotten
+            resonance: floor + 0.4, // one full decay step from being forgotten
             echo_cooldown: 5,
         });
 

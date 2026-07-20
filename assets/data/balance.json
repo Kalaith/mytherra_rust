@@ -329,6 +329,7 @@
     "resonance_scale": 1.4,
     "resonance_decay": 0.5,
     "forgotten_floor": 25.0,
+    "resonance_sustain": 0.6,
     "region_floor": 15.0,
     "legend_theme_id": "valor"
   },

@@ -188,6 +188,12 @@ pub struct MythBalance {
     /// Resonance below which a myth is forgotten entirely and removed, freeing a
     /// slot on the capped roster so new tales can rise.
     pub forgotten_floor: f32,
+    /// How strongly a myth's home region sustains it against forgetting (GDD
+    /// 5.6): a legend whose theme still runs vivid in its land decays slower,
+    /// while one whose subject has faded — or whose region is lost entirely — is
+    /// forgotten fastest. At 0 decay is uniform; at 1 a perfect-fit region can
+    /// slow decay toward (but never to) nothing, so every tale still fades.
+    pub resonance_sustain: f32,
     /// Baseline weight every region carries when a themed myth looks for a home,
     /// so a legend can still arise where its subject is faint — just less often.
     pub region_floor: f32,
