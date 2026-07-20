@@ -107,6 +107,8 @@
     "weather_empty": "The skies are still.",
     "weather_meta": "{pattern}  ·  {intensity}  ·  {region}",
     "weather_magnitude": "strength {magnitude}",
+    "weather_boon": "Enriches",
+    "weather_bane": "Ravages",
     "magic_panel": "Magic",
     "magic_intro": "Guide the world's arcane research along five paths.",
     "research": "Research {cost}",

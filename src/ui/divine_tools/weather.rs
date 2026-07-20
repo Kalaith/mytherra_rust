@@ -115,6 +115,21 @@ fn draw_front(ctx: &UiContext<'_>, front: &WeatherEvent, rect: Rect) {
         rect.y + 24.0,
         TextStyle::new(16.0, dark::TEXT).params(),
     );
+
+    // Whether this front blesses or blights the land it sits on: net gain of the
+    // good stats (prosperity, magic) over the ill ones (chaos, danger). A badge,
+    // so a glance tells fair weather from foul (GDD 5.6).
+    let boon = front.prosperity + front.magic - front.chaos - front.danger > 0.0;
+    draw_badge(
+        Rect::new(rect.right() - 124.0, rect.y + 12.0, 110.0, 22.0),
+        if boon {
+            &strings.weather_boon
+        } else {
+            &strings.weather_bane
+        },
+        Color::new(0.14, 0.16, 0.2, 1.0),
+        if boon { dark::POSITIVE } else { dark::NEGATIVE },
+    );
     meter(
         Rect::new(rect.x + 14.0, rect.y + 36.0, rect.w - 28.0, 14.0),
         front.magnitude,

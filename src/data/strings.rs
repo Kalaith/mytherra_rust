@@ -218,6 +218,8 @@ pub struct DivineText {
     pub weather_empty: String,
     pub weather_meta: String,
     pub weather_magnitude: String,
+    pub weather_boon: String,
+    pub weather_bane: String,
     pub magic_panel: String,
     pub magic_intro: String,
     pub research: String,
