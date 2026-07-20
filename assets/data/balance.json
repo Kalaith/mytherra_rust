@@ -79,6 +79,8 @@
     "winner_prosperity": -6.0,
     "winner_chaos": 10.0,
     "winner_danger": 14.0,
+    "sack_population_loss": 0.4,
+    "sack_prosperity_loss": 18.0,
     "min_regions": 3,
     "momentum_gain": 20.0,
     "momentum_cap": 60.0

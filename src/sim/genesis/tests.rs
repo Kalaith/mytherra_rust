@@ -204,6 +204,63 @@ fn a_strong_region_conquers_a_defenceless_neighbour() {
 }
 
 #[test]
+fn conquest_sacks_the_losers_greatest_city() {
+    let data = GameData::load().unwrap();
+    let mut world = WorldState::new(&data);
+
+    // Same dominant-aggressor / defenceless-crisis setup that conquers.
+    let loser_id = world.regions[0].id.clone();
+    let winner = &mut world.regions[1];
+    winner.prosperity = 90.0;
+    winner.population = 40000.0;
+    winner.chaos = 20.0;
+    winner.danger = 20.0;
+    winner.refresh_status(&data.balance.region);
+    let loser = &mut world.regions[0];
+    loser.prosperity = 8.0;
+    loser.chaos = 90.0;
+    loser.danger = 90.0;
+    loser.population = 3000.0;
+    loser.refresh_status(&data.balance.region);
+    for hero in &mut world.heroes {
+        if hero.region_id == loser_id {
+            hero.level = 1;
+        }
+    }
+    world.artifacts.retain(|a| a.region_id != loser_id);
+
+    // The loser's greatest city, tracked by id (it changes hands, not identity).
+    let (city_id, before_pop) = world
+        .settlements
+        .iter()
+        .filter(|s| s.region_id == loser_id)
+        .max_by(|a, b| a.population.total_cmp(&b.population))
+        .map(|s| (s.id.clone(), s.population))
+        .expect("the loser holds at least one settlement");
+
+    tick_genesis(&mut world, &data);
+
+    let sacked = world
+        .settlements
+        .iter()
+        .find(|s| s.id == city_id)
+        .expect("the sacked city survives the fall, diminished");
+    assert!(
+        sacked.population < before_pop * (1.0 - data.balance.conquest.sack_population_loss) + 1.0,
+        "the greatest city should lose its people in the sack: {} -> {}",
+        before_pop,
+        sacked.population
+    );
+    assert!(
+        world
+            .chronicle
+            .iter_newest()
+            .any(|e| e.message.contains("is sacked")),
+        "the sack of the great city should be chronicled"
+    );
+}
+
+#[test]
 fn a_defended_region_resists_conquest() {
     let data = GameData::load().unwrap();
     let mut world = WorldState::new(&data);

@@ -121,6 +121,20 @@ pub(super) fn run(
     let loser_name = regions[loser_idx].name.clone();
     let spoils = regions[loser_idx].population * balance.population_transfer;
 
+    // The war falls hardest on the loser's greatest city — the seat of
+    // resistance is sacked as the region falls, its people scattered or slain
+    // (GDD 5.2). Done before reassignment, while the loser's holdings are still
+    // identifiable, and only if the region actually held a settlement.
+    let sacked_city = settlements
+        .iter_mut()
+        .filter(|s| s.region_id == loser_id)
+        .max_by(|a, b| a.population.total_cmp(&b.population))
+        .map(|s| {
+            s.population *= 1.0 - balance.sack_population_loss;
+            s.prosperity = (s.prosperity - balance.sack_prosperity_loss).max(0.0);
+            s.name.clone()
+        });
+
     // Reassign everything the loser owned to its conqueror.
     for s in settlements.iter_mut() {
         if s.region_id == loser_id {
@@ -186,9 +200,19 @@ pub(super) fn run(
         EventKind::Region,
         fill(
             &text.region_conquest,
-            &[("winner", winner_name), ("loser", loser_name)],
+            &[("winner", winner_name), ("loser", loser_name.clone())],
         ),
     );
+    if let Some(city) = sacked_city {
+        chronicle.push(
+            year,
+            EventKind::Region,
+            fill(
+                &text.region_sack,
+                &[("settlement", city), ("region", loser_name)],
+            ),
+        );
+    }
 }
 
 #[cfg(test)]

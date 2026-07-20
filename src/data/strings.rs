@@ -404,6 +404,7 @@ pub struct ChronicleText {
     pub landmark_razed: String,
     pub region_fracture: String,
     pub region_conquest: String,
+    pub region_sack: String,
     pub region_founded: String,
     pub weather_natural: String,
 }

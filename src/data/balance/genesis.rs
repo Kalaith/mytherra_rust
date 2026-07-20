@@ -92,6 +92,12 @@ pub struct ConquestBalance {
     pub winner_prosperity: f32,
     pub winner_chaos: f32,
     pub winner_danger: f32,
+    /// The war that breaks a region falls hardest on its greatest city (GDD 5.2):
+    /// the seat of resistance is sacked as the region falls, losing this fraction
+    /// of its people and this many points of prosperity. A metropolis so sacked
+    /// can drop a size tier — the fall of a great city, written into the map.
+    pub sack_population_loss: f32,
+    pub sack_prosperity_loss: f32,
     /// The world will never be conquered below this many regions.
     pub min_regions: usize,
     /// Conquest momentum each annexation adds to the world (feeds Conquest-era

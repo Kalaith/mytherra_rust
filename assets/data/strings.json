@@ -314,6 +314,7 @@
     "landmark_razed": "{landmark} is thrown down as the age ends, a wonder lost to the ages.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
+    "region_sack": "The great city of {settlement} is sacked as {region} falls.",
     "region_founded": "{founder} leads settlers out of {parent} to found the frontier of {frontier}.",
     "weather_natural": "{intensity} {pattern} sweep across {region}."
   },
