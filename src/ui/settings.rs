@@ -128,7 +128,8 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         y += 24.0;
     }
 
-    // Return to the title menu (save first from the Dashboard to keep progress).
+    // Return to the title menu — the session is saved on the way out, so
+    // Continue resumes exactly here.
     y += 12.0;
     if button(
         Rect::new(content.x, y, 200.0, 40.0),
@@ -137,7 +138,7 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         ButtonTone::Secondary,
         ctx.mouse,
     ) {
-        actions.push(UiAction::SelectScreen(crate::ui::Screen::Title));
+        actions.push(UiAction::ReturnToMenu);
     }
 }
 

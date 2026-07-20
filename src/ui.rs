@@ -77,6 +77,8 @@ pub enum UiAction {
     ContinueGame,
     /// Quit the game (from the title menu).
     ExitGame,
+    /// Leave the game back to the title menu, saving the session first.
+    ReturnToMenu,
     SelectRegion(usize),
     /// Jump the region roster to the given (already-clamped) page.
     SetRegionPage(usize),

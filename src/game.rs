@@ -60,6 +60,10 @@ pub struct Game {
     last_autosave_tick: u64,
     /// Set when the player chooses Exit; the main loop ends on the next frame.
     quit_requested: bool,
+    /// Whether a world is actually being played (entered via New Game / Continue).
+    /// Guards the auto-save on leaving to the menu, so merely visiting Settings
+    /// from the title never overwrites a real save with an unplayed world.
+    session_active: bool,
 }
 
 /// Rasterize every glyph the UI can draw, at every size it uses, once at
@@ -136,6 +140,7 @@ impl Game {
             paused: false,
             last_autosave_tick: 0,
             quit_requested: false,
+            session_active: false,
         };
         game.refresh_save_state();
         game.sync_achievements();
@@ -345,16 +350,31 @@ impl Game {
             UiAction::NewWorld => self.new_world(),
             UiAction::StartNewGame => {
                 self.new_world();
+                self.session_active = true;
                 self.screen = Screen::Dashboard;
             }
             UiAction::ContinueGame => {
                 self.load_game();
                 // Only enter the world if the load actually restored one.
                 if self.save_exists {
+                    self.session_active = true;
                     self.screen = Screen::Dashboard;
                 }
             }
-            UiAction::ExitGame => self.quit_requested = true,
+            UiAction::ReturnToMenu => {
+                // Preserve the session so Continue resumes exactly here.
+                if self.session_active {
+                    self.save_game();
+                }
+                self.session_active = false;
+                self.screen = Screen::Title;
+            }
+            UiAction::ExitGame => {
+                if self.session_active {
+                    let _ = self.write_save();
+                }
+                self.quit_requested = true;
+            }
         }
     }
 
