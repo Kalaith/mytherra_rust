@@ -271,6 +271,8 @@ pub struct UiText {
     pub no_region: String,
     pub world_summary: String,
     pub standing_summary: String,
+    pub tenor_labels: Vec<String>,
+    pub tenor_line: String,
     pub region_meta: String,
     pub region_subtitle: String,
     pub favor_meter: String,

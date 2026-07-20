@@ -62,7 +62,15 @@
     "page_prev": "< Prev",
     "page_next": "Next >",
     "aftermath_looms": "Omens warn of aftermath — {count} looming here.",
-    "boon_ripens": "Omens promise a harvest to come — {count} ripening here."
+    "boon_ripens": "Omens promise a harvest to come — {count} ripening here.",
+    "tenor_labels": [
+      "A Golden Age",
+      "An Age of Plenty",
+      "A Restless Age",
+      "A Turbulent Age",
+      "A Dark Age"
+    ],
+    "tenor_line": "The world lives through {tenor}."
   },
   "divine": {
     "artifacts_panel": "Artifacts ({count}/{max})",

@@ -50,6 +50,18 @@ pub struct Balance {
     pub trade: TradeBalance,
     pub player: PlayerBalance,
     pub settings: SettingsBalance,
+    pub tenor: TenorBalance,
+}
+
+/// Tuning for the dashboard's qualitative "state of the world" read (GDD 10): a
+/// health score is `avg prosperity - avg danger - avg chaos - crises *
+/// crisis_penalty`, and the descending `thresholds` bucket it into an age from
+/// golden to dark. `strings.ui.tenor_labels` names each bucket (one more label
+/// than thresholds).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TenorBalance {
+    pub crisis_penalty: f32,
+    pub thresholds: Vec<f32>,
 }
 
 /// Favor-economy tuning for the player's own level-ups (GDD 5.1).

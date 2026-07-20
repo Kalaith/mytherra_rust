@@ -64,6 +64,20 @@ pub struct WorldSummary {
     pub regions_in_crisis: usize,
 }
 
+impl WorldSummary {
+    /// The world's qualitative tenor as a bucket index, from 0 (a golden age) up
+    /// to `thresholds.len()` (a dark age). Health is prosperity minus the forces
+    /// that trouble a world; the descending `thresholds` bucket it. Pure — the UI
+    /// maps the index to a label (GDD 10).
+    pub fn tenor(&self, thresholds: &[f32], crisis_penalty: f32) -> usize {
+        let health = self.avg_prosperity
+            - self.avg_danger
+            - self.avg_chaos
+            - self.regions_in_crisis as f32 * crisis_penalty;
+        thresholds.iter().filter(|&&t| health < t).count()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorldState {
     pub year: u32,
@@ -278,5 +292,29 @@ mod tests {
         assert_eq!(summary.region_count, world.regions.len());
         assert!(summary.avg_prosperity > 0.0);
         assert!(summary.total_population > 0.0);
+    }
+
+    #[test]
+    fn tenor_worsens_as_the_world_darkens() {
+        let thresholds = [60.0, 35.0, 15.0, -10.0];
+        let penalty = 12.0;
+        let with = |prosperity: f32, danger: f32, chaos: f32, crises: usize| WorldSummary {
+            avg_prosperity: prosperity,
+            avg_danger: danger,
+            avg_chaos: chaos,
+            regions_in_crisis: crises,
+            ..Default::default()
+        };
+
+        // A calm, rich world reads as a golden age (health 90 clears every bar).
+        assert_eq!(with(95.0, 3.0, 2.0, 0).tenor(&thresholds, penalty), 0);
+        // A troubled, crisis-stricken world sinks toward a dark age.
+        let dark = with(20.0, 80.0, 70.0, 3).tenor(&thresholds, penalty);
+        assert_eq!(dark, thresholds.len(), "a broken world is a dark age");
+        // And the tenor is monotonic: more turmoil never improves the age.
+        assert!(
+            with(60.0, 40.0, 40.0, 1).tenor(&thresholds, penalty)
+                >= with(80.0, 10.0, 10.0, 0).tenor(&thresholds, penalty)
+        );
     }
 }

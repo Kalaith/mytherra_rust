@@ -29,6 +29,25 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
     let mut y = content.y + 40.0;
 
     let summary = ctx.world.summary();
+
+    // The age's tenor: a qualitative read of the world's health, from a golden
+    // age to a dark one (GDD 10).
+    let tenor = &ctx.data.balance.tenor;
+    let labels = &strings.ui.tenor_labels;
+    let tier = summary
+        .tenor(&tenor.thresholds, tenor.crisis_penalty)
+        .min(labels.len().saturating_sub(1));
+    if let Some(label) = labels.get(tier) {
+        let color = tenor_color(tier, labels.len());
+        draw_ui_text_ex(
+            &fill(&strings.ui.tenor_line, &[("tenor", label.clone())]),
+            content.x,
+            y - 6.0,
+            TextStyle::new(17.0, color).params(),
+        );
+        y += 26.0;
+    }
+
     let stats = &strings.stats;
     y = stat_row(
         content,
@@ -319,6 +338,13 @@ fn stat_row(content: Rect, y: f32, label: &str, value: f32, color: Color, trend:
         Some(&format!("{label}  {value:.0}{}", trend_marker(trend))),
     );
     y + 30.0
+}
+
+/// A gradient from a golden green (best tenor) through amber to a dark red
+/// (worst), so the age's mood reads at a glance.
+fn tenor_color(tier: usize, count: usize) -> Color {
+    let t = tier as f32 / count.saturating_sub(1).max(1) as f32;
+    Color::new(0.3 + 0.6 * t, 0.75 - 0.4 * t, 0.35 - 0.2 * t, 1.0)
 }
 
 fn kind_color(kind: EventKind) -> Color {
