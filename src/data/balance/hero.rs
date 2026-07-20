@@ -89,6 +89,10 @@ pub struct LevelUpCurve {
     pub mid_tier_mult: f32,
     pub high_tier_mult: f32,
     pub decay: f32,
+    /// Trial by fire (GDD 5.4): a hero forged in a dangerous land grows faster.
+    /// Level-up chance is scaled by `1 + region danger * crucible_coeff`, so a
+    /// warrior who flows toward peril is tempered by it.
+    pub crucible_coeff: f32,
 }
 
 /// Per-tick death roll parameters (GDD 5.4).

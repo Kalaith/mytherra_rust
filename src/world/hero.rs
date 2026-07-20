@@ -65,6 +65,12 @@ impl Hero {
         let decay = curve.decay.powi(self.level as i32 - 1);
         curve.base_chance * tier_mult * decay
     }
+
+    /// Level-up chance tempered by the peril of the hero's region: a hero forged
+    /// in a dangerous land grows faster than one in a placid one (GDD 5.4).
+    pub fn level_up_chance_in(&self, region_danger: f32, balance: &HeroBalance) -> f32 {
+        self.level_up_chance(balance) * (1.0 + region_danger * balance.level_up.crucible_coeff)
+    }
 }
 
 #[cfg(test)]
@@ -97,6 +103,21 @@ mod tests {
         let b = balance();
         assert!(hero(1).level_up_chance(&b) > hero(20).level_up_chance(&b));
         assert!(hero(20).level_up_chance(&b) > hero(60).level_up_chance(&b));
+    }
+
+    #[test]
+    fn peril_quickens_a_heros_growth() {
+        let b = balance();
+        let h = hero(5);
+        assert!(
+            h.level_up_chance_in(100.0, &b) > h.level_up_chance_in(0.0, &b),
+            "a hero in a dangerous land should grow faster than one at peace"
+        );
+        assert_eq!(
+            h.level_up_chance_in(0.0, &b),
+            h.level_up_chance(&b),
+            "a placid region leaves the base growth chance untouched"
+        );
     }
 
     #[test]

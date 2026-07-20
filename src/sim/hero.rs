@@ -22,7 +22,10 @@ pub fn tick_heroes(
             continue;
         }
 
-        if rng.chance(hero.level_up_chance(balance)) {
+        // Trial by fire: a hero grows faster in a dangerous land than a placid
+        // one (GDD 5.4), so peril tempers those who dwell in it.
+        let danger = region_danger(regions, &hero.region_id);
+        if rng.chance(hero.level_up_chance_in(danger, balance)) {
             hero.level += 1;
             hero.renown += balance.renown.per_level;
             chronicle.push(
