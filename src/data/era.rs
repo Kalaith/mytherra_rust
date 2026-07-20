@@ -38,4 +38,40 @@ pub struct EraNameBank {
     #[serde(default)]
     pub patterns: Vec<String>,
     pub descendant_titles: Vec<String>,
+    /// Prefix pools keyed by the trigger that *ended* the previous age, so a new
+    /// age is named after the cataclysm that birthed it (GDD 5.7) — the trigger's
+    /// mark endures in the very name, not only in one-time aftermath deltas. An
+    /// empty pool (or the first age, which no trigger birthed) falls back to the
+    /// generic `prefixes`. `serde(default)` keeps older content loadable.
+    #[serde(default)]
+    pub trigger_prefixes: TriggerPrefixes,
+}
+
+/// Era-name prefix pools, one per era trigger (GDD 5.7). Mirrors the
+/// `AftermathDelta` per-trigger table so a new age's name echoes its cause.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TriggerPrefixes {
+    #[serde(default)]
+    pub cataclysm: Vec<String>,
+    #[serde(default)]
+    pub collapse: Vec<String>,
+    #[serde(default)]
+    pub conquest: Vec<String>,
+    #[serde(default)]
+    pub rupture: Vec<String>,
+    #[serde(default)]
+    pub divine_war: Vec<String>,
+}
+
+impl TriggerPrefixes {
+    /// The prefix pool for an age born of this trigger (may be empty).
+    pub fn get(&self, trigger: EraTrigger) -> &[String] {
+        match trigger {
+            EraTrigger::Cataclysm => &self.cataclysm,
+            EraTrigger::Collapse => &self.collapse,
+            EraTrigger::Conquest => &self.conquest,
+            EraTrigger::MagicalRupture => &self.rupture,
+            EraTrigger::DivineWar => &self.divine_war,
+        }
+    }
 }

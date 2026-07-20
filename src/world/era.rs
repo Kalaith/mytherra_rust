@@ -141,9 +141,20 @@ pub fn compute_scores(
 
 /// Generate a fresh era name by drawing a prefix, a title, and one of the
 /// name patterns from the banks, then filling the pattern's `{prefix}`/`{title}`
-/// slots. Draw order is fixed so world generation stays deterministic.
-pub fn generate_era_name(bank: &EraNameBank, rng: &mut SeededRng) -> String {
-    let prefix = rng.choose(&bank.prefixes).cloned().unwrap_or_default();
+/// slots. Draw order (and count) is fixed so world generation stays
+/// deterministic. When `birthed_by` is `Some`, the prefix is drawn from that
+/// trigger's pool so the age is named after the cataclysm that ended the last
+/// one — "The Ashen Dawn" after a Cataclysm; the first age passes `None`.
+pub fn generate_era_name(
+    bank: &EraNameBank,
+    birthed_by: Option<EraTrigger>,
+    rng: &mut SeededRng,
+) -> String {
+    let pool = birthed_by
+        .map(|t| bank.trigger_prefixes.get(t))
+        .filter(|p| !p.is_empty())
+        .unwrap_or(&bank.prefixes);
+    let prefix = rng.choose(pool).cloned().unwrap_or_default();
     let title = rng.choose(&bank.titles).cloned().unwrap_or_default();
     let pattern = rng
         .choose(&bank.patterns)
@@ -162,6 +173,7 @@ mod tests {
             titles: vec!["Dawn".into(), "Ruin".into()],
             patterns: vec!["The Age of {title}".into(), "The {prefix} {title}".into()],
             descendant_titles: vec![],
+            trigger_prefixes: Default::default(),
         }
     }
 
@@ -171,8 +183,8 @@ mod tests {
         let mut lhs = SeededRng::new(42);
         let mut rhs = SeededRng::new(42);
         assert_eq!(
-            generate_era_name(&b, &mut lhs),
-            generate_era_name(&b, &mut rhs)
+            generate_era_name(&b, None, &mut lhs),
+            generate_era_name(&b, None, &mut rhs)
         );
     }
 
@@ -181,7 +193,7 @@ mod tests {
         let b = bank();
         let mut rng = SeededRng::new(7);
         for _ in 0..50 {
-            let name = generate_era_name(&b, &mut rng);
+            let name = generate_era_name(&b, None, &mut rng);
             assert!(!name.contains('{'), "left an unfilled slot: {name}");
             assert!(
                 b.titles.iter().any(|t| name.contains(t)),
@@ -195,10 +207,41 @@ mod tests {
         let mut b = bank();
         b.patterns.clear();
         let mut rng = SeededRng::new(3);
-        let name = generate_era_name(&b, &mut rng);
+        let name = generate_era_name(&b, None, &mut rng);
         assert!(
             name.starts_with("The "),
             "expected classic form, got: {name}"
+        );
+    }
+
+    #[test]
+    fn an_age_is_named_after_the_trigger_that_birthed_it() {
+        // A bank whose trigger pool for Cataclysm is a single unique word, so the
+        // birthing trigger is unmistakable in the name; Collapse's pool is empty
+        // and must fall back to the generic prefix.
+        let mut b = EraNameBank {
+            prefixes: vec!["Generic".into()],
+            titles: vec!["Age".into()],
+            patterns: vec!["The {prefix} {title}".into()],
+            descendant_titles: vec![],
+            trigger_prefixes: Default::default(),
+        };
+        b.trigger_prefixes.cataclysm = vec!["Cataclysmic".into()];
+        let mut rng = SeededRng::new(11);
+        assert_eq!(
+            generate_era_name(&b, Some(EraTrigger::Cataclysm), &mut rng),
+            "The Cataclysmic Age",
+            "a cataclysm-born age draws its prefix from the cataclysm pool"
+        );
+        assert_eq!(
+            generate_era_name(&b, Some(EraTrigger::Collapse), &mut rng),
+            "The Generic Age",
+            "an empty trigger pool falls back to the generic prefixes"
+        );
+        assert_eq!(
+            generate_era_name(&b, None, &mut rng),
+            "The Generic Age",
+            "the first age, birthed by no trigger, uses the generic prefixes"
         );
     }
 }

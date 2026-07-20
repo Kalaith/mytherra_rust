@@ -248,9 +248,15 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
 
     world.weather.clear();
 
-    // A new era dawns.
+    // A new era dawns, named after the trigger that ended the last — its cause
+    // written into its name (GDD 5.7). `dominant_trigger` still holds the closing
+    // age's cause here; it is recomputed next tick.
     world.era.number += 1;
-    world.era.name = generate_era_name(&data.era_names, &mut world.rng);
+    world.era.name = generate_era_name(
+        &data.era_names,
+        Some(world.era.dominant_trigger),
+        &mut world.rng,
+    );
     world.era.start_year = world.year;
     world.era.pressure = 0.0;
 

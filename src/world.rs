@@ -176,7 +176,7 @@ impl WorldState {
         let mut rng = SeededRng::new(data.config.world_seed);
         let era = EraState {
             number: 1,
-            name: era::generate_era_name(&data.era_names, &mut rng),
+            name: era::generate_era_name(&data.era_names, None, &mut rng),
             start_year: data.config.start_year,
             dominant_trigger: crate::data::EraTrigger::Cataclysm,
             pressure: 0.0,
