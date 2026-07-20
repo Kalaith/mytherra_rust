@@ -91,4 +91,9 @@ pub struct AftermathDelta {
     /// end guts them; a quiet one barely touches them. A town emptied below the
     /// abandonment floor passes from the map next tick.
     pub settlement_toll: f32,
+    /// Per-wonder chance the age's end razes it (GDD 5.7 <-> 5.2): a cataclysm or
+    /// divine war can topple the great works of the old world, while a quiet
+    /// rupture leaves them standing. The counterpart to landmark founding — so
+    /// wonders rise in golden ages and fall in cataclysms.
+    pub landmark_raze_chance: f32,
 }

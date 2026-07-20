@@ -210,6 +210,37 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         }
     }
 
+    // A violent age can throw down the old world's wonders (GDD 5.7 <-> 5.2), the
+    // counterpart to their founding. Roll per landmark against the world RNG
+    // first, then remove the doomed — so the razing is deterministic and the
+    // retain touches only locals.
+    let raze = aftermath.landmark_raze_chance.clamp(0.0, 1.0);
+    if raze > 0.0 && !world.landmarks.is_empty() {
+        let doomed: Vec<bool> = (0..world.landmarks.len())
+            .map(|_| world.rng.chance(raze))
+            .collect();
+        let mut fallen: Vec<String> = Vec::new();
+        let mut i = 0usize;
+        world.landmarks.retain(|l| {
+            let keep = !doomed[i];
+            if !keep {
+                fallen.push(l.name.clone());
+            }
+            i += 1;
+            keep
+        });
+        for name in fallen {
+            world.chronicle.push(
+                world.year,
+                EventKind::Region,
+                fill(
+                    &data.strings.chronicle.landmark_razed,
+                    &[("landmark", name)],
+                ),
+            );
+        }
+    }
+
     world.weather.clear();
 
     // A new era dawns.
@@ -309,6 +340,46 @@ mod tests {
                 .expect("settlements are not removed during the transition itself");
             assert!(now < *was, "the age's end should claim souls from {id}");
         }
+    }
+
+    #[test]
+    fn a_violent_ages_end_can_raze_wonders() {
+        // A raze chance of 1.0 topples every wonder as the age turns (GDD 5.7).
+        let mut data = GameData::load().unwrap();
+        let a = &mut data.balance.era.aftermath;
+        for delta in [
+            &mut a.cataclysm,
+            &mut a.collapse,
+            &mut a.conquest,
+            &mut a.rupture,
+            &mut a.divine_war,
+        ] {
+            delta.landmark_raze_chance = 1.0;
+        }
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        assert!(!world.landmarks.is_empty(), "the seed world has wonders");
+        for region in &mut world.regions {
+            region.danger = 100.0;
+            region.chaos = 100.0;
+            region.prosperity = 0.0;
+            region.refresh_status(&data.balance.region);
+        }
+
+        tick_era(&mut world, &mut player, &data);
+
+        assert!(world.era.number > 1, "the age should have ended");
+        assert!(
+            world.landmarks.is_empty(),
+            "a raze-1.0 age should throw down every wonder"
+        );
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains("thrown down")),
+            "a razed wonder should be chronicled"
+        );
     }
 
     #[test]
