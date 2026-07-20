@@ -379,6 +379,7 @@ pub struct ChronicleText {
     pub settlement_built: String,
     pub settlement_abandoned: String,
     pub settlement_founded: String,
+    pub landmark_raised: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_founded: String,

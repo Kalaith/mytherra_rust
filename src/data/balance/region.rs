@@ -101,6 +101,17 @@ pub struct CultureBalance {
     /// perilous — so a notable place shapes its region's character, not just its
     /// culture.
     pub landmark_aura: f32,
+    /// A flourishing, culturally-vibrant region raises a wonder over time (GDD
+    /// 5.2): each tick an eligible region rolls `landmark_found_chance`; it must
+    /// hold at least `landmark_found_prosperity` prosperity and
+    /// `landmark_found_influence_min` cultural influence, and never grows past
+    /// `landmark_max_per_region` wonders. A new wonder takes the region's culture
+    /// and `landmark_found_influence`.
+    pub landmark_found_chance: f32,
+    pub landmark_found_prosperity: f32,
+    pub landmark_found_influence_min: f32,
+    pub landmark_max_per_region: usize,
+    pub landmark_found_influence: f32,
 }
 
 /// Trade-route tuning (GDD 5.2).

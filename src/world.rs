@@ -104,6 +104,9 @@ pub struct WorldState {
     /// two founded settlements ever collide.
     #[serde(default)]
     pub settlement_seq: u64,
+    /// Monotonic counter for unique ids of wonders raised mid-run (GDD 5.2).
+    #[serde(default)]
+    pub landmark_seq: u64,
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
     pub trade_routes: Vec<TradeRoute>,
@@ -192,6 +195,7 @@ impl WorldState {
             buildings,
             heroes,
             settlement_seq: 0,
+            landmark_seq: 0,
             hero_seq: 0,
             artifacts,
             artifact_seq: 0,

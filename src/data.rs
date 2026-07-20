@@ -40,7 +40,7 @@ pub use civilization::{Agenda, CivStat, SpilloverTarget};
 pub use config::GameConfig;
 pub use era::{EraNameBank, EraTrigger};
 pub use hero::{HeroRole, HeroSeed};
-pub use landmark::LandmarkSeed;
+pub use landmark::{LandmarkNameBank, LandmarkSeed};
 pub use magic::{MagicPathSeed, MagicStat};
 pub use myth::{MythStat, MythTheme};
 pub use pantheon::{DeitySeed, PantheonStat};
@@ -63,6 +63,7 @@ const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
 const SETTLEMENT_NAMES_JSON: &str = include_str!("../assets/data/settlement_names.json");
 const RESOURCE_NODES_JSON: &str = include_str!("../assets/data/resource_nodes.json");
 const LANDMARKS_JSON: &str = include_str!("../assets/data/landmarks.json");
+const LANDMARK_NAMES_JSON: &str = include_str!("../assets/data/landmark_names.json");
 const TRADE_ROUTES_JSON: &str = include_str!("../assets/data/trade_routes.json");
 const BUILDING_TYPES_JSON: &str = include_str!("../assets/data/building_types.json");
 const BUILDINGS_JSON: &str = include_str!("../assets/data/buildings.json");
@@ -92,6 +93,7 @@ pub struct GameData {
     pub settlement_names: SettlementNameBank,
     pub resource_nodes: Vec<ResourceNodeSeed>,
     pub landmarks: Vec<LandmarkSeed>,
+    pub landmark_names: LandmarkNameBank,
     pub trade_routes: Vec<TradeRouteSeed>,
     pub building_types: DataRegistry<BuildingType>,
     pub buildings: Vec<BuildingSeed>,
@@ -123,6 +125,8 @@ impl GameData {
             load_embedded_json_labeled("settlement_names", SETTLEMENT_NAMES_JSON)?;
         let resource_nodes: Vec<ResourceNodeSeed> = load_embedded_json(RESOURCE_NODES_JSON)?;
         let landmarks: Vec<LandmarkSeed> = load_embedded_json(LANDMARKS_JSON)?;
+        let landmark_names: LandmarkNameBank =
+            load_embedded_json_labeled("landmark_names", LANDMARK_NAMES_JSON)?;
         let trade_routes: Vec<TradeRouteSeed> = load_embedded_json(TRADE_ROUTES_JSON)?;
         let building_types = DataRegistry::from_embedded_json(BUILDING_TYPES_JSON, "id")?;
         let buildings: Vec<BuildingSeed> = load_embedded_json(BUILDINGS_JSON)?;
@@ -162,6 +166,7 @@ impl GameData {
             settlement_names,
             resource_nodes,
             landmarks,
+            landmark_names,
             trade_routes,
             building_types,
             buildings,

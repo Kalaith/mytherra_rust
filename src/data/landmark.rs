@@ -13,3 +13,11 @@ pub struct LandmarkSeed {
     pub culture: Culture,
     pub influence: f32,
 }
+
+/// Name parts a newly-raised wonder draws from (`landmark_names.json`): a prefix
+/// and a noun combine into a grand name like "The Golden Spire" (GDD 5.2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LandmarkNameBank {
+    pub prefixes: Vec<String>,
+    pub nouns: Vec<String>,
+}

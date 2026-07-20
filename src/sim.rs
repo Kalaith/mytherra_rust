@@ -9,6 +9,7 @@ mod culture;
 mod era;
 mod genesis;
 mod hero;
+mod landmark;
 mod magic;
 mod myth;
 mod pantheon;
@@ -123,6 +124,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &world.trade_routes,
         &data.balance.culture,
         &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    landmark::tick_landmark_founding(
+        &mut world.landmarks,
+        &world.regions,
+        &mut world.landmark_seq,
+        &data.landmark_names,
+        &data.balance.culture,
+        &mut world.rng,
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,
