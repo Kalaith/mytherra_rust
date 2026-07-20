@@ -1,5 +1,6 @@
 //! Region, culture, and trade tuning (GDD 5.2).
 
+use crate::data::ClimateType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,11 +44,40 @@ pub struct DriftParams {
     pub chaos_rate: f32,
     pub danger_target: f32,
     pub danger_rate: f32,
+    /// Per-climate offset to the danger equilibrium (GDD 5.2): harsh lands
+    /// (frozen, arid) settle more dangerous than hospitable ones, so an untended
+    /// region keeps the character of its climate instead of every region
+    /// relaxing to one shared baseline.
+    pub climate_danger: ClimateDrift,
     pub magic_target: f32,
     /// Proportional pull toward `magic_target`, so magic — pushed up by
     /// knowledge artifacts / divination / the Growth deity — settles rather than
     /// pinning at the ceiling (mirrors the prosperity mean-reversion).
     pub magic_reversion_rate: f32,
+}
+
+/// A per-climate value, one field per `ClimateType`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClimateDrift {
+    pub temperate: f32,
+    pub arid: f32,
+    pub tropical: f32,
+    pub frozen: f32,
+    pub coastal: f32,
+    pub highland: f32,
+}
+
+impl ClimateDrift {
+    pub fn danger_offset(&self, climate: ClimateType) -> f32 {
+        match climate {
+            ClimateType::Temperate => self.temperate,
+            ClimateType::Arid => self.arid,
+            ClimateType::Tropical => self.tropical,
+            ClimateType::Frozen => self.frozen,
+            ClimateType::Coastal => self.coastal,
+            ClimateType::Highland => self.highland,
+        }
+    }
 }
 
 /// Dynamic culture-scoring tuning (GDD 5.2).

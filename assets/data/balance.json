@@ -28,6 +28,14 @@
       "chaos_rate": 1.0,
       "danger_target": 30.0,
       "danger_rate": 1.0,
+      "climate_danger": {
+        "temperate": 0.0,
+        "arid": 12.0,
+        "tropical": 8.0,
+        "frozen": 15.0,
+        "coastal": -5.0,
+        "highland": 6.0
+      },
       "magic_target": 45.0,
       "magic_reversion_rate": 0.1
     }
