@@ -498,8 +498,11 @@ mod tests {
 
     #[test]
     fn prosperity_settles_into_a_dynamic_range() {
-        // With mean-reverting drift, a long unmanaged run should neither pin
-        // every region at the ceiling nor collapse the whole world.
+        // With mean-reverting drift, a long unmanaged run should neither climb
+        // toward a static utopia (the positive systems stacking on the reversion)
+        // nor collapse the whole world. The upper bound is deliberately tighter
+        // than the 100 ceiling: it guards against the world re-drifting into a
+        // crisis-free paradise as more prosperity-lifting systems are added.
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
         let mut player = PlayerState::new(&data.config);
@@ -508,8 +511,8 @@ mod tests {
         }
         let summary = world.summary();
         assert!(
-            summary.avg_prosperity < 92.0,
-            "prosperity pinned: {}",
+            summary.avg_prosperity < 88.0,
+            "prosperity drifting toward utopia: {}",
             summary.avg_prosperity
         );
         assert!(
