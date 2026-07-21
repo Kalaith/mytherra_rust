@@ -348,6 +348,9 @@ pub struct UiText {
     /// Region-detail warning of scheduled backlash/weather aftermaths; `{count}`.
     pub aftermath_looms: String,
     pub boon_ripens: String,
+    /// Region-detail line naming the weather front now over the region (GDD 5.6);
+    /// slots `{intensity}`, `{pattern}`. Coloured fair/foul by the front's tenor.
+    pub weather_over: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

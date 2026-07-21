@@ -221,6 +221,31 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         y += 22.0;
     }
 
+    // The weather front now over the region, if any — the storm or fair spell
+    // actively reshaping these very stats each tick was visible only in the
+    // Weather tool before, opaque to a player reading the land itself (GDD 5.6).
+    // Coloured by whether the skies bless or blight, matching the tool's badge.
+    if let Some(front) = ctx.world.weather.iter().find(|w| w.region_id == region.id) {
+        let color = if front.is_fair() {
+            dark::POSITIVE
+        } else {
+            dark::NEGATIVE
+        };
+        draw_ui_text_ex(
+            &fill(
+                &strings.ui.weather_over,
+                &[
+                    ("intensity", front.intensity_name.clone()),
+                    ("pattern", front.pattern_name.clone()),
+                ],
+            ),
+            content.x,
+            y,
+            TextStyle::new(14.0, color).params(),
+        );
+        y += 22.0;
+    }
+
     // Scheduled consequences bound for this region, surfaced so the player can
     // foresee them (GDD 5.6). A coming harvest (bloom) is foretold apart from a
     // coming scar (blight/backlash) — the two shouldn't read alike.

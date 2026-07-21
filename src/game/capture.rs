@@ -102,6 +102,13 @@ impl Game {
             for _ in 0..90 {
                 self.run_tick();
             }
+            // Shape a front over the selected region so the active-skies line
+            // (the weather now reshaping this land) is visible in the capture.
+            self.selected_region = 0;
+            self.weather_pattern = 0;
+            self.weather_intensity = 2;
+            self.shape_weather();
+            self.weather_intensity = 0;
         }
         if scene == "eras" {
             // Run through a few ages so the chronicle of eras fills — long enough

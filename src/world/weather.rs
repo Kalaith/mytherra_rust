@@ -39,6 +39,14 @@ impl WeatherEvent {
             magic: pattern.magic,
         }
     }
+
+    /// Whether this front blesses or blights the land it sits on: a net gain of
+    /// the good stats (prosperity, magic) over the ill ones (chaos, danger), so a
+    /// glance tells fair weather from foul (GDD 5.6). Shared by the Weather tool's
+    /// front cards and the region detail's active-skies line.
+    pub fn is_fair(&self) -> bool {
+        self.prosperity + self.magic - self.chaos - self.danger > 0.0
+    }
 }
 
 /// Favor cost to shape weather: base scaled by intensity and (inversely) by the
