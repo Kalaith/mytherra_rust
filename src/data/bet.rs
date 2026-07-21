@@ -26,6 +26,10 @@ pub enum BetPredicate {
     /// The target region's cultural influence reaches at least `threshold` —
     /// a rising cultural centre (fed by trade and myth, GDD 5.2).
     RegionCultureAtLeast,
+    /// The target region's divine resonance reaches at least `threshold` — a land
+    /// growing hallowed as the faithful (its Clerics) and the gods' own attention
+    /// consecrate it (GDD 5.1 <-> 5.4).
+    RegionResonanceAtLeast,
     /// The target region falls into a crisis status.
     RegionCrisis,
     /// The target region is conquered and absorbed by another (GDD 5.2) —
@@ -64,6 +68,7 @@ impl BetPredicate {
             | BetPredicate::RegionDangerAtLeast
             | BetPredicate::RegionMagicAtLeast
             | BetPredicate::RegionCultureAtLeast
+            | BetPredicate::RegionResonanceAtLeast
             | BetPredicate::RegionCrisis
             | BetPredicate::RegionConquered => TargetKind::Region,
             BetPredicate::SettlementPopulationAtLeast

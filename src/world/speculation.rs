@@ -87,6 +87,10 @@ impl SpeculationEvent {
                 .region(regions)
                 .map(|r| r.cultural_influence >= self.threshold)
                 .unwrap_or(false),
+            BetPredicate::RegionResonanceAtLeast => self
+                .region(regions)
+                .map(|r| r.divine_resonance >= self.threshold)
+                .unwrap_or(false),
             BetPredicate::RegionCrisis => self
                 .region(regions)
                 .map(|r| r.status.is_crisis())
@@ -173,6 +177,10 @@ impl SpeculationEvent {
             BetPredicate::RegionCultureAtLeast => self
                 .region(regions)
                 .map(|r| clamp01(r.cultural_influence / self.threshold.max(1.0)))
+                .unwrap_or(0.5),
+            BetPredicate::RegionResonanceAtLeast => self
+                .region(regions)
+                .map(|r| clamp01(r.divine_resonance / self.threshold.max(1.0)))
                 .unwrap_or(0.5),
             BetPredicate::RegionCrisis => self
                 .region(regions)
@@ -436,6 +444,27 @@ mod tests {
         );
         // Likelihood tracks the ratio to the bar.
         assert!((event.likelihood(&[], &regions, &[], 0.0) - 40.0 / 60.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn hallowed_ground_resolves_when_resonance_clears_the_bar() {
+        // `region()` seeds divine_resonance at 50.
+        let mut event = usurpation_event("kharzul");
+        event.predicate = BetPredicate::RegionResonanceAtLeast;
+        let regions = vec![region("kharzul")];
+
+        event.threshold = 40.0;
+        assert!(
+            event.is_satisfied(&[], &regions, &[], 1),
+            "50 clears a bar of 40"
+        );
+        event.threshold = 80.0;
+        assert!(
+            !event.is_satisfied(&[], &regions, &[], 1),
+            "50 falls short of 80"
+        );
+        // Likelihood tracks the ratio to the bar.
+        assert!((event.likelihood(&[], &regions, &[], 0.0) - 50.0 / 80.0).abs() < 0.01);
     }
 
     #[test]

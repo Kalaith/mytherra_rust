@@ -96,6 +96,14 @@
     "description": "{target} will flower into a cultural centre, its influence reaching {threshold}."
   },
   {
+    "id": "hallowed_ground",
+    "name": "Hallowed Ground",
+    "base_odds": 2.5,
+    "predicate": "region_resonance_at_least",
+    "threshold": 80.0,
+    "description": "{target} will grow hallowed, its divine resonance reaching {threshold}."
+  },
+  {
     "id": "usurpation",
     "name": "Usurpation",
     "base_odds": 4.0,
