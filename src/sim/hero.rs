@@ -5,7 +5,7 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, HeroBalance, HeroRole, MigrationBalance};
 use crate::sim::culture::hero_culture;
-use crate::world::{Chronicle, EventKind, Hero, Landmark, Region};
+use crate::world::{Chronicle, EventKind, Hero, Landmark, Region, Settlement};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Advance every living hero by one world tick.
@@ -14,6 +14,8 @@ pub fn tick_heroes(
     heroes: &mut [Hero],
     regions: &[Region],
     landmarks: &[Landmark],
+    settlements: &[Settlement],
+    tier_thresholds: &[f32],
     rng: &mut SeededRng,
     balance: &HeroBalance,
     chronicle: &mut Chronicle,
@@ -77,6 +79,8 @@ pub fn tick_heroes(
             if let Some(dest) = pick_destination(
                 regions,
                 landmarks,
+                settlements,
+                tier_thresholds,
                 &hero.region_id,
                 hero.role,
                 rng,
@@ -144,11 +148,14 @@ fn region_name(regions: &[Region], region_id: &str) -> String {
 /// How strongly a region draws a hero of the given role (GDD 5.4). Each role
 /// weights the region's stats differently, floored so the pull is always
 /// positive. This is what makes warriors flow toward danger and scholars toward
-/// settled, cultured lands — and wonders of the hero's own culture add their own
-/// pull, so great works draw the kind of people who raise them (GDD 5.2).
+/// settled, cultured lands — wonders of the hero's own culture add their own pull
+/// (so great works draw the kind of people who raise them, GDD 5.2), and the tier
+/// of the region's greatest city lures every role toward the great cities where
+/// fame and fortune gather (GDD 5.3). `city_tier` is that greatest tier.
 fn attractiveness(
     region: &Region,
     landmarks: &[Landmark],
+    city_tier: f32,
     role: HeroRole,
     mig: &MigrationBalance,
 ) -> f32 {
@@ -163,16 +170,31 @@ fn attractiveness(
         + w.danger * region.danger
         + w.magic * region.magic_affinity
         + w.culture * region.cultural_influence
-        + mig.wonder_pull * kin_wonders)
+        + mig.wonder_pull * kin_wonders
+        + mig.city_pull * city_tier)
         .max(mig.min_weight)
+}
+
+/// The size tier of a region's greatest city (0 if it holds no settlements), the
+/// lure that draws heroes toward its great cities.
+fn greatest_city_tier(region_id: &str, settlements: &[Settlement], tier_thresholds: &[f32]) -> f32 {
+    settlements
+        .iter()
+        .filter(|s| s.region_id == region_id)
+        .map(|s| s.tier(tier_thresholds))
+        .max()
+        .unwrap_or(0) as f32
 }
 
 /// Pick a destination region other than the hero's current one, weighted by how
 /// attractive each is to the hero's role. Deterministic given the RNG state: a
 /// single roll walks the cumulative weight.
+#[allow(clippy::too_many_arguments)]
 fn pick_destination(
     regions: &[Region],
     landmarks: &[Landmark],
+    settlements: &[Settlement],
+    tier_thresholds: &[f32],
     current: &str,
     role: HeroRole,
     rng: &mut SeededRng,
@@ -181,7 +203,13 @@ fn pick_destination(
     let candidates: Vec<(&str, f32)> = regions
         .iter()
         .filter(|r| r.id != current)
-        .map(|r| (r.id.as_str(), attractiveness(r, landmarks, role, mig)))
+        .map(|r| {
+            let city_tier = greatest_city_tier(&r.id, settlements, tier_thresholds);
+            (
+                r.id.as_str(),
+                attractiveness(r, landmarks, city_tier, role, mig),
+            )
+        })
         .collect();
     if candidates.is_empty() {
         return None;
@@ -253,18 +281,55 @@ mod tests {
 
         // A warrior is drawn to conflict; a scholar toward settled, cultured land.
         assert!(
-            attractiveness(&dangerous, &[], HeroRole::Warrior, mig)
-                > attractiveness(&settled, &[], HeroRole::Warrior, mig)
+            attractiveness(&dangerous, &[], 0.0, HeroRole::Warrior, mig)
+                > attractiveness(&settled, &[], 0.0, HeroRole::Warrior, mig)
         );
         assert!(
-            attractiveness(&settled, &[], HeroRole::Scholar, mig)
-                > attractiveness(&dangerous, &[], HeroRole::Scholar, mig)
+            attractiveness(&settled, &[], 0.0, HeroRole::Scholar, mig)
+                > attractiveness(&dangerous, &[], 0.0, HeroRole::Scholar, mig)
         );
         // A mage follows magic.
         let arcane = region("spire", 50.0, 30.0, 95.0, 40.0);
         assert!(
-            attractiveness(&arcane, &[], HeroRole::Mage, mig)
-                > attractiveness(&settled, &[], HeroRole::Mage, mig)
+            attractiveness(&arcane, &[], 0.0, HeroRole::Mage, mig)
+                > attractiveness(&settled, &[], 0.0, HeroRole::Mage, mig)
+        );
+    }
+
+    #[test]
+    fn the_lure_of_a_great_city_draws_every_role() {
+        let data = GameData::load().unwrap();
+        let mig = &data.balance.hero.migration;
+        let land = region("aldervale", 60.0, 20.0, 40.0, 60.0);
+        // The same land pulls harder when it holds a great city than none, for any
+        // role — heroes seek the fame and fortune of the metropolis.
+        for role in [HeroRole::Warrior, HeroRole::Scholar, HeroRole::Mage] {
+            assert!(
+                attractiveness(&land, &[], 4.0, role, mig)
+                    > attractiveness(&land, &[], 0.0, role, mig),
+                "a great city should draw heroes of every calling"
+            );
+        }
+
+        // greatest_city_tier reports the flagship city's tier among the towns.
+        let thresholds = &data.balance.settlement.tier_thresholds;
+        let town = |id: &str, pop: f32| Settlement {
+            id: id.to_owned(),
+            name: "T".to_owned(),
+            region_id: "aldervale".to_owned(),
+            population: pop,
+            prosperity: 50.0,
+        };
+        let towns = vec![town("a", 800.0), town("b", 40_000.0), town("c", 3_000.0)];
+        assert_eq!(
+            greatest_city_tier("aldervale", &towns, thresholds),
+            town("b", 40_000.0).tier(thresholds) as f32,
+            "the greatest city's tier is what draws heroes"
+        );
+        assert_eq!(
+            greatest_city_tier("elsewhere", &towns, thresholds),
+            0.0,
+            "a region with no towns has no city lure"
         );
     }
 
@@ -284,14 +349,14 @@ mod tests {
 
         // A scholar is drawn more strongly to a land bearing a scholarly wonder...
         assert!(
-            attractiveness(&land, wonders, HeroRole::Scholar, mig)
-                > attractiveness(&land, &[], HeroRole::Scholar, mig),
+            attractiveness(&land, wonders, 0.0, HeroRole::Scholar, mig)
+                > attractiveness(&land, &[], 0.0, HeroRole::Scholar, mig),
             "a scholarly wonder should draw scholars"
         );
         // ...but a warrior, of a different culture, feels no such pull from it.
         assert_eq!(
-            attractiveness(&land, wonders, HeroRole::Warrior, mig),
-            attractiveness(&land, &[], HeroRole::Warrior, mig),
+            attractiveness(&land, wonders, 0.0, HeroRole::Warrior, mig),
+            attractiveness(&land, &[], 0.0, HeroRole::Warrior, mig),
             "a scholarly wonder is no draw to a warrior"
         );
     }
@@ -331,6 +396,8 @@ mod tests {
                 &mut world.heroes,
                 &world.regions,
                 &world.landmarks,
+                &world.settlements,
+                &data.balance.settlement.tier_thresholds,
                 &mut world.rng,
                 &balance,
                 &mut world.chronicle,
@@ -379,6 +446,8 @@ mod tests {
                 &mut world.heroes,
                 &world.regions,
                 &world.landmarks,
+                &world.settlements,
+                &data.balance.settlement.tier_thresholds,
                 &mut world.rng,
                 &data.balance.hero,
                 &mut world.chronicle,
@@ -401,6 +470,8 @@ mod tests {
             &mut world.heroes,
             &world.regions,
             &world.landmarks,
+            &world.settlements,
+            &data.balance.settlement.tier_thresholds,
             &mut world.rng,
             &data.balance.hero,
             &mut world.chronicle,
@@ -424,6 +495,8 @@ mod tests {
                     &mut world.heroes,
                     &world.regions,
                     &world.landmarks,
+                    &world.settlements,
+                    &data.balance.settlement.tier_thresholds,
                     &mut world.rng,
                     &data.balance.hero,
                     &mut world.chronicle,

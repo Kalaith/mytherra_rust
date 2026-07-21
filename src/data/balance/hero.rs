@@ -48,6 +48,11 @@ pub struct MigrationBalance {
     /// a land of mystical wonders (GDD 5.4 <-> 5.2). This makes a region's wonders,
     /// its heroes, and its culture reinforce one another.
     pub wonder_pull: f32,
+    /// Extra pull, per tier of a region's greatest city (GDD 5.4 <-> 5.3): heroes
+    /// are drawn to the great cities, where fame, fortune, and patrons gather — so
+    /// a metropolis is a beacon a scattering of villages is not, and a region that
+    /// nurtures a city draws the heroes who then defend and enrich it.
+    pub city_pull: f32,
     pub roles: RoleMigrationWeights,
 }
 
