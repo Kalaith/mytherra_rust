@@ -1,7 +1,7 @@
 //! Runtime era state (GDD 5.7): the current era, its accumulated pressure from
 //! five weighted triggers, and the chronicle of past eras.
 
-use crate::data::{EraBalance, EraNameBank, EraTrigger};
+use crate::data::{Culture, EraBalance, EraNameBank, EraTrigger};
 use crate::world::{Hero, MagicPath, MagicState, PantheonDeity, Region, RegionStatus};
 use macroquad_toolkit::rng::SeededRng;
 use serde::{Deserialize, Serialize};
@@ -106,6 +106,21 @@ pub fn compute_scores(
 
     let ratio = |count: usize| count as f32 / n;
     let crisis = ratio(regions.iter().filter(|r| r.status.is_crisis()).count());
+    // A world's enduring character — its dominant cultures — portends how the age
+    // ends, apart from its momentary stats: a warlike world tends to conquest, a
+    // mystical one to rupture (GDD 5.7 <-> 5.2).
+    let martial = ratio(
+        regions
+            .iter()
+            .filter(|r| r.culture == Culture::Martial)
+            .count(),
+    );
+    let mystical = ratio(
+        regions
+            .iter()
+            .filter(|r| r.culture == Culture::Mystical)
+            .count(),
+    );
     let struggling = ratio(
         regions
             .iter()
@@ -144,8 +159,11 @@ pub fn compute_scores(
             + secession_momentum * balance.collapse_momentum_weight,
         conquest: avg_danger * balance.conquest_danger
             + wartorn * balance.conquest_wartorn
-            + conquest_momentum * balance.conquest_momentum_weight,
-        rupture: avg_magic * balance.rupture_magic + known * balance.rupture_known,
+            + conquest_momentum * balance.conquest_momentum_weight
+            + martial * balance.conquest_martial_culture,
+        rupture: avg_magic * balance.rupture_magic
+            + known * balance.rupture_known
+            + mystical * balance.rupture_mystical_culture,
         divine_war: pending_stake as f32 * balance.divinewar_stake
             + fallen * balance.divinewar_fallen
             + low_favor * balance.divinewar_lowfavor

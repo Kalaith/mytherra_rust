@@ -508,6 +508,60 @@ mod tests {
     }
 
     #[test]
+    fn a_worlds_dominant_culture_shapes_how_its_age_ends() {
+        use crate::data::Culture;
+        use crate::world::compute_scores;
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.era;
+        let mut world = WorldState::new(&data);
+
+        let scores = |w: &WorldState| {
+            compute_scores(
+                &w.regions,
+                &w.heroes,
+                &w.magic_paths,
+                100,
+                data.config.max_favor,
+                0,
+                0.0,
+                0.0,
+                0.0,
+                balance,
+            )
+        };
+        // Start from a neutral baseline (neither martial nor mystical) so the
+        // culture deltas are attributable purely to the swap under test.
+        for r in &mut world.regions {
+            r.culture = Culture::Scholarly;
+        }
+        let base = scores(&world);
+        // Turn every region martial without touching its stats: conquest pressure
+        // rises on character alone, rupture unchanged.
+        for r in &mut world.regions {
+            r.culture = Culture::Martial;
+        }
+        let martial = scores(&world);
+        assert!(
+            martial.conquest > base.conquest,
+            "a warlike world should trend toward a Conquest age"
+        );
+
+        // A wholly mystical world instead trends toward rupture.
+        for r in &mut world.regions {
+            r.culture = Culture::Mystical;
+        }
+        let mystical = scores(&world);
+        assert!(
+            mystical.rupture > base.rupture,
+            "a mystical world should trend toward a Magical Rupture age"
+        );
+        assert!(
+            (mystical.rupture - base.rupture - balance.rupture_mystical_culture).abs() < 0.01,
+            "a fully mystical world adds exactly the culture weight to rupture"
+        );
+    }
+
+    #[test]
     fn a_wrathful_pantheon_drives_toward_divine_war() {
         use crate::world::{compute_scores, pantheon_wrath};
         let data = GameData::load().unwrap();

@@ -20,6 +20,11 @@ pub struct EraBalance {
     pub collapse_momentum_decay: f32,
     pub conquest_danger: f32,
     pub conquest_wartorn: f32,
+    /// Weight on the fraction of regions whose dominant culture is Martial as a
+    /// driver of a Conquest age (GDD 5.7 <-> 5.2): a warlike world ends its age in
+    /// conquest even when its stats are momentarily calm — the world's enduring
+    /// character, not just its present danger, shapes how the age ends.
+    pub conquest_martial_culture: f32,
     /// Weight on the world's decaying conquest-momentum tally, so actual region
     /// annexations (not just ambient danger) drive Conquest-era pressure.
     pub conquest_momentum_weight: f32,
@@ -27,6 +32,11 @@ pub struct EraBalance {
     pub conquest_momentum_decay: f32,
     pub rupture_magic: f32,
     pub rupture_known: f32,
+    /// Weight on the fraction of regions whose dominant culture is Mystical as a
+    /// driver of a Magical Rupture age (GDD 5.7 <-> 5.2): a world steeped in the
+    /// mystical is prone to the arcane tearing loose, its character portending the
+    /// rupture even where raw magic affinity has not yet climbed.
+    pub rupture_mystical_culture: f32,
     pub divinewar_stake: f32,
     pub divinewar_fallen: f32,
     pub divinewar_lowfavor: f32,
