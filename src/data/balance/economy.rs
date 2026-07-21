@@ -42,6 +42,12 @@ pub struct PlagueBalance {
     /// Extra severity decay per point of the region's prosperity — a wealthy land
     /// tends its sick and throws off the pestilence sooner.
     pub decay_prosperity_coeff: f32,
+    /// Extra severity decay per living Cleric dwelling in the afflicted region
+    /// (GDD 5.3 <-> 5.4): the devout tend the sick, so a land served by healers
+    /// throws off a plague faster. This gives the Cleric role a second domain
+    /// beside the faith it already nurtures — the counterpart to the Merchant's
+    /// trade weight and the Warrior's conquest might.
+    pub cleric_relief: f32,
     /// A plague below this severity has burned out and is forgotten.
     pub min_severity: f32,
 }

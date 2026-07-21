@@ -1,13 +1,13 @@
 //! Per-tick pestilence (GDD 5.3): plagues break out where squalor meets a
 //! crowd, sap their region's people and wealth while raising its peril, spread
 //! along the trade network the way wealth and ideas do, and burn out as the sick
-//! die or recover — soonest where the land is prosperous enough to tend them.
-//! The dark counterweight to the world's growth systems. Randomness (outbreak,
-//! spread) flows through the world RNG.
+//! die or recover — soonest where the land is prosperous enough to tend them and
+//! served by Clerics to tend the sick. The dark counterweight to the world's
+//! growth systems. Randomness (outbreak, spread) flows through the world RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, PlagueBalance, RegionBalance};
-use crate::world::{Chronicle, EventKind, Plague, Region, Settlement, TradeRoute};
+use crate::data::{fill, HeroRole, PlagueBalance, RegionBalance};
+use crate::world::{Chronicle, EventKind, Hero, Plague, Region, Settlement, TradeRoute};
 use macroquad_toolkit::rng::SeededRng;
 
 #[allow(clippy::too_many_arguments)]
@@ -15,6 +15,7 @@ pub fn tick_plague(
     plagues: &mut Vec<Plague>,
     regions: &mut [Region],
     settlements: &mut [Settlement],
+    heroes: &[Hero],
     routes: &[TradeRoute],
     seq: &mut u64,
     names: &[String],
@@ -42,7 +43,17 @@ pub fn tick_plague(
                 0.0,
                 region_balance,
             );
-            let recovery = balance.decay_base + region.prosperity * balance.decay_prosperity_coeff;
+            // The land throws off the plague by its own wealth, and faster still
+            // where Clerics dwell to tend the sick (GDD 5.3 <-> 5.4).
+            let clerics = heroes
+                .iter()
+                .filter(|h| {
+                    h.is_alive && h.role == HeroRole::Cleric && h.region_id == plague.region_id
+                })
+                .count();
+            let recovery = balance.decay_base
+                + region.prosperity * balance.decay_prosperity_coeff
+                + clerics as f32 * balance.cleric_relief;
             plague.severity -= recovery;
         } else {
             // The afflicted region has vanished (conquered, sundered); let the
@@ -228,6 +239,7 @@ mod tests {
             &mut world.plagues,
             &mut world.regions,
             &mut world.settlements,
+            &world.heroes,
             &world.trade_routes,
             &mut world.plague_seq,
             &data.plague_names,
@@ -383,6 +395,54 @@ mod tests {
         assert!(
             ticks_to_fade(95.0) < ticks_to_fade(5.0),
             "a wealthy land should throw off a plague sooner than a destitute one"
+        );
+    }
+
+    #[test]
+    fn clerics_tend_the_sick_and_hasten_a_plagues_end() {
+        // The same plague fades sooner in a region served by Clerics than in one
+        // with none, holding wealth fixed (GDD 5.3 <-> 5.4).
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.plague.clone();
+        balance.outbreak_chance = 0.0;
+        balance.spread_chance = 0.0;
+
+        let ticks_to_fade = |cleric_count: usize| {
+            let mut world = WorldState::new(&data);
+            let region_id = world.regions[0].id.clone();
+            world.regions[0].prosperity = 30.0;
+            // Replace the roster with exactly `cleric_count` Clerics in the region.
+            world.heroes = (0..cleric_count)
+                .map(|i| Hero {
+                    id: format!("c{i}"),
+                    name: format!("Cleric {i}"),
+                    role: HeroRole::Cleric,
+                    region_id: region_id.clone(),
+                    level: 5,
+                    age: 30,
+                    is_alive: true,
+                    renown: 0.0,
+                })
+                .collect();
+            world.plagues.push(Plague {
+                id: "p".to_owned(),
+                name: "The Test Fever".to_owned(),
+                region_id,
+                severity: 3.0,
+                age: 0,
+            });
+            let mut ticks = 0;
+            while !world.plagues.is_empty() && ticks < 1000 {
+                world.regions[0].prosperity = 30.0; // hold wealth fixed
+                run(&mut world, &data, &balance);
+                ticks += 1;
+            }
+            ticks
+        };
+
+        assert!(
+            ticks_to_fade(3) < ticks_to_fade(0),
+            "a land tended by Clerics should throw off a plague sooner"
         );
     }
 }

@@ -555,6 +555,7 @@
     "spread_severity_fraction": 0.6,
     "decay_base": 0.03,
     "decay_prosperity_coeff": 0.0008,
+    "cleric_relief": 0.06,
     "min_severity": 0.15
   },
   "resource": {

@@ -164,6 +164,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.plagues,
         &mut world.regions,
         &mut world.settlements,
+        &world.heroes,
         &world.trade_routes,
         &mut world.plague_seq,
         &data.plague_names,
