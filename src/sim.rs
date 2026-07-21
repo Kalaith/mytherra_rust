@@ -175,6 +175,8 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.year,
     );
 
+    hero::tick_faith(&world.heroes, &mut world.regions, &data.balance.hero);
+
     champion::tick_champions(
         &mut player.champions,
         &mut world.heroes,

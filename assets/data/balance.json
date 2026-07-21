@@ -191,7 +191,8 @@
         100.0,
         180.0
       ]
-    }
+    },
+    "cleric_resonance_per_tick": 0.15
   },
   "champion": {
     "max_roster": 3,

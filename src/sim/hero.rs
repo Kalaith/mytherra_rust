@@ -96,6 +96,27 @@ pub fn tick_heroes(
     }
 }
 
+/// A land's resident Clerics tend its faith: each living Cleric raises their home
+/// region's divine resonance a little every tick (GDD 5.4 <-> 5.1), so a land
+/// served by the devout grows more receptive to divine will over time — the
+/// passive, favor-free counterpart to the player's consecration, and the Cleric
+/// role's own domain beside the Warrior's might and the Merchant's trade.
+/// Deterministic: no RNG.
+pub fn tick_faith(heroes: &[Hero], regions: &mut [Region], balance: &HeroBalance) {
+    if balance.cleric_resonance_per_tick <= 0.0 {
+        return;
+    }
+    for region in regions.iter_mut() {
+        let clerics = heroes
+            .iter()
+            .filter(|h| h.is_alive && h.role == HeroRole::Cleric && h.region_id == region.id)
+            .count();
+        if clerics > 0 {
+            region.add_resonance(clerics as f32 * balance.cleric_resonance_per_tick);
+        }
+    }
+}
+
 /// Death roll for one hero: elders past their life expectancy roll a flat
 /// chance; younger heroes face a danger-scaled, level-mitigated chance.
 fn rolls_death(
@@ -243,6 +264,36 @@ mod tests {
         let bar = *data.balance.hero.renown.thresholds.last().unwrap();
         assert_eq!(death_line(bar + 1.0, bar, text), text.hero_legend_death);
         assert_eq!(death_line(bar - 1.0, bar, text), text.hero_death);
+    }
+
+    #[test]
+    fn a_living_cleric_tends_the_faith_of_its_home_region() {
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.hero;
+        // Two regions at the neutral resonance baseline (50): one home to clerics,
+        // one barren of them.
+        let mut regions = vec![
+            region("home", 60.0, 20.0, 40.0, 40.0),
+            region("barren", 60.0, 20.0, 40.0, 40.0),
+        ];
+
+        // At home: one living cleric (counts), a warrior (wrong role), and a
+        // fallen cleric (dead). Only the living cleric should tend the faith.
+        let warrior = hero("fighter", HeroRole::Warrior, "home");
+        let mut fallen = hero("martyr", HeroRole::Cleric, "home");
+        fallen.is_alive = false;
+        let cleric = hero("holy", HeroRole::Cleric, "home");
+
+        tick_faith(&[cleric, warrior, fallen], &mut regions, balance);
+
+        assert!(
+            (regions[0].divine_resonance - (50.0 + balance.cleric_resonance_per_tick)).abs() < 1e-4,
+            "exactly one living cleric should raise home resonance by one step"
+        );
+        assert_eq!(
+            regions[1].divine_resonance, 50.0,
+            "a land with no clerics keeps its faith unchanged"
+        );
     }
 
     fn region(id: &str, prosperity: f32, danger: f32, magic: f32, culture: f32) -> Region {

@@ -164,6 +164,13 @@ impl Region {
         self.strife = (self.strife + amount).max(0.0);
     }
 
+    /// Raise (or lower) divine resonance, clamped 0-100. A resident Cleric tends
+    /// the land's faith without the player spending favor (GDD 5.4 ↔ 5.1) — the
+    /// passive counterpart to consecration in `apply_action`.
+    pub fn add_resonance(&mut self, amount: f32) {
+        self.divine_resonance = clamp_stat(self.divine_resonance + amount);
+    }
+
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {

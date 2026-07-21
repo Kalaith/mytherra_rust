@@ -13,6 +13,13 @@ pub struct HeroBalance {
     pub move_chance: f32,
     pub migration: MigrationBalance,
     pub renown: RenownParams,
+    /// Divine resonance each living Cleric raises in their home region per tick
+    /// (GDD 5.4 <-> 5.1): a holy servant makes the land faithful, so the gods'
+    /// will — and the player's own nudges — take hold there more keenly over time.
+    /// This gives the Cleric role a domain of its own, the counterpart to a
+    /// Merchant swelling trade and a Scholar hastening magic; unlike a player's
+    /// consecration it costs no favor, accruing slowly wherever clerics dwell.
+    pub cleric_resonance_per_tick: f32,
 }
 
 /// Hero fame tuning (GDD 5.4): how renown accrues, the danger-death it staves
