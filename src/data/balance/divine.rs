@@ -86,10 +86,15 @@ pub struct ArtifactBalance {
     pub backlash_chaos: f32,
     pub backlash_danger: f32,
     /// A backlash isn't over when the relic shatters: its aftermath unfolds in
-    /// two delayed steps (GDD 5.6). First a settlement is blighted, then a later
-    /// pulse of unrest strikes the region.
+    /// three delayed steps (GDD 5.6). First a settlement is blighted, then the
+    /// arcane shockwave shakes the region's heroes, then a later pulse of unrest
+    /// strikes the region.
     pub aftermath_blight_delay: i32,
     pub aftermath_blight_prosperity: f32,
+    /// The shockwave that strips renown from every living hero of the shattered
+    /// relic's region (GDD 5.6 <-> 5.4).
+    pub aftermath_hero_delay: i32,
+    pub aftermath_hero_renown: f32,
     pub aftermath_unrest_delay: i32,
     pub aftermath_unrest_chaos: f32,
     pub aftermath_unrest_danger: f32,

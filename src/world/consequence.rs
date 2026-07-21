@@ -26,6 +26,12 @@ pub enum ConsequenceEffect {
     /// Bless the region's largest settlement with a delayed harvest (a positive
     /// prosperity delta) — the bounty that follows fair weather.
     SettlementBloom(f32),
+    /// The arcane shockwave of a shattering strips renown from the region's
+    /// living heroes (GDD 5.6 <-> 5.4): a catastrophe the heroes failed to avert
+    /// dims their legends, and a hero shorn of renown is the frailer for it just
+    /// as the aftermath's unrest raises the danger around them. The value is the
+    /// renown each living hero of the region loses.
+    HeroesShaken(f32),
 }
 
 impl ConsequenceEffect {

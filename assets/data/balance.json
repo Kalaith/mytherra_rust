@@ -312,6 +312,8 @@
     },
     "aftermath_blight_delay": 3,
     "aftermath_blight_prosperity": -8.0,
+    "aftermath_hero_delay": 4,
+    "aftermath_hero_renown": 12.0,
     "aftermath_unrest_delay": 6,
     "aftermath_unrest_chaos": 6.0,
     "aftermath_unrest_danger": 4.0

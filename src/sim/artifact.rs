@@ -92,7 +92,8 @@ fn apply_focus(
 }
 
 /// Queue the delayed steps that follow a shattering: a blighted settlement,
-/// then a later pulse of regional unrest.
+/// then a shockwave that shakes the region's heroes, then a later pulse of
+/// regional unrest.
 fn schedule_aftermath(
     pending: &mut Vec<DelayedConsequence>,
     region_id: &str,
@@ -104,6 +105,12 @@ fn schedule_aftermath(
         source: source.to_owned(),
         delay: balance.aftermath_blight_delay,
         effect: ConsequenceEffect::SettlementBlight(balance.aftermath_blight_prosperity),
+    });
+    pending.push(DelayedConsequence {
+        region_id: region_id.to_owned(),
+        source: source.to_owned(),
+        delay: balance.aftermath_hero_delay,
+        effect: ConsequenceEffect::HeroesShaken(balance.aftermath_hero_renown),
     });
     pending.push(DelayedConsequence {
         region_id: region_id.to_owned(),

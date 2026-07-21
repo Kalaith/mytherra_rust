@@ -424,8 +424,12 @@ pub struct ChronicleText {
     pub bet_won: String,
     pub bet_lost: String,
     pub artifact_backlash: String,
-    /// Delayed backlash aftermath: a blighted settlement, then regional unrest.
+    /// Delayed backlash aftermath: a blighted settlement, heroes shaken by the
+    /// arcane shockwave, then regional unrest.
     pub aftermath_blight: String,
+    /// Heroes stripped of renown by a shattering's shockwave (GDD 5.6 <-> 5.4);
+    /// slots `{source}`, `{region}`.
+    pub aftermath_heroes_shaken: String,
     pub aftermath_unrest: String,
     /// The delayed bounty that follows fair weather.
     pub aftermath_bloom: String,

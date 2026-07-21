@@ -316,6 +316,7 @@
     "bet_lost": "Your wager on {target} lapses unfulfilled.",
     "artifact_backlash": "{artifact} shatters, scarring {region}.",
     "aftermath_blight": "In the wake of {source}, blight withers {settlement}.",
+    "aftermath_heroes_shaken": "The arcane shockwave of {source} rolls across {region}, and the deeds of its heroes dim in the telling.",
     "aftermath_unrest": "The shattering of {source} still festers — unrest grips {region}.",
     "aftermath_bloom": "The fair weather {source} brought ripens into a bountiful harvest in {settlement}.",
     "magic_known": "{path} passes into common knowledge.",
