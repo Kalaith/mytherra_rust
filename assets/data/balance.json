@@ -10,6 +10,7 @@
       "min": 0.75,
       "max": 1.35
     },
+    "resonance_per_action": 1.5,
     "status": {
       "wartorn_danger": 65.0,
       "wartorn_chaos": 60.0,

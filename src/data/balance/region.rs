@@ -7,6 +7,12 @@ use serde::{Deserialize, Serialize};
 pub struct RegionBalance {
     pub cost_multiplier: MultiplierCurve,
     pub effect_multiplier: MultiplierCurve,
+    /// Divine resonance a region gains each time the player acts on it directly
+    /// (Bless/Corrupt/Guide) — a god's repeated touch consecrates the land (GDD
+    /// 5.2), making it cheaper and more responsive to future nudges (and more
+    /// keenly felt by a roused pantheon). Player-driven only; the world's own
+    /// drift never touches resonance.
+    pub resonance_per_action: f32,
     pub status: StatusThresholds,
     pub drift: DriftParams,
 }

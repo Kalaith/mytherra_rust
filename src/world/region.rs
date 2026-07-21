@@ -144,6 +144,12 @@ impl Region {
         self.chaos = clamp_stat(self.chaos + scaled(def.chaos, mult));
         self.danger = clamp_stat(self.danger + scaled(def.danger, mult));
         self.magic_affinity = clamp_stat(self.magic_affinity + scaled(def.magic_affinity, mult));
+        // Every divine touch attunes the land a little more (GDD 5.2): a region a
+        // god shapes often grows in divine resonance, becoming cheaper and more
+        // responsive to future nudges — and more keenly felt by a roused pantheon.
+        // So concentrating favor on a land consecrates it, at the cost of tying
+        // its fate more tightly to the heavens.
+        self.divine_resonance = clamp_stat(self.divine_resonance + balance.resonance_per_action);
         self.refresh_status(balance);
     }
 
@@ -379,6 +385,30 @@ mod tests {
         assert!((region.prosperity - 58.0).abs() < f32::EPSILON);
         assert!((region.chaos - 46.0).abs() < f32::EPSILON);
         assert!((region.danger - 47.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn a_divine_touch_consecrates_the_land() {
+        // Acting on a region raises its divine resonance, so a god's repeated
+        // attention makes future nudges there cheaper and stronger (GDD 5.2).
+        let b = balance();
+        let mut region = Region::from_seed(&seed(), &b.region);
+        let before = region.divine_resonance;
+        let cost_before = region.action_cost(&bless(), &b.region);
+        region.apply_action(&bless(), &b.region);
+        assert!(
+            region.divine_resonance > before,
+            "a divine act should attune the land"
+        );
+        // Enough repeated attention lowers the cost of acting there.
+        for _ in 0..20 {
+            region.apply_action(&bless(), &b.region);
+        }
+        assert!(
+            region.action_cost(&bless(), &b.region) < cost_before,
+            "a consecrated land should be cheaper to nudge"
+        );
+        assert!(region.divine_resonance <= 100.0, "resonance stays clamped");
     }
 
     #[test]
