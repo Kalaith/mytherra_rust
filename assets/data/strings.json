@@ -59,6 +59,7 @@
     "landmarks_line": "Landmarks:  {list}",
     "trade_line": "Trade:  {list}",
     "buildings_line": "Buildings:  {list}",
+    "heroes_line": "Heroes:  {list}",
     "holdings_more": "  (+{count} more)",
     "no_holdings": "No holdings here.",
     "town_browser_title": "Towns of {region}",

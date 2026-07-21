@@ -333,6 +333,9 @@ pub struct UiText {
     pub landmarks_line: String,
     pub trade_line: String,
     pub buildings_line: String,
+    /// Region-detail line naming the living heroes who dwell in a region and the
+    /// callings they lend it (GDD 5.4); slot `{list}`.
+    pub heroes_line: String,
     pub holdings_more: String,
     pub no_holdings: String,
     /// Town browser (drill-in from a region's holdings): title, close, the

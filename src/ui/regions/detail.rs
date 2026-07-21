@@ -5,7 +5,7 @@
 use crate::data::{fill, RegionActionDef};
 use crate::ui::widgets::{bad_stat_color, button, draw_titled, good_stat_color, trend_marker};
 use crate::ui::{UiAction, UiContext};
-use crate::world::{Region, RegionStatus};
+use crate::world::{Hero, Region, RegionStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
@@ -187,6 +187,41 @@ pub(super) fn draw_region_detail(ctx: &UiContext<'_>, rect: Rect, actions: &mut 
         TextStyle::new(14.0, dark::TEXT_DIM).params(),
     );
     y += 22.0;
+
+    // The living heroes who dwell here and the callings they lend the land (GDD
+    // 5.4): a warrior guards it, a merchant enriches its roads, a cleric hallows
+    // it. Shown beside the might that folds them, so a region's *people* are
+    // legible — the drivers of its faith, trade, magic, and defence — not only its
+    // holdings. Drawn here (always visible) rather than among the holdings, which
+    // truncate; capped at three, most notable first.
+    let mut region_heroes: Vec<&Hero> = ctx
+        .world
+        .heroes
+        .iter()
+        .filter(|h| h.is_alive && h.region_id == region.id)
+        .collect();
+    if !region_heroes.is_empty() {
+        region_heroes.sort_by(|a, b| b.level.cmp(&a.level).then(a.id.cmp(&b.id)));
+        let listed: Vec<String> = region_heroes
+            .iter()
+            .take(3)
+            .map(|h| format!("{} ({})", h.name, h.role.label()))
+            .collect();
+        let mut list = listed.join(",  ");
+        if region_heroes.len() > listed.len() {
+            list.push_str(&fill(
+                &strings.ui.holdings_more,
+                &[("count", (region_heroes.len() - listed.len()).to_string())],
+            ));
+        }
+        draw_ui_text_ex(
+            &fill(&strings.ui.heroes_line, &[("list", list)]),
+            content.x,
+            y,
+            TextStyle::new(14.0, dark::TEXT_DIM).params(),
+        );
+        y += 22.0;
+    }
 
     // The region's prevailing course — its dominant civilization agenda — so a
     // region's character is legible here, not only in the divine tool that steers
