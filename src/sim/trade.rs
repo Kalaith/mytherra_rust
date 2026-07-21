@@ -32,8 +32,18 @@ pub fn tick_trade(
         let avg = (pa + pb) * 0.5;
         let delta_a = bonus + (avg - pa) * balance.equalize_rate;
         let delta_b = bonus + (avg - pb) * balance.equalize_rate;
-        regions[a].apply_deltas(delta_a, 0.0, 0.0, 0.0, region_balance);
-        regions[b].apply_deltas(delta_b, 0.0, 0.0, 0.0, region_balance);
+
+        // Arcana travels the roads too: magic affinity drifts toward the pair's
+        // average, so an attuned land (a manaspring's blessing, a mystical bent)
+        // shares its arcane current with its trade partners (GDD 5.2 <-> 5.6).
+        // Trade only spreads magic, never conjures it — no flat bonus here.
+        let (ma, mb) = (regions[a].magic_affinity, regions[b].magic_affinity);
+        let mavg = (ma + mb) * 0.5;
+        let magic_a = (mavg - ma) * balance.magic_equalize;
+        let magic_b = (mavg - mb) * balance.magic_equalize;
+
+        regions[a].apply_deltas(delta_a, 0.0, 0.0, magic_a, region_balance);
+        regions[b].apply_deltas(delta_b, 0.0, 0.0, magic_b, region_balance);
 
         // Ideas: the same shape carries cultural influence along the route, so
         // connected lands grow to resemble one another.
@@ -150,6 +160,39 @@ mod tests {
         assert!(
             gap_after < gap_before,
             "ideas should flow along the route, narrowing the culture gap"
+        );
+    }
+
+    #[test]
+    fn trade_narrows_the_magic_gap() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        // A wide arcane gap on the Iron Road (aldermoor <-> kharzul); trade should
+        // spread the attunement from the steeped land toward the barren one.
+        let ai = world
+            .regions
+            .iter()
+            .position(|r| r.id == "aldermoor")
+            .unwrap();
+        let ki = world
+            .regions
+            .iter()
+            .position(|r| r.id == "kharzul")
+            .unwrap();
+        world.regions[ai].magic_affinity = 80.0;
+        world.regions[ki].magic_affinity = 20.0;
+        let gap_before =
+            (world.regions[ai].magic_affinity - world.regions[ki].magic_affinity).abs();
+        tick_trade(
+            &world.trade_routes,
+            &mut world.regions,
+            &data.balance.trade,
+            &data.balance.region,
+        );
+        let gap_after = (world.regions[ai].magic_affinity - world.regions[ki].magic_affinity).abs();
+        assert!(
+            gap_after < gap_before,
+            "arcana should travel the road, narrowing the magic gap"
         );
     }
 }

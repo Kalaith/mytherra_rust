@@ -137,6 +137,11 @@ pub struct TradeBalance {
     pub culture_bonus: f32,
     /// Fraction each endpoint drifts toward the pair's average cultural influence.
     pub culture_equalize: f32,
+    /// Fraction each endpoint drifts toward the pair's average magic affinity:
+    /// arcana travels the roads too, so a connected, attuned land shares its
+    /// arcane current with its partners (GDD 5.2 <-> 5.6). Trade only spreads
+    /// magic between regions, never creates it — no flat bonus.
+    pub magic_equalize: f32,
     /// How much the more perilous endpoint's danger throttles trade income:
     /// a route is only as safe as its worst leg, so caravans falter where the
     /// road runs through peril (GDD 5.2). Route safety is

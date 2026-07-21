@@ -515,6 +515,7 @@
     "equalize_rate": 0.02,
     "culture_bonus": 0.15,
     "culture_equalize": 0.02,
+    "magic_equalize": 0.02,
     "peril_penalty": 0.008,
     "min_safety": 0.2
   },
