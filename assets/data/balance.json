@@ -128,7 +128,7 @@
       "elder_roll": 0.2,
       "danger_divisor": 1000.0,
       "level_divisor": 3000.0,
-      "min_chance": 0.005
+      "min_chance": 0.0025
     },
     "move_chance": 0.12,
     "migration": {
@@ -403,11 +403,11 @@
     "divinewar_lowfavor": 14.0,
     "reincarnate_age_min": 18,
     "reincarnate_age_max": 34,
-    "death_chance": 0.35,
+    "death_chance": 0.28,
     "death_age": 75,
     "hero_level_scale": 0.7,
-    "descendant_min": 1,
-    "descendant_max": 4,
+    "descendant_min": 3,
+    "descendant_max": 7,
     "renewal_chaos": -12.0,
     "renewal_danger": -12.0,
     "renewal_prosperity": 6.0,

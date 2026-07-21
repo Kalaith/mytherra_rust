@@ -470,6 +470,33 @@ mod tests {
     }
 
     #[test]
+    fn the_hero_population_survives_the_ages() {
+        // A 400-year unmanaged run must keep a living hero population across the
+        // era cullings, and at least one hero must reach the top renown title (a
+        // living legend) somewhere along the way — the champion/renown/legend web
+        // depends on the roster never dwindling to nothing (GDD 5.4). Guards the
+        // hero-lifecycle tuning against a regression that starves the world of
+        // heroes.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        let bar = *data.balance.hero.renown.thresholds.last().unwrap();
+        let mut min_alive = usize::MAX;
+        let mut ever_legend = false;
+        for _ in 0..400 {
+            tick_world(&mut world, &mut player, &data);
+            let living = world.heroes.iter().filter(|h| h.is_alive);
+            min_alive = min_alive.min(living.clone().count());
+            ever_legend |= living.map(|h| h.renown).fold(0.0_f32, f32::max) >= bar;
+        }
+        assert!(
+            min_alive >= 2,
+            "the hero roster dwindled to {min_alive} — the world starves of heroes"
+        );
+        assert!(ever_legend, "no hero ever rose to legend across four ages");
+    }
+
+    #[test]
     fn prosperity_settles_into_a_dynamic_range() {
         // With mean-reverting drift, a long unmanaged run should neither pin
         // every region at the ceiling nor collapse the whole world.
