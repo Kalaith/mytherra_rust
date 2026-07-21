@@ -3,6 +3,49 @@
 use crate::data::resource::ResourceStatus;
 use serde::{Deserialize, Serialize};
 
+/// Pestilence tuning (GDD 5.3): the dark counterweight to the world's growth
+/// systems. Crowded, squalid lands breed disease; it saps their people and
+/// wealth, leaps along the trade roads that carry everything else, and burns out
+/// as immunity builds — fastest where the land is prosperous enough to tend its
+/// sick.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlagueBalance {
+    /// Base per-tick chance a plague breaks out in an eligible region.
+    pub outbreak_chance: f32,
+    /// A region needs at least this population for an epidemic to take hold —
+    /// disease needs a crowd.
+    pub outbreak_min_population: f32,
+    /// Prosperity at or below which squalor breeds pestilence; above it the
+    /// squalor term contributes nothing.
+    pub squalor_prosperity: f32,
+    /// How steeply the outbreak chance rises per point of prosperity below the
+    /// squalor line — a destitute, crowded land is a tinderbox.
+    pub squalor_coeff: f32,
+    /// Severity a fresh outbreak begins at.
+    pub start_severity: f32,
+    /// Population fraction the region's largest settlement loses per tick per
+    /// unit of severity — the pestilence's demographic toll.
+    pub toll_population: f32,
+    /// Prosperity the region loses per tick per unit of severity.
+    pub toll_prosperity: f32,
+    /// Danger the region gains per tick per unit of severity — a plague-stricken
+    /// land is a perilous one.
+    pub toll_danger: f32,
+    /// Per-tick chance an active plague leaps down a trade route to an
+    /// unafflicted connected region (GDD 5.3 <-> 5.2): contagion travels the same
+    /// caravan roads that carry wealth, ideas, and arcana.
+    pub spread_chance: f32,
+    /// Severity a spread outbreak begins at, as a fraction of its parent's.
+    pub spread_severity_fraction: f32,
+    /// Severity lost each tick as the sick recover or die and immunity builds.
+    pub decay_base: f32,
+    /// Extra severity decay per point of the region's prosperity — a wealthy land
+    /// tends its sick and throws off the pestilence sooner.
+    pub decay_prosperity_coeff: f32,
+    /// A plague below this severity has burned out and is forgotten.
+    pub min_severity: f32,
+}
+
 /// Resource-node tuning.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceBalance {

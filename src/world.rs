@@ -14,6 +14,7 @@ mod landmark;
 mod magic;
 mod myth;
 mod pantheon;
+mod plague;
 mod player;
 mod region;
 mod resource;
@@ -35,6 +36,7 @@ pub use landmark::Landmark;
 pub use magic::{MagicPath, MagicState};
 pub use myth::{Myth, MythCandidate};
 pub use pantheon::{adjust_pressure, PantheonDeity};
+pub use plague::Plague;
 pub use player::PlayerState;
 pub use region::{resident_might, Region, RegionStatus};
 pub use resource::ResourceNode;
@@ -131,6 +133,13 @@ pub struct WorldState {
     pub era: EraState,
     pub era_history: Vec<EraRecord>,
     pub weather: Vec<WeatherEvent>,
+    /// Active plagues gripping regions (GDD 5.3); arise dynamically, so this
+    /// starts empty on a fresh world.
+    #[serde(default)]
+    pub plagues: Vec<Plague>,
+    /// Monotonic counter for unique ids of plagues that break out mid-run.
+    #[serde(default)]
+    pub plague_seq: u64,
     pub magic_paths: Vec<MagicPath>,
     pub myths: Vec<Myth>,
     pub myth_candidates: Vec<MythCandidate>,
@@ -213,6 +222,8 @@ impl WorldState {
             era,
             era_history: Vec::new(),
             weather: Vec::new(),
+            plagues: Vec::new(),
+            plague_seq: 0,
             magic_paths,
             myths: Vec::new(),
             myth_candidates: Vec::new(),

@@ -45,6 +45,7 @@ pub struct Balance {
     pub pantheon: PantheonBalance,
     pub era: EraBalance,
     pub settlement: SettlementBalance,
+    pub plague: PlagueBalance,
     pub resource: ResourceBalance,
     pub culture: CultureBalance,
     pub trade: TradeBalance,

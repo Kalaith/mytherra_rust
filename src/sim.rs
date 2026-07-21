@@ -13,6 +13,7 @@ mod landmark;
 mod magic;
 mod myth;
 mod pantheon;
+mod plague;
 mod region;
 mod resource;
 mod settlement;
@@ -153,6 +154,21 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &world.regions,
         &mut world.trade_seq,
         &data.balance.trade,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    plague::tick_plague(
+        &mut world.plagues,
+        &mut world.regions,
+        &mut world.settlements,
+        &world.trade_routes,
+        &mut world.plague_seq,
+        &data.plague_names,
+        &data.balance.plague,
+        &data.balance.region,
         &mut world.rng,
         &mut world.chronicle,
         &data.strings.chronicle,

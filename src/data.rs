@@ -30,9 +30,9 @@ pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
     ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance,
     ConquestBalance, CultureBalance, EraBalance, FrontierBalance, GenesisBalance, HeroBalance,
-    HeroMightWeights, MagicBalance, MigrationBalance, MythBalance, PantheonBalance, PlayerBalance,
-    RegionBalance, ResourceBalance, ResourceOutputs, SettlementBalance, TradeBalance,
-    WeatherBalance,
+    HeroMightWeights, MagicBalance, MigrationBalance, MythBalance, PantheonBalance, PlagueBalance,
+    PlayerBalance, RegionBalance, ResourceBalance, ResourceOutputs, SettlementBalance,
+    TradeBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use building::{BuildingSeed, BuildingType};
@@ -66,6 +66,7 @@ const SETTLEMENT_NAMES_JSON: &str = include_str!("../assets/data/settlement_name
 const RESOURCE_NODES_JSON: &str = include_str!("../assets/data/resource_nodes.json");
 const LANDMARKS_JSON: &str = include_str!("../assets/data/landmarks.json");
 const LANDMARK_NAMES_JSON: &str = include_str!("../assets/data/landmark_names.json");
+const PLAGUE_NAMES_JSON: &str = include_str!("../assets/data/plague_names.json");
 const TRADE_ROUTES_JSON: &str = include_str!("../assets/data/trade_routes.json");
 const BUILDING_TYPES_JSON: &str = include_str!("../assets/data/building_types.json");
 const BUILDINGS_JSON: &str = include_str!("../assets/data/buildings.json");
@@ -97,6 +98,9 @@ pub struct GameData {
     pub resource_nodes: Vec<ResourceNodeSeed>,
     pub landmarks: Vec<LandmarkSeed>,
     pub landmark_names: LandmarkNameBank,
+    /// Pestilence name bank — plagues arise dynamically, so they need no seed
+    /// content, only names to draw from (GDD 5.3).
+    pub plague_names: Vec<String>,
     pub trade_routes: Vec<TradeRouteSeed>,
     pub building_types: DataRegistry<BuildingType>,
     pub buildings: Vec<BuildingSeed>,
@@ -131,6 +135,7 @@ impl GameData {
         let landmarks: Vec<LandmarkSeed> = load_embedded_json(LANDMARKS_JSON)?;
         let landmark_names: LandmarkNameBank =
             load_embedded_json_labeled("landmark_names", LANDMARK_NAMES_JSON)?;
+        let plague_names: Vec<String> = load_embedded_json(PLAGUE_NAMES_JSON)?;
         let trade_routes: Vec<TradeRouteSeed> = load_embedded_json(TRADE_ROUTES_JSON)?;
         let building_types = DataRegistry::from_embedded_json(BUILDING_TYPES_JSON, "id")?;
         let buildings: Vec<BuildingSeed> = load_embedded_json(BUILDINGS_JSON)?;
@@ -172,6 +177,7 @@ impl GameData {
             resource_nodes,
             landmarks,
             landmark_names,
+            plague_names,
             trade_routes,
             building_types,
             buildings,

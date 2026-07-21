@@ -461,6 +461,13 @@ pub struct ChronicleText {
     pub trade_route_forged: String,
     /// Name pattern for a forged route; slots `{region_a}`, `{region_b}`.
     pub trade_route_name: String,
+    /// A plague's course (GDD 5.3): it breaks out, spreads along the roads to a
+    /// new region, and finally burns out. Slots `{plague}`, `{region}`.
+    pub plague_outbreak: String,
+    pub plague_spread: String,
+    pub plague_fades: String,
+    /// Name pattern for an outbreak; slots `{pestilence}`, `{region}`.
+    pub plague_name: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_sack: String,

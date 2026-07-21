@@ -542,6 +542,21 @@
     "found_max_routes_per_region": 4,
     "found_volume": 1.0
   },
+  "plague": {
+    "outbreak_chance": 0.015,
+    "outbreak_min_population": 4000.0,
+    "squalor_prosperity": 45.0,
+    "squalor_coeff": 0.0006,
+    "start_severity": 1.0,
+    "toll_population": 0.01,
+    "toll_prosperity": 0.6,
+    "toll_danger": 0.4,
+    "spread_chance": 0.08,
+    "spread_severity_fraction": 0.6,
+    "decay_base": 0.03,
+    "decay_prosperity_coeff": 0.0008,
+    "min_severity": 0.15
+  },
   "resource": {
     "stress_chaos": 0.4,
     "stress_danger": 0.3,
