@@ -25,6 +25,12 @@ pub struct ChampionBalance {
     /// dwelling there, so cultivating one is a standing guard against fracture —
     /// the counterpart to the shield a strong hero raises against conquest.
     pub passive_strife: f32,
+    /// Fractional boost to a champion's passive focus effect when its focus suits
+    /// its hero's role (GDD 5.4): a champion cultivated along their nature — Valor
+    /// for a warrior, Devotion for a cleric — shapes their land more strongly, so
+    /// matching focus to role becomes a lever worth pulling. At 0.5 a suited
+    /// champion guards or enriches its home half again as much.
+    pub focus_synergy_bonus: f32,
     pub quest: QuestParams,
     pub rivalry: RivalryParams,
     pub focuses: ChampionFocuses,

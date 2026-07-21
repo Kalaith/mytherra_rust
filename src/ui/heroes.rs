@@ -109,17 +109,33 @@ fn draw_champion_card(
     );
 
     // What this focus does for its region — continuously at home, more on victory.
+    // When the focus suits the hero's own nature it shapes the land half again as
+    // much (GDD 5.4), so flag it "in tune" and colour the line brighter — the cue
+    // to match a champion's focus to their calling.
+    let in_tune = hero.is_some_and(|h| champion.focus.suits(h.role));
+    let mut focus_text = fill(
+        &strings.focus_line,
+        &[
+            ("focus", champion.focus.label().to_owned()),
+            ("effect", focus_effect(ctx, champion.focus).to_owned()),
+        ],
+    );
+    if in_tune {
+        focus_text.push_str(&strings.focus_in_tune);
+    }
     draw_ui_text_ex(
-        &fill(
-            &strings.focus_line,
-            &[
-                ("focus", champion.focus.label().to_owned()),
-                ("effect", focus_effect(ctx, champion.focus).to_owned()),
-            ],
-        ),
+        &focus_text,
         rect.x + 14.0,
         rect.y + 64.0,
-        TextStyle::new(13.0, dark::ACCENT).params(),
+        TextStyle::new(
+            13.0,
+            if in_tune {
+                dark::POSITIVE
+            } else {
+                dark::ACCENT
+            },
+        )
+        .params(),
     );
 
     // Quest progress meter.

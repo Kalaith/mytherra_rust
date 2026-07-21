@@ -165,8 +165,23 @@ impl Game {
                     .take(2)
                     .map(|h| h.id.clone())
                     .collect();
-                for id in ids {
-                    self.designate_champion(&id);
+                for id in &ids {
+                    self.designate_champion(id);
+                }
+                // Align the first champion's focus to its hero's calling so the
+                // "in tune" synergy cue is visible in the capture (GDD 5.4).
+                let roles: std::collections::HashMap<String, crate::data::HeroRole> = self
+                    .world
+                    .heroes
+                    .iter()
+                    .map(|h| (h.id.clone(), h.role))
+                    .collect();
+                for champ in self.player.champions.iter_mut() {
+                    if let Some(&role) = roles.get(&champ.hero_id) {
+                        while !champ.focus.suits(role) {
+                            champ.focus = champ.focus.next();
+                        }
+                    }
                 }
                 for _ in 0..8 {
                     self.run_tick();

@@ -206,6 +206,7 @@
     "renown_per_quest": 4.0,
     "passive_scale": 0.05,
     "passive_strife": 0.15,
+    "focus_synergy_bonus": 0.5,
     "quest": {
       "base": 7.0,
       "rank_mult": 3.0,

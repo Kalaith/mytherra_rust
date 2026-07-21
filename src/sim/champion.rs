@@ -53,8 +53,16 @@ pub fn tick_champions(
         // 5.4) — a Valor champion holds back danger, Wisdom kindles magic,
         // Devotion lifts prosperity — scaled by rank, so a deeper investment
         // guards or enriches the land more, every tick, not just at resolution.
+        // A focus that suits the hero's own nature (Valor for a warrior, Devotion
+        // for a cleric) shapes the land more strongly still, so matching focus to
+        // role rewards the player who cultivates along the grain (GDD 5.4).
         let focus = balance.focuses.get(champion.focus);
-        let scale = balance.passive_scale * champion.rank as f32;
+        let synergy = if champion.focus.suits(heroes[idx].role) {
+            1.0 + balance.focus_synergy_bonus
+        } else {
+            1.0
+        };
+        let scale = balance.passive_scale * champion.rank as f32 * synergy;
         if let Some(region) = regions.iter_mut().find(|r| r.id == heroes[idx].region_id) {
             region.apply_deltas(
                 focus.resolve_prosperity * scale,
@@ -300,6 +308,55 @@ mod tests {
         assert!(
             world.regions[region_idx].danger < danger_before,
             "a Valor champion's presence should still hold back danger"
+        );
+    }
+
+    #[test]
+    fn a_focus_that_suits_the_hero_shapes_the_land_more() {
+        use crate::data::HeroRole;
+        // A Valor champion eases danger; on a warrior — whom Valor suits — it
+        // should ease more than the same champion on a scholar, by exactly the
+        // synergy bonus (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let drop = |role: HeroRole| {
+            let mut world = WorldState::new(&data);
+            world.heroes[0].role = role;
+            world.heroes[0].is_alive = true;
+            let hero = world.heroes[0].clone();
+            let ri = world
+                .regions
+                .iter()
+                .position(|r| r.id == hero.region_id)
+                .unwrap();
+            world.regions[ri].danger = 60.0;
+            let before = world.regions[ri].danger;
+            let mut champion = Champion::designate(hero.id.clone(), ChampionFocus::Valor);
+            champion.rank = 5;
+            champion.quest_progress = 0.0; // no quest resolves this tick
+            let mut champions = vec![champion];
+            tick_champions(
+                &mut champions,
+                &mut world.heroes,
+                &mut world.regions,
+                &data.balance.champion,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            before - world.regions[ri].danger
+        };
+
+        let suited = drop(HeroRole::Warrior);
+        let unsuited = drop(HeroRole::Scholar);
+        assert!(
+            suited > unsuited,
+            "a focus suited to the hero should shape the land more ({suited} vs {unsuited})"
+        );
+        let bonus = data.balance.champion.focus_synergy_bonus;
+        assert!(
+            (suited - unsuited * (1.0 + bonus)).abs() < 1e-3,
+            "the suited effect should be greater by exactly the synergy bonus"
         );
     }
 

@@ -162,6 +162,9 @@ pub struct HeroText {
     pub focus_effect_valor: String,
     pub focus_effect_wisdom: String,
     pub focus_effect_devotion: String,
+    /// Suffix on a champion's focus line when its focus suits its hero's role, so
+    /// the synergy bonus (GDD 5.4) is visible as a reason to match them.
+    pub focus_in_tune: String,
     /// Earned renown titles, ascending (index-aligned with hero.renown.thresholds).
     pub renown_titles: Vec<String>,
     /// Roster meta line for a titled hero.
