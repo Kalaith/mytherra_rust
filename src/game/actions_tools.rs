@@ -127,8 +127,12 @@ impl Game {
         }
         let next = &self.world.regions[(cur_idx + 1) % self.world.regions.len()];
         let (next_id, next_name) = (next.id.clone(), next.name.clone());
+        let transfer_instability = balance.transfer_instability;
         if let Some(artifact) = self.world.artifacts.iter_mut().find(|a| a.id == id) {
             artifact.region_id = next_id;
+            // Wrenching a bound relic loose unsettles it — the journey adds
+            // instability, so moving is a considered act, not a free reposition.
+            artifact.instability += transfer_instability;
             let name = artifact.name.clone();
             self.notifications.success(fill(
                 &notes.artifact_transferred,

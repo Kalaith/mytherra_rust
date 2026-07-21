@@ -79,4 +79,20 @@ mod tests {
         let b = balance();
         assert!(artifact(3, 0.0).focus_delta(&b) < 0.0);
     }
+
+    #[test]
+    fn a_transfer_unsettles_a_relic_without_instantly_shattering_it() {
+        // Moving a relic must cost real instability (GDD 5.6), but a single move
+        // of an already-stable relic must not push it straight past the backlash
+        // line — the risk is meant to build, not be an instant kill.
+        let b = balance();
+        assert!(
+            b.transfer_instability > 0.0,
+            "a transfer should unsettle the relic"
+        );
+        assert!(
+            b.transfer_instability < b.backlash_threshold,
+            "one transfer of a fresh relic must not instantly shatter it"
+        );
+    }
 }

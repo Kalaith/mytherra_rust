@@ -60,6 +60,11 @@ pub struct ArtifactBalance {
     pub empower_power_mult: i64,
     pub empower_instability_div: f32,
     pub transfer_cost: i64,
+    /// Instability a relic gains when moved to a new region (GDD 5.6): wrenching a
+    /// bound relic loose unsettles it, so transferring is not a free repositioning
+    /// — a near-critical relic can shatter on the journey, and the player must
+    /// weigh moving it against stabilizing it first.
+    pub transfer_instability: f32,
     pub stabilize_cost: i64,
     pub stabilize_amount: f32,
     pub empower_instability_gain: f32,

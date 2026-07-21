@@ -278,6 +278,7 @@
     "empower_power_mult": 10,
     "empower_instability_div": 5.0,
     "transfer_cost": 8,
+    "transfer_instability": 14.0,
     "stabilize_cost": 15,
     "stabilize_amount": 22.0,
     "empower_instability_gain": 12.0,

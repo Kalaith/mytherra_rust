@@ -225,7 +225,7 @@
     "artifact_max": "You cannot sustain another artifact.",
     "artifact_empowered": "{name} swells with power.",
     "artifact_stabilized": "You steady {name}.",
-    "artifact_transferred": "{name} passes to {region}.",
+    "artifact_transferred": "{name} passes to {region}, unsettled by the journey.",
     "weather_shaped": "You shape {pattern} over {region}.",
     "weather_max": "Too many storms already rage.",
     "magic_researched": "You pour insight into {path}.",
