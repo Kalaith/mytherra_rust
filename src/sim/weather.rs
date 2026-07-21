@@ -24,6 +24,7 @@ pub fn tick_weather(
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
+    era_pressure: f32,
 ) {
     spawn_natural(
         weather,
@@ -35,6 +36,7 @@ pub fn tick_weather(
         chronicle,
         text,
         year,
+        era_pressure,
     );
 
     for front in weather.iter_mut() {
@@ -66,11 +68,15 @@ fn spawn_natural(
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
+    era_pressure: f32,
 ) {
     if regions.is_empty() || patterns.is_empty() || weather.len() >= balance.max_active {
         return;
     }
-    if !rng.chance(balance.natural_chance) {
+    // The age's pressure whips up the skies: near a cataclysmic breaking, fronts
+    // arise more often and turn Strong more readily (GDD 5.6 <-> 5.7).
+    let turmoil = 1.0 + (era_pressure / 100.0).clamp(0.0, 1.0) * balance.pressure_weather_coeff;
+    if !rng.chance(balance.natural_chance * turmoil) {
         return;
     }
     let region = &regions[rng.below(regions.len())];
@@ -80,7 +86,7 @@ fn spawn_natural(
     }
 
     let pattern = pick_pattern(patterns, region.climate, rng);
-    let strong = rng.chance(balance.natural_strong_chance);
+    let strong = rng.chance((balance.natural_strong_chance * turmoil).min(1.0));
     let intensity_id = if strong {
         &balance.natural_strong_id
     } else {
@@ -162,6 +168,7 @@ mod tests {
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
+            0.0,
         );
     }
 
@@ -188,6 +195,41 @@ mod tests {
     }
 
     #[test]
+    fn a_breaking_age_whips_up_the_skies() {
+        // Over an identical run, a world near its era's breaking should raise more
+        // (and fiercer) natural weather than one in a calm age (GDD 5.6 <-> 5.7).
+        let data = GameData::load().unwrap();
+        let storm_load = |pressure: f32| {
+            let mut world = WorldState::new(&data);
+            world.weather.clear();
+            let mut total = 0usize;
+            for _ in 0..300 {
+                tick_weather(
+                    &mut world.weather,
+                    &mut world.regions,
+                    &data.weather_patterns,
+                    &data.weather_intensities,
+                    &mut world.rng,
+                    &data.balance.weather,
+                    &data.balance.region,
+                    &mut world.chronicle,
+                    &data.strings.chronicle,
+                    world.year,
+                    pressure,
+                );
+                total += world.weather.len(); // active fronts this tick, summed
+            }
+            total
+        };
+        let calm = storm_load(0.0);
+        let breaking = storm_load(85.0);
+        assert!(
+            breaking > calm,
+            "a breaking age should whip up more storms ({breaking} vs {calm})"
+        );
+    }
+
+    #[test]
     fn natural_weather_arises_and_stays_capped() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
@@ -204,6 +246,7 @@ mod tests {
                 &mut world.chronicle,
                 &data.strings.chronicle,
                 world.year,
+                0.0,
             );
             if !world.weather.is_empty() {
                 ever_saw_weather = true;

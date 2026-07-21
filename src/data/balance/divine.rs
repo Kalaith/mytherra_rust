@@ -134,6 +134,12 @@ pub struct WeatherBalance {
     pub natural_chance: f32,
     /// Chance a natural front is Strong rather than Gentle.
     pub natural_strong_chance: f32,
+    /// How much the age's pressure whips up the skies (GDD 5.6 <-> 5.7): as an era
+    /// nears its cataclysmic breaking, natural fronts arise more often and turn
+    /// Strong more readily — the world's turmoil made visible overhead before the
+    /// age ends. Scales both chances by `1 + (pressure/100) * this`; 0 leaves the
+    /// skies indifferent to the age.
+    pub pressure_weather_coeff: f32,
     /// Intensity ids a natural front uses (never Cataclysmic — that's the
     /// player's alone).
     pub natural_gentle_id: String,

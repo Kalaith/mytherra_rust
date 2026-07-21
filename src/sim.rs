@@ -207,6 +207,9 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,
+        // Last tick's era pressure (era runs at the end of the tick); it moves
+        // slowly, so the skies rage as the age approaches its breaking.
+        world.era.pressure,
     );
 
     magic::tick_magic(

@@ -312,6 +312,7 @@
     "max_active": 6,
     "natural_chance": 0.18,
     "natural_strong_chance": 0.25,
+    "pressure_weather_coeff": 1.4,
     "natural_gentle_id": "gentle",
     "natural_strong_id": "strong",
     "aftermath_delay": 4,
