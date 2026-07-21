@@ -55,21 +55,22 @@ fn is_warded(artifacts: &[Artifact], region_id: &str, balance: &ConquestBalance)
     })
 }
 
-/// Extra might-gap needed to overrun a region whose prevailing civilization
-/// course is Defense (GDD 5.2 <-> 5.6): a graded resistance, short of the outright
-/// shield a hero or ward gives.
-fn defense_margin(
-    target: &Region,
+/// The bonus a region's prevailing civilization course lends conquest: a Defense
+/// target demands a wider margin to overrun (positive), a Rivalry aggressor will
+/// forgo margin to strike (negative), any other course nothing (GDD 5.2 <-> 5.6).
+fn agenda_margin(
+    region: &Region,
     civ: &[RegionAgendas],
     agendas: &[Agenda],
     apply_threshold: f32,
     balance: &ConquestBalance,
 ) -> f32 {
-    let Some(entry) = civ.iter().find(|c| c.region_id == target.id) else {
+    let Some(entry) = civ.iter().find(|c| c.region_id == region.id) else {
         return 0.0;
     };
-    match crate::world::dominant_agenda(agendas, target, entry, apply_threshold) {
+    match crate::world::dominant_agenda(agendas, region, entry, apply_threshold) {
         Some(i) if agendas[i].id == "defense" => balance.defense_margin_bonus,
+        Some(i) if agendas[i].id == "rivalry" => -balance.rivalry_aggression,
         _ => 0.0,
     }
 }
@@ -102,9 +103,12 @@ fn pick(
                 continue;
             }
             let gap = a_might - conquest_might(target, heroes, artifacts, balance);
-            // A defensive people demand a wider margin before they can be overrun.
+            // Both peoples' courses shape the margin: a Defense target demands a
+            // wider gap and a Rivalry one lies more exposed; a Rivalry aggressor
+            // will forgo margin to strike where a Defense-minded one holds off.
             let margin = balance.conquest_margin
-                + defense_margin(target, civ, agendas, apply_threshold, balance);
+                + agenda_margin(target, civ, agendas, apply_threshold, balance)
+                + agenda_margin(aggressor, civ, agendas, apply_threshold, balance);
             if gap < margin
                 || has_defender(heroes, &target.id, balance)
                 || is_warded(artifacts, &target.id, balance)
@@ -297,27 +301,32 @@ mod tests {
     }
 
     #[test]
-    fn a_region_set_on_defense_demands_a_wider_margin() {
+    fn a_regions_course_shapes_the_conquest_margin() {
         let data = GameData::load().unwrap();
         let balance = &data.balance.conquest;
         let threshold = data.balance.civilization.apply_threshold;
-        let target = crate::world::WorldState::new(&data).regions[0].clone();
-        let defense = data.agendas.iter().position(|a| a.id == "defense").unwrap();
+        let region = crate::world::WorldState::new(&data).regions[0].clone();
+        let idx = |id: &str| data.agendas.iter().position(|a| a.id == id).unwrap();
+        let with_course = |course: usize| {
+            let mut entry = crate::world::RegionAgendas::new(region.id.clone(), data.agendas.len());
+            entry.boosts[course] = 500.0;
+            agenda_margin(&region, &[entry], &data.agendas, threshold, balance)
+        };
 
-        // Boost Defense to the region's prevailing course.
-        let mut entry = crate::world::RegionAgendas::new(target.id.clone(), data.agendas.len());
-        entry.boosts[defense] = 500.0;
-        let civ = vec![entry];
+        // Defense widens the required margin; Rivalry narrows it (bolder attacks,
+        // a more exposed defence); another course does neither.
         assert!(
-            (defense_margin(&target, &civ, &data.agendas, threshold, balance)
-                - balance.defense_margin_bonus)
-                .abs()
-                < f32::EPSILON,
-            "a defense-course region should widen the required conquest margin"
+            (with_course(idx("defense")) - balance.defense_margin_bonus).abs() < f32::EPSILON,
+            "a defense course should widen the margin"
         );
-        // A region with no civilization entry demands nothing extra.
+        assert!(
+            (with_course(idx("rivalry")) + balance.rivalry_aggression).abs() < f32::EPSILON,
+            "a rivalry course should narrow the margin"
+        );
+        assert_eq!(with_course(idx("recovery")), 0.0);
+        // A region with no civilization entry contributes nothing.
         assert_eq!(
-            defense_margin(&target, &[], &data.agendas, threshold, balance),
+            agenda_margin(&region, &[], &data.agendas, threshold, balance),
             0.0
         );
     }

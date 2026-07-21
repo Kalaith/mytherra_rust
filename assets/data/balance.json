@@ -73,6 +73,7 @@
     "aggressor_min_might": 55.0,
     "conquest_margin": 16.0,
     "defense_margin_bonus": 14.0,
+    "rivalry_aggression": 8.0,
     "defender_min_level": 5,
     "defender_renown_min": 100.0,
     "shield_min_power": 3,

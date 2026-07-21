@@ -107,6 +107,11 @@ pub struct ConquestBalance {
     /// are harder to conquer — a graded resistance the player can raise with the
     /// Advance verb, short of the outright shield a hero or a ward provides.
     pub defense_margin_bonus: f32,
+    /// Margin an aggressor whose prevailing course is Rivalry will forgo to strike
+    /// (GDD 5.2 <-> 5.6): a bellicose people accept a closer fight, so a region set
+    /// on Rivalry conquers where a cautious neighbour would hold off — the offensive
+    /// mirror of Defense, completing the agenda's grip on the three genesis paths.
+    pub rivalry_aggression: f32,
     /// A living hero of at least this level shields its region from conquest —
     /// the same calibre of hero who would instead lead it to secede.
     pub defender_min_level: u32,
