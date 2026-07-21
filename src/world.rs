@@ -29,7 +29,7 @@ pub use champion::Champion;
 pub use chronicle::{Chronicle, EventKind, WorldEvent};
 pub use civilization::{agenda_score, dominant_agenda, spillover_target, RegionAgendas};
 pub use consequence::{ConsequenceEffect, DelayedConsequence};
-pub use era::{compute_scores, generate_era_name, EraRecord, EraState};
+pub use era::{compute_scores, generate_era_name, pantheon_wrath, EraRecord, EraState};
 pub use hero::Hero;
 pub use landmark::Landmark;
 pub use magic::{MagicPath, MagicState};

@@ -92,6 +92,8 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
         .filter(|b| b.resolved.is_none())
         .map(|b| b.stake)
         .sum();
+    let wrath =
+        crate::world::pantheon_wrath(&ctx.world.pantheon, ctx.data.balance.pantheon.drift_target);
     let scores = compute_scores(
         &ctx.world.regions,
         &ctx.world.heroes,
@@ -101,6 +103,7 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
         pending_stake,
         ctx.world.conquest_momentum,
         ctx.world.secession_momentum,
+        wrath,
         balance,
     );
     let dominant = scores.dominant().0;

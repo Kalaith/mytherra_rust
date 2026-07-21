@@ -19,6 +19,7 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         .filter(|b| b.resolved.is_none())
         .map(|b| b.stake)
         .sum();
+    let wrath = crate::world::pantheon_wrath(&world.pantheon, data.balance.pantheon.drift_target);
     let scores = compute_scores(
         &world.regions,
         &world.heroes,
@@ -28,6 +29,7 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         pending_stake,
         world.conquest_momentum,
         world.secession_momentum,
+        wrath,
         balance,
     );
     let (dominant, pressure) = scores.dominant();
@@ -446,6 +448,7 @@ mod tests {
             0,
             0.0,
             0.0,
+            0.0,
             balance,
         );
         let warlike = compute_scores(
@@ -456,6 +459,7 @@ mod tests {
             data.config.max_favor,
             0,
             50.0,
+            0.0,
             0.0,
             balance,
         );
@@ -477,6 +481,51 @@ mod tests {
     }
 
     #[test]
+    fn a_wrathful_pantheon_drives_toward_divine_war() {
+        use crate::world::{compute_scores, pantheon_wrath};
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.era;
+        let mut world = WorldState::new(&data);
+
+        // Calm gods add nothing; a fully-roused pantheon adds exactly its weight.
+        let scores = |wrath: f32| {
+            compute_scores(
+                &world.regions,
+                &world.heroes,
+                &world.magic_paths,
+                100,
+                data.config.max_favor,
+                0,
+                0.0,
+                0.0,
+                wrath,
+                balance,
+            )
+        };
+        let calm = scores(0.0).divine_war;
+        let wrathful = scores(1.0).divine_war;
+        assert!(
+            wrathful > calm,
+            "roused gods should drive the world toward a Divine War age"
+        );
+        assert!(
+            (wrathful - calm - balance.divinewar_pantheon).abs() < 0.01,
+            "full wrath contributes exactly the pantheon weight"
+        );
+
+        // The wrath measure itself: zero at the resting baseline, positive above.
+        let target = data.balance.pantheon.drift_target;
+        for d in &mut world.pantheon {
+            d.pressure = target;
+        }
+        assert_eq!(pantheon_wrath(&world.pantheon, target), 0.0);
+        for d in &mut world.pantheon {
+            d.pressure = 100.0;
+        }
+        assert!(pantheon_wrath(&world.pantheon, target) > 0.9);
+    }
+
+    #[test]
     fn secession_momentum_raises_collapse_pressure_and_decays() {
         use crate::world::compute_scores;
         let data = GameData::load().unwrap();
@@ -492,6 +541,7 @@ mod tests {
             0,
             0.0,
             0.0,
+            0.0,
             balance,
         );
         let fracturing = compute_scores(
@@ -503,6 +553,7 @@ mod tests {
             0,
             0.0,
             50.0,
+            0.0,
             balance,
         );
         assert!(

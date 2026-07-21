@@ -30,6 +30,11 @@ pub struct EraBalance {
     pub divinewar_stake: f32,
     pub divinewar_fallen: f32,
     pub divinewar_lowfavor: f32,
+    /// Weight on the pantheon's roused wrath (its average pressure above the
+    /// resting baseline, 0-1) as a driver of a Divine War age (GDD 5.7 <-> 5.6):
+    /// when the gods themselves are stirred to fury, the age they end is one of
+    /// divine war, so the reactive pantheon feeds the trigger it thematically owns.
+    pub divinewar_pantheon: f32,
     pub reincarnate_age_min: u32,
     pub reincarnate_age_max: u32,
     pub death_chance: f32,

@@ -2,7 +2,7 @@
 //! five weighted triggers, and the chronicle of past eras.
 
 use crate::data::{EraBalance, EraNameBank, EraTrigger};
-use crate::world::{Hero, MagicPath, MagicState, Region, RegionStatus};
+use crate::world::{Hero, MagicPath, MagicState, PantheonDeity, Region, RegionStatus};
 use macroquad_toolkit::rng::SeededRng;
 use serde::{Deserialize, Serialize};
 
@@ -72,6 +72,18 @@ impl EraScores {
     }
 }
 
+/// The pantheon's roused wrath: its average pressure above the resting baseline,
+/// normalized to 0-1. Zero when the gods are calm (at baseline), rising as world
+/// turmoil stirs them — the input the era system reads as a Divine War driver
+/// (GDD 5.7 <-> 5.6). Shared by the sim and the Eras readout so both agree.
+pub fn pantheon_wrath(pantheon: &[PantheonDeity], drift_target: f32) -> f32 {
+    if pantheon.is_empty() {
+        return 0.0;
+    }
+    let avg = pantheon.iter().map(|d| d.pressure).sum::<f32>() / pantheon.len() as f32;
+    ((avg - drift_target) / (100.0 - drift_target).max(1.0)).clamp(0.0, 1.0)
+}
+
 /// Compute the five era triggers from world and player state (GDD 5.7).
 #[allow(clippy::too_many_arguments)]
 pub fn compute_scores(
@@ -83,6 +95,7 @@ pub fn compute_scores(
     pending_stake: i64,
     conquest_momentum: f32,
     secession_momentum: f32,
+    pantheon_wrath: f32,
     balance: &EraBalance,
 ) -> EraScores {
     let n = regions.len().max(1) as f32;
@@ -135,7 +148,8 @@ pub fn compute_scores(
         rupture: avg_magic * balance.rupture_magic + known * balance.rupture_known,
         divine_war: pending_stake as f32 * balance.divinewar_stake
             + fallen * balance.divinewar_fallen
-            + low_favor * balance.divinewar_lowfavor,
+            + low_favor * balance.divinewar_lowfavor
+            + pantheon_wrath.clamp(0.0, 1.0) * balance.divinewar_pantheon,
     }
 }
 

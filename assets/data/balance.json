@@ -401,6 +401,7 @@
     "divinewar_stake": 0.05,
     "divinewar_fallen": 30.0,
     "divinewar_lowfavor": 14.0,
+    "divinewar_pantheon": 20.0,
     "reincarnate_age_min": 18,
     "reincarnate_age_max": 34,
     "death_chance": 0.28,
