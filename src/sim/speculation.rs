@@ -151,6 +151,32 @@ fn replenish(
     }
 }
 
+/// Pick a living hero to speculate about, weighted toward the renowned and
+/// mighty (GDD 5.5): the Observatory watches the heroes who matter most, though
+/// any living hero can still be named. Deterministic given the RNG state.
+fn pick_notable_hero<'a>(
+    heroes: &'a [Hero],
+    balance: &BettingBalance,
+    rng: &mut SeededRng,
+) -> Option<&'a Hero> {
+    let alive: Vec<&Hero> = heroes.iter().filter(|h| h.is_alive).collect();
+    if alive.is_empty() {
+        return None;
+    }
+    let weight = |h: &Hero| {
+        1.0 + h.renown * balance.hero_renown_bias + h.level as f32 * balance.hero_level_bias
+    };
+    let total: f32 = alive.iter().map(|h| weight(h)).sum();
+    let mut roll = rng.next_f32() * total;
+    for hero in &alive {
+        roll -= weight(hero);
+        if roll <= 0.0 {
+            return Some(hero);
+        }
+    }
+    alive.last().copied()
+}
+
 #[allow(clippy::too_many_arguments)]
 fn generate_event(
     seq: &mut u64,
@@ -168,8 +194,7 @@ fn generate_event(
 
     let (target_id, target_name) = match bet_type.predicate.target_kind() {
         TargetKind::Hero => {
-            let alive: Vec<&Hero> = heroes.iter().filter(|h| h.is_alive).collect();
-            let hero = *rng.choose(&alive)?;
+            let hero = pick_notable_hero(heroes, &data.balance.betting, rng)?;
             (hero.id.clone(), hero.name.clone())
         }
         TargetKind::Region => {
@@ -291,6 +316,41 @@ mod tests {
     use super::*;
     use crate::data::BetPredicate;
     use crate::world::WorldState;
+
+    #[test]
+    fn the_observatory_favours_notable_heroes() {
+        let data = GameData::load().unwrap();
+        let b = &data.balance.betting;
+        let hero = |id: &str, level: u32, renown: f32, alive: bool| Hero {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            role: crate::data::HeroRole::Warrior,
+            region_id: "r".to_owned(),
+            level,
+            age: 30,
+            is_alive: alive,
+            renown,
+        };
+        let heroes = vec![
+            hero("legend", 30, 200.0, true),
+            hero("novice", 1, 0.0, true),
+        ];
+
+        // Legend weight ~= 1 + 200*renown_bias + 30*level_bias; novice ~= 1.1. The
+        // renowned hero should be named the large majority of the time.
+        let mut rng = SeededRng::new(42);
+        let legend_picks = (0..1000)
+            .filter(|_| pick_notable_hero(&heroes, b, &mut rng).unwrap().id == "legend")
+            .count();
+        assert!(
+            legend_picks > 700,
+            "the Observatory should favour the legend ({legend_picks}/1000)"
+        );
+
+        // A roster with no living hero yields nobody to speculate about.
+        let dead = vec![hero("gone", 5, 10.0, false)];
+        assert!(pick_notable_hero(&dead, b, &mut rng).is_none());
+    }
 
     #[test]
     fn the_crowd_drifts_toward_the_current_likelihood() {

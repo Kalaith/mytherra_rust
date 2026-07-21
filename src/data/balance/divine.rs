@@ -37,6 +37,13 @@ pub struct BettingBalance {
     pub payout_max_mult: f32,
     /// Floor on final odds.
     pub min_odds: f32,
+    /// How strongly a hero's renown and level bias the Observatory toward naming
+    /// them the subject of a wager (GDD 5.5): the watching deities speculate most
+    /// about the heroes who matter — a legend's fall or a champion's next triumph
+    /// — so a famous, mighty hero is a far likelier subject than an obscure
+    /// novice, though any living hero can still be named.
+    pub hero_renown_bias: f32,
+    pub hero_level_bias: f32,
 }
 
 /// Omens forecasting tuning (GDD 5.6). Omens never mutate world state; these
