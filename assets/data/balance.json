@@ -178,7 +178,8 @@
           "prosperity": 0.2,
           "danger": -0.3,
           "magic": 0.6,
-          "culture": 0.5
+          "culture": 0.5,
+          "resonance": 0.3
         }
       }
     },

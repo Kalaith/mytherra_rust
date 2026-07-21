@@ -94,6 +94,15 @@ pub struct StatWeights {
     pub danger: f32,
     pub magic: f32,
     pub culture: f32,
+    /// Pull toward a region's divine resonance (GDD 5.4 <-> 5.1): the devout make
+    /// pilgrimage to hallowed lands, so a Cleric is drawn to faithful ground above
+    /// all — the counterpart to a warrior drawn to danger and a scholar to culture.
+    /// It completes the cleric's own loop: they tend a land's faith, faith draws
+    /// more of them, and the faithful land tithes its god. `serde(default)` keeps
+    /// the other roles (which don't answer this call) at zero without touching
+    /// their data.
+    #[serde(default)]
+    pub resonance: f32,
 }
 
 /// Per-tick level-up probability curve: `base * tier_mult * decay^(level-1)`.

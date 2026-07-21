@@ -195,6 +195,7 @@ fn attractiveness(
         + w.danger * region.danger
         + w.magic * region.magic_affinity
         + w.culture * region.cultural_influence
+        + w.resonance * region.divine_resonance
         + mig.wonder_pull * kin_wonders
         + mig.city_pull * city_tier)
         .max(mig.min_weight)
@@ -348,6 +349,30 @@ mod tests {
         assert!(
             attractiveness(&arcane, &[], 0.0, HeroRole::Mage, mig)
                 > attractiveness(&settled, &[], 0.0, HeroRole::Mage, mig)
+        );
+    }
+
+    #[test]
+    fn a_cleric_makes_pilgrimage_to_hallowed_ground() {
+        let data = GameData::load().unwrap();
+        let mig = &data.balance.hero.migration;
+        // Two lands alike but for their faith.
+        let mut hallowed = region("shrine", 60.0, 20.0, 40.0, 40.0);
+        let mut faithless = region("waste", 60.0, 20.0, 40.0, 40.0);
+        hallowed.divine_resonance = 95.0;
+        faithless.divine_resonance = 20.0;
+
+        // A cleric is drawn to the hallowed land above the faithless one.
+        assert!(
+            attractiveness(&hallowed, &[], 0.0, HeroRole::Cleric, mig)
+                > attractiveness(&faithless, &[], 0.0, HeroRole::Cleric, mig),
+            "a cleric should make pilgrimage toward hallowed ground"
+        );
+        // A warrior answers no such call, so resonance does not sway them.
+        assert_eq!(
+            attractiveness(&hallowed, &[], 0.0, HeroRole::Warrior, mig),
+            attractiveness(&faithless, &[], 0.0, HeroRole::Warrior, mig),
+            "divine resonance should not move a hero who does not answer its call"
         );
     }
 
