@@ -167,6 +167,9 @@ pub struct HeroText {
     /// Roster meta line for a titled hero.
     pub titled_meta: String,
     pub untitled_meta: String,
+    /// Appended to a living hero's meta line when their calling suits their land's
+    /// dominant culture — they grow faster there (GDD 5.4).
+    pub in_element: String,
     /// Renown meter labels: climbing toward the next title, or already a legend.
     pub renown_meter: String,
     pub renown_meter_max: String,

@@ -35,6 +35,21 @@ impl HeroRole {
             HeroRole::Cleric => "Cleric",
         }
     }
+
+    /// The culture this role embodies (GDD 5.2): the land a hero of this calling
+    /// feeds, is drawn to, and grows fastest in. The single source of the
+    /// role<->culture mapping, shared by the culture sim and the UI.
+    pub fn kin_culture(self) -> crate::data::Culture {
+        use crate::data::Culture;
+        match self {
+            HeroRole::Warrior => Culture::Martial,
+            HeroRole::Mage => Culture::Mystical,
+            HeroRole::Scholar => Culture::Scholarly,
+            HeroRole::Ranger => Culture::Pastoral,
+            HeroRole::Merchant => Culture::Mercantile,
+            HeroRole::Cleric => Culture::Mystical,
+        }
+    }
 }
 
 /// A hero's authored starting state (`heroes.json`). `region_id` references a

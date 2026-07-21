@@ -267,6 +267,7 @@
     ],
     "titled_meta": "{title}  ·  {role}  ·  {region}  ·  {level}",
     "untitled_meta": "{role}  ·  {region}  ·  {level}",
+    "in_element": "  ·  in their element",
     "renown_meter": "Renown {renown} / {next}",
     "renown_meter_max": "Renown {renown} - Legend",
     "page_label": "Page {page} / {pages}",

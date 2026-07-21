@@ -124,14 +124,7 @@ fn landmark_aura(culture: Culture, amount: f32) -> (f32, f32, f32, f32) {
 }
 
 pub(crate) fn hero_culture(role: HeroRole) -> Culture {
-    match role {
-        HeroRole::Warrior => Culture::Martial,
-        HeroRole::Mage => Culture::Mystical,
-        HeroRole::Scholar => Culture::Scholarly,
-        HeroRole::Ranger => Culture::Pastoral,
-        HeroRole::Merchant => Culture::Mercantile,
-        HeroRole::Cleric => Culture::Mystical,
-    }
+    role.kin_culture()
 }
 
 /// The archetypal hero role a culture breeds — the inverse of [`hero_culture`],

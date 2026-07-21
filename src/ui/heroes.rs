@@ -311,7 +311,7 @@ fn draw_hero_card(
         &ctx.data.balance.hero.renown.thresholds,
     );
     let level_text = fill(&strings.level, &[("level", hero.level.to_string())]);
-    let meta = if title.is_empty() {
+    let mut meta = if title.is_empty() {
         fill(
             &strings.untitled_meta,
             &[
@@ -331,6 +331,18 @@ fn draw_hero_card(
             ],
         )
     };
+    // A living hero whose calling suits their land's dominant culture grows faster
+    // there (GDD 5.4) — surface it so the player can see who is in their element.
+    let in_element = hero.is_alive
+        && ctx
+            .world
+            .regions
+            .iter()
+            .find(|r| r.id == hero.region_id)
+            .is_some_and(|r| r.culture == hero.role.kin_culture());
+    if in_element {
+        meta.push_str(&strings.in_element);
+    }
     draw_ui_text_ex(
         &meta,
         rect.x + 14.0,
