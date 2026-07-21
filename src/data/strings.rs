@@ -322,6 +322,17 @@ pub struct UiText {
     pub buildings_line: String,
     pub holdings_more: String,
     pub no_holdings: String,
+    /// Town browser (drill-in from a region's holdings): title, close, the
+    /// selected town's stat lines, its works list, and the clickable hint on the
+    /// region-detail towns line.
+    pub town_browser_title: String,
+    pub town_close: String,
+    pub town_population: String,
+    pub town_prosperity: String,
+    pub town_tier: String,
+    pub town_buildings: String,
+    pub town_no_buildings: String,
+    pub towns_hint: String,
     /// Generic list pager, reusable across screens: "Page {page} / {pages}".
     pub page_label: String,
     pub page_prev: String,

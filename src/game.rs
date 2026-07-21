@@ -29,6 +29,9 @@ pub struct Game {
     events: EventBus<UiAction>,
     screen: Screen,
     selected_region: usize,
+    /// Settlement id whose detail is open in the Regions town browser (transient
+    /// UI state, not persisted); `None` shows the ordinary region detail.
+    selected_town: Option<String>,
     save_exists: bool,
     tick_accum: f32,
     /// Betting selectors (transient UI state, not persisted).
@@ -121,6 +124,7 @@ impl Game {
             events: EventBus::new(),
             screen: Screen::Title,
             selected_region: 0,
+            selected_town: None,
             save_exists: false,
             tick_accum: 0.0,
             bet_confidence: 1,
@@ -191,6 +195,7 @@ impl Game {
             player: &self.player,
             screen: self.screen,
             selected_region: self.selected_region,
+            selected_town: self.selected_town.as_deref(),
             save_exists: self.save_exists,
             seconds_to_tick: (self.tick_interval() - self.tick_accum).max(0.0),
             bet_confidence: self.bet_confidence,
@@ -288,8 +293,12 @@ impl Game {
             UiAction::SelectRegion(index) => {
                 if index < self.world.regions.len() {
                     self.selected_region = index;
+                    // A new region's holdings differ; close any open town detail.
+                    self.selected_town = None;
                 }
             }
+            UiAction::SelectTown(id) => self.selected_town = Some(id),
+            UiAction::CloseTown => self.selected_town = None,
             UiAction::SetRegionPage(page) => self.region_page = page,
             UiAction::SetOmensPage(page) => self.omens_page = page,
             UiAction::SetErasPage(page) => self.eras_page = page,
@@ -389,6 +398,7 @@ impl Game {
         self.player = PlayerState::new(&self.data.config);
         self.sync_achievements();
         self.selected_region = 0;
+        self.selected_town = None;
         self.tick_accum = 0.0;
         self.last_autosave_tick = 0;
         self.notifications
@@ -462,6 +472,7 @@ impl Game {
                 self.player = save.player;
                 self.sync_achievements();
                 self.selected_region = 0;
+                self.selected_town = None;
                 self.tick_accum = 0.0;
                 self.last_autosave_tick = self.world.tick_count;
                 self.notifications.success(notes.world_restored);

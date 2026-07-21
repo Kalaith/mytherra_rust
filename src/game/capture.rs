@@ -13,7 +13,7 @@ impl Game {
         self.screen = match scene {
             "title" | "menu" => Screen::Title,
             "chronicle" | "event_log" => Screen::Chronicle,
-            "regions" => Screen::Regions,
+            "regions" | "town" => Screen::Regions,
             "heroes" => Screen::Heroes,
             "divine_tools" | "artifacts" | "omens" | "weather" | "magic" | "myths"
             | "civilization" | "pantheon" => Screen::DivineTools,
@@ -31,6 +31,22 @@ impl Game {
             "pantheon" => 6,
             _ => 0,
         };
+        if scene == "town" {
+            // Grow towns into cities with works raised, then drill into the first.
+            for _ in 0..80 {
+                self.run_tick();
+            }
+            self.selected_region = 0;
+            let region_id = self.world.regions[0].id.clone();
+            if let Some(first) = self
+                .world
+                .settlements
+                .iter()
+                .find(|s| s.region_id == region_id)
+            {
+                self.selected_town = Some(first.id.clone());
+            }
+        }
         if scene == "weather" {
             self.weather_intensity = 2;
             self.shape_weather();

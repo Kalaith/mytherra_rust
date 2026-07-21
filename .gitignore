@@ -12,6 +12,3 @@ dist/
 *.history
 .vscode
 .gemini
-
-# Screenshot-harness capture artifacts
-docs/verification/

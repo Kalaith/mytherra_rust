@@ -80,6 +80,10 @@ pub enum UiAction {
     /// Leave the game back to the title menu, saving the session first.
     ReturnToMenu,
     SelectRegion(usize),
+    /// Open a town's detail in the Regions town browser (by settlement id).
+    SelectTown(String),
+    /// Close the town browser, returning to the region detail.
+    CloseTown,
     /// Jump the region roster to the given (already-clamped) page.
     SetRegionPage(usize),
     /// Jump the eras chronicle to the given (already-clamped) page.
@@ -153,6 +157,9 @@ pub struct UiContext<'a> {
     pub player: &'a PlayerState,
     pub screen: Screen,
     pub selected_region: usize,
+    /// The settlement id whose detail is open in the Regions town browser, if any
+    /// — drilled into from the selected region's holdings.
+    pub selected_town: Option<&'a str>,
     pub save_exists: bool,
     pub seconds_to_tick: f32,
     /// Index into `data.confidence_levels` for the next bet.
