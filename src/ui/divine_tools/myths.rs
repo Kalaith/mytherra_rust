@@ -180,4 +180,24 @@ fn draw_myth(ctx: &UiContext<'_>, myth: &Myth, rect: Rect) {
         rect.y + 32.0,
         TextStyle::new(14.0, color).params(),
     );
+
+    // A myth still vivid enough to echo lifts the living heroes of its land
+    // (GDD 5.6 <-> 5.4); note how many take heart, so the reach beyond the map
+    // is visible on the board and not just in the chronicle.
+    if myth.resonance >= threshold {
+        let inspired = ctx
+            .world
+            .heroes
+            .iter()
+            .filter(|h| h.is_alive && h.region_id == myth.region_id)
+            .count();
+        if inspired > 0 {
+            draw_ui_text_ex(
+                &fill(&strings.myth_inspires, &[("count", inspired.to_string())]),
+                rect.right() - 160.0,
+                rect.y + 50.0,
+                TextStyle::new(12.0, dark::TEXT_DIM).params(),
+            );
+        }
+    }
 }

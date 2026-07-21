@@ -223,6 +223,12 @@ pub struct MythBalance {
     /// Theme (by id) a myth takes when it commemorates a hero's passage into
     /// legend (GDD 5.4 <-> 5.6). Falls back to the first theme if unmatched.
     pub legend_theme_id: String,
+    /// Renown a myth grants, each time it echoes, to every living hero in its
+    /// home region (GDD 5.6 <-> 5.4): a tale still sung in the land inspires the
+    /// living toward legend, so myth breeds heroes just as heroes breed myth.
+    /// Scaled by the echo's resonance, so a vivid legend inspires more than a
+    /// half-forgotten one.
+    pub echo_hero_renown: f32,
 }
 
 /// Magic tool tuning (GDD 5.6).

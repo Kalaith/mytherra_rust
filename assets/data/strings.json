@@ -146,6 +146,7 @@
     "myth_resonance": "resonance {resonance}",
     "myth_echo_in": "echoes in {years}y",
     "myth_faint": "too faint to echo",
+    "myth_inspires": "inspires {count}",
     "new_myth_title": "The {theme} of {region}",
     "legend_myth_title": "The Legend of {hero}",
     "civ_panel": "Civilization",

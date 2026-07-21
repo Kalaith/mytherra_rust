@@ -357,7 +357,8 @@
     "forgotten_floor": 25.0,
     "resonance_sustain": 0.6,
     "region_floor": 15.0,
-    "legend_theme_id": "valor"
+    "legend_theme_id": "valor",
+    "echo_hero_renown": 0.4
   },
   "civilization": {
     "apply_threshold": 35.0,

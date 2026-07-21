@@ -263,6 +263,9 @@ pub struct DivineText {
     pub myth_resonance: String,
     pub myth_echo_in: String,
     pub myth_faint: String,
+    /// Note on a living myth that has living heroes in its home region to
+    /// inspire when it echoes (GDD 5.6 <-> 5.4); slot `{count}`.
+    pub myth_inspires: String,
     pub new_myth_title: String,
     /// Title of a myth born from a hero's passage into legend; slot `{hero}`.
     pub legend_myth_title: String,

@@ -5,7 +5,7 @@
 //! the world RNG for spread.
 
 use crate::data::{fill, GameData, MythBalance, MythStat};
-use crate::world::{Chronicle, EventKind, Myth, MythCandidate, Region};
+use crate::world::{Chronicle, EventKind, Hero, Myth, MythCandidate, Region};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Echo mature myths and replenish candidates.
@@ -15,6 +15,7 @@ pub fn tick_myths(
     candidates: &mut Vec<MythCandidate>,
     seq: &mut u64,
     regions: &mut [Region],
+    heroes: &mut [Hero],
     rng: &mut SeededRng,
     chronicle: &mut Chronicle,
     data: &GameData,
@@ -39,6 +40,21 @@ pub fn tick_myths(
                 region.apply_deltas(dp, dc, dd, dm, &data.balance.region);
                 region.adjust_culture(myth.cultural_effect);
             }
+
+            // The tale reaches the living, not only the land: every hero of its
+            // home region takes heart and gains a little renown, scaled by how
+            // vividly the myth still echoes — legend inspiring legend, the
+            // counterpart to a hero's own passing seeding a myth (GDD 5.6 <-> 5.4).
+            let inspiration = balance.echo_hero_renown * (myth.resonance / 100.0).clamp(0.0, 1.0);
+            if inspiration > 0.0 {
+                for hero in heroes
+                    .iter_mut()
+                    .filter(|h| h.is_alive && h.region_id == myth.region_id)
+                {
+                    hero.renown += inspiration;
+                }
+            }
+
             myth.echo_cooldown = balance.echo_cooldown;
             chronicle.push(
                 year,
@@ -242,6 +258,7 @@ mod tests {
             &mut world.myth_candidates,
             &mut world.myth_seq,
             &mut world.regions,
+            &mut world.heroes,
             &mut world.rng,
             &mut world.chronicle,
             &data,
@@ -308,6 +325,7 @@ mod tests {
             &mut world.myth_candidates,
             &mut world.myth_seq,
             &mut world.regions,
+            &mut world.heroes,
             &mut world.rng,
             &mut world.chronicle,
             &data,
@@ -318,6 +336,73 @@ mod tests {
             world.myths[0].echo_cooldown,
             data.balance.myth.echo_cooldown
         );
+    }
+
+    #[test]
+    fn an_echoing_myth_inspires_the_heroes_of_its_land() {
+        use crate::data::HeroRole;
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.regions.truncate(2);
+        let home = world.regions[0].id.clone();
+        let away = world.regions[1].id.clone();
+
+        // A hero in the myth's home region, one in another, and a fallen one at
+        // home — only the living local should be inspired by the echo.
+        let hero = |id: &str, region: &str, alive: bool| Hero {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            role: HeroRole::Warrior,
+            region_id: region.to_owned(),
+            level: 3,
+            age: 25,
+            is_alive: alive,
+            renown: 0.0,
+        };
+        world.heroes = vec![
+            hero("local", &home, true),
+            hero("distant", &away, true),
+            hero("fallen", &home, false),
+        ];
+
+        // A vivid myth ready to echo this tick in the home region.
+        world.myths.clear();
+        world.myths.push(Myth {
+            id: "m".to_owned(),
+            title: "The Old Song".to_owned(),
+            theme_name: "Valor".to_owned(),
+            stat: MythStat::Prosperity,
+            cultural_effect: 0.0,
+            stat_effect: 0.0,
+            region_id: home.clone(),
+            region_name: world.regions[0].name.clone(),
+            resonance: 100.0,
+            echo_cooldown: 0,
+        });
+
+        tick_myths(
+            &mut world.myths,
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            &mut world.regions,
+            &mut world.heroes,
+            &mut world.rng,
+            &mut world.chronicle,
+            &data,
+            world.year,
+        );
+
+        let renown = |id: &str| world.heroes.iter().find(|h| h.id == id).unwrap().renown;
+        assert!(
+            renown("local") > 0.0,
+            "a tale still sung should inspire the living heroes of its land"
+        );
+        assert_eq!(
+            renown("distant"),
+            0.0,
+            "the tale reaches only its own region's heroes"
+        );
+        assert_eq!(renown("fallen"), 0.0, "the dead take no inspiration");
     }
 
     #[test]
@@ -359,6 +444,7 @@ mod tests {
                 &mut world.myth_candidates,
                 &mut world.myth_seq,
                 &mut world.regions,
+                &mut world.heroes,
                 &mut world.rng,
                 &mut world.chronicle,
                 &data,
@@ -407,6 +493,7 @@ mod tests {
             &mut world.myth_candidates,
             &mut world.myth_seq,
             &mut world.regions,
+            &mut world.heroes,
             &mut world.rng,
             &mut world.chronicle,
             &data,
