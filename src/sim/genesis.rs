@@ -78,6 +78,8 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
         heroes,
         artifacts,
         civilization,
+        &data.agendas,
+        data.balance.civilization.apply_threshold,
         trade_routes,
         region_seq,
         agenda_count,

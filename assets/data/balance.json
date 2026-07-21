@@ -100,6 +100,7 @@
     "parent_min_population": 8000.0,
     "found_chance": 0.015,
     "artifact_prosperity_chance": 0.02,
+    "expansion_found_chance": 0.02,
     "settler_fraction": 0.15,
     "max_regions": 8,
     "child_prosperity": 55.0,

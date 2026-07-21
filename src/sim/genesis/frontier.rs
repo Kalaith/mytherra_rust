@@ -6,7 +6,7 @@
 //! driven by success — so a well-tended world grows new regions of its own.
 
 use crate::data::strings::{ChronicleText, GenesisText};
-use crate::data::{fill, ArtifactFocus, FrontierBalance, RegionBalance, RegionSeed};
+use crate::data::{fill, Agenda, ArtifactFocus, FrontierBalance, RegionBalance, RegionSeed};
 use crate::world::{
     Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, RegionStatus, TradeRoute,
 };
@@ -22,13 +22,36 @@ fn prosperity_bonus(region_id: &str, artifacts: &[Artifact], balance: &FrontierB
         .sum()
 }
 
+/// Founding-chance bonus a region gains when its prevailing civilization course
+/// is Expansion (GDD 5.6 <-> 5.2): a people set on expansion strike out to found
+/// frontiers more readily.
+fn expansion_bonus(
+    region: &Region,
+    civ: &[RegionAgendas],
+    agendas: &[Agenda],
+    apply_threshold: f32,
+    balance: &FrontierBalance,
+) -> f32 {
+    let Some(entry) = civ.iter().find(|c| c.region_id == region.id) else {
+        return 0.0;
+    };
+    match crate::world::dominant_agenda(agendas, region, entry, apply_threshold) {
+        Some(i) if agendas[i].id == "expansion" => balance.expansion_found_chance,
+        _ => 0.0,
+    }
+}
+
 /// A founding hero: a veteran living in a thriving, populous region. Scanned in
 /// index order; each eligible hero rolls the founding chance, so selection is
 /// deterministic for a given RNG state.
+#[allow(clippy::too_many_arguments)]
 fn pick(
     regions: &[Region],
     heroes: &[Hero],
     artifacts: &[Artifact],
+    civ: &[RegionAgendas],
+    agendas: &[Agenda],
+    apply_threshold: f32,
     rng: &mut SeededRng,
     balance: &FrontierBalance,
 ) -> Option<(usize, usize)> {
@@ -45,7 +68,9 @@ fn pick(
         {
             continue;
         }
-        let chance = balance.found_chance + prosperity_bonus(&region.id, artifacts, balance);
+        let chance = balance.found_chance
+            + prosperity_bonus(&region.id, artifacts, balance)
+            + expansion_bonus(region, civ, agendas, apply_threshold, balance);
         if rng.chance(chance) {
             return Some((hi, ri));
         }
@@ -61,6 +86,8 @@ pub(super) fn run(
     heroes: &mut [Hero],
     artifacts: &[Artifact],
     civ: &mut Vec<RegionAgendas>,
+    agendas: &[Agenda],
+    apply_threshold: f32,
     trade_routes: &mut Vec<TradeRoute>,
     region_seq: &mut u64,
     agenda_count: usize,
@@ -75,7 +102,16 @@ pub(super) fn run(
     if regions.len() >= balance.max_regions {
         return;
     }
-    let Some((hero_idx, parent_idx)) = pick(regions, heroes, artifacts, rng, balance) else {
+    let Some((hero_idx, parent_idx)) = pick(
+        regions,
+        heroes,
+        artifacts,
+        civ,
+        agendas,
+        apply_threshold,
+        rng,
+        balance,
+    ) else {
         return;
     };
 
@@ -225,6 +261,36 @@ mod tests {
             },
             &GameData::load().unwrap().balance.region,
         )
+    }
+
+    #[test]
+    fn a_region_set_on_expansion_gains_a_founding_bonus() {
+        let data = GameData::load().unwrap();
+        let region = named("aldervale");
+        let threshold = data.balance.civilization.apply_threshold;
+        let frontier = &data.balance.frontier;
+        let expansion = data
+            .agendas
+            .iter()
+            .position(|a| a.id == "expansion")
+            .unwrap();
+
+        // Boost Expansion to this region's prevailing course.
+        let mut entry =
+            crate::world::RegionAgendas::new("aldervale".to_owned(), data.agendas.len());
+        entry.boosts[expansion] = 500.0;
+        let civ = vec![entry];
+        let bonus = expansion_bonus(&region, &civ, &data.agendas, threshold, frontier);
+        assert!(
+            (bonus - frontier.expansion_found_chance).abs() < f32::EPSILON,
+            "an expansion-minded region should gain exactly the founding bonus"
+        );
+
+        // A region with no civilization entry gains nothing.
+        assert_eq!(
+            expansion_bonus(&region, &[], &data.agendas, threshold, frontier),
+            0.0
+        );
     }
 
     #[test]

@@ -165,6 +165,11 @@ pub struct FrontierBalance {
     /// (GDD 5.6 ↔ 5.2) — the player's lever to encourage expansion, the peaceful
     /// counterpart to War artifacts driving conquest.
     pub artifact_prosperity_chance: f32,
+    /// Founding-chance bonus a region gains when its prevailing civilization
+    /// course is Expansion (GDD 5.6 <-> 5.2): a people set on expansion strike out
+    /// to found frontiers more readily, so the player's Advance-agenda nudge on a
+    /// thriving region becomes a lever on where the map grows.
+    pub expansion_found_chance: f32,
     /// Fraction of the home region's population that leaves to settle.
     pub settler_fraction: f32,
     /// The world will never grow past this many regions by founding.
