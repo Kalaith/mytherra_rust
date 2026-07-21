@@ -159,6 +159,11 @@ fn draw_achievements(ctx: &UiContext<'_>, content: Rect) {
         TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
     );
     y += 28.0;
+    // Fit the whole list within the panel however many goals there are: the row
+    // stride shrinks toward a readable floor as achievements are added, so a
+    // growing list never spills over the status bar (GDD 10).
+    let count = ctx.player.achievements.iter().count().max(1) as f32;
+    let stride = ((content.bottom() - y) / count).clamp(30.0, 40.0);
     for achievement in ctx.player.achievements.iter() {
         let (mark, color) = if achievement.unlocked {
             ("[x]", dark::POSITIVE)
@@ -174,9 +179,9 @@ fn draw_achievements(ctx: &UiContext<'_>, content: Rect) {
         draw_ui_text_ex(
             &achievement.description,
             x + 6.0,
-            y + 16.0,
+            y + 15.0,
             TextStyle::new(12.0, dark::TEXT_DIM).params(),
         );
-        y += 40.0;
+        y += stride;
     }
 }
