@@ -40,7 +40,7 @@ pub use champion::ChampionFocus;
 pub use civilization::{Agenda, CivStat, SpilloverTarget};
 pub use config::GameConfig;
 pub use era::{EraNameBank, EraTrigger};
-pub use hero::{HeroRole, HeroSeed};
+pub use hero::{HeroNameBank, HeroRole, HeroSeed};
 pub use landmark::{LandmarkNameBank, LandmarkSeed};
 pub use magic::{MagicPathSeed, MagicStat};
 pub use myth::{MythStat, MythTheme};
@@ -60,6 +60,7 @@ const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
 const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
 const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
 const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
+const HERO_NAMES_JSON: &str = include_str!("../assets/data/hero_names.json");
 const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
 const SETTLEMENT_NAMES_JSON: &str = include_str!("../assets/data/settlement_names.json");
 const RESOURCE_NODES_JSON: &str = include_str!("../assets/data/resource_nodes.json");
@@ -90,6 +91,7 @@ pub struct GameData {
     pub regions: Vec<RegionSeed>,
     pub region_actions: DataRegistry<RegionActionDef>,
     pub heroes: Vec<HeroSeed>,
+    pub hero_names: HeroNameBank,
     pub settlements: Vec<SettlementSeed>,
     pub settlement_names: SettlementNameBank,
     pub resource_nodes: Vec<ResourceNodeSeed>,
@@ -121,6 +123,7 @@ impl GameData {
         let regions: Vec<RegionSeed> = load_embedded_json(REGIONS_JSON)?;
         let region_actions = DataRegistry::from_embedded_json(REGION_ACTIONS_JSON, "id")?;
         let heroes: Vec<HeroSeed> = load_embedded_json(HEROES_JSON)?;
+        let hero_names: HeroNameBank = load_embedded_json_labeled("hero_names", HERO_NAMES_JSON)?;
         let settlements: Vec<SettlementSeed> = load_embedded_json(SETTLEMENTS_JSON)?;
         let settlement_names: SettlementNameBank =
             load_embedded_json_labeled("settlement_names", SETTLEMENT_NAMES_JSON)?;
@@ -163,6 +166,7 @@ impl GameData {
             regions,
             region_actions,
             heroes,
+            hero_names,
             settlements,
             settlement_names,
             resource_nodes,

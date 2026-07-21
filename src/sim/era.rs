@@ -129,16 +129,6 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
             .get(world.rng.below(regions_info.len().max(1)))
             .cloned()
             .unwrap_or((String::new(), Culture::Pastoral));
-        let prefix = world
-            .rng
-            .choose(&data.era_names.prefixes)
-            .cloned()
-            .unwrap_or_default();
-        let title = world
-            .rng
-            .choose(&data.era_names.descendant_titles)
-            .cloned()
-            .unwrap_or_default();
         // A land breeds heirs in its own image more often than not.
         let role = if world.rng.chance(balance.cultural_heir_chance) {
             culture_role(culture)
@@ -147,7 +137,7 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         };
         world.heroes.push(Hero {
             id: format!("descendant-{}", world.hero_seq),
-            name: format!("{prefix} {title}"),
+            name: descendant_name(&data.hero_names, &mut world.rng),
             role,
             region_id,
             level: 1,
@@ -287,10 +277,47 @@ fn reincarnate_age(rng: &mut macroquad_toolkit::rng::SeededRng, min: u32, max: u
     min + rng.below(span) as u32
 }
 
+/// A proper "Given Surname" name for a hero born during play, drawn from the hero
+/// name bank so an era's heirs read like the seeded roster rather than a string of
+/// epithets (GDD 5.4).
+fn descendant_name(
+    bank: &crate::data::HeroNameBank,
+    rng: &mut macroquad_toolkit::rng::SeededRng,
+) -> String {
+    let first = rng.choose(&bank.first_names).cloned().unwrap_or_default();
+    let surname = rng.choose(&bank.surnames).cloned().unwrap_or_default();
+    format!("{first} {surname}").trim().to_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::world::WorldState;
+
+    #[test]
+    fn an_heir_is_named_given_and_surname_from_the_bank() {
+        // A hero born during play gets a proper "Given Surname" drawn from the
+        // hero name bank, so heirs read like the seeded roster (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let mut rng = macroquad_toolkit::rng::SeededRng::new(3);
+        let name = descendant_name(&data.hero_names, &mut rng);
+        let parts: Vec<&str> = name.split(' ').collect();
+        assert_eq!(
+            parts.len(),
+            2,
+            "an heir's name is a given name and a surname: {name}"
+        );
+        assert!(
+            data.hero_names.first_names.iter().any(|f| f == parts[0]),
+            "the given name comes from the bank: {}",
+            parts[0]
+        );
+        assert!(
+            data.hero_names.surnames.iter().any(|s| s == parts[1]),
+            "the surname comes from the bank: {}",
+            parts[1]
+        );
+    }
 
     #[test]
     fn breaking_pressure_forces_a_transition() {

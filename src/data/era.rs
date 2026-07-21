@@ -37,7 +37,6 @@ pub struct EraNameBank {
     /// falls back to the classic single form when absent.
     #[serde(default)]
     pub patterns: Vec<String>,
-    pub descendant_titles: Vec<String>,
     /// Prefix pools keyed by the trigger that *ended* the previous age, so a new
     /// age is named after the cataclysm that birthed it (GDD 5.7) — the trigger's
     /// mark endures in the very name, not only in one-time aftermath deltas. An

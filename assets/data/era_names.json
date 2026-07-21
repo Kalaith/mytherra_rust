@@ -1,15 +1,55 @@
 {
   "prefixes": [
-    "Sundered", "Golden", "Ashen", "Verdant", "Iron", "Silent",
-    "Radiant", "Broken", "Emerald", "Crimson", "Hollow", "Gilded",
-    "Shattered", "Ember", "Frost", "Obsidian", "Weeping", "Boundless",
-    "Withered", "Stormborn", "Pale", "Sovereign", "Thornclad", "Everdark"
+    "Sundered",
+    "Golden",
+    "Ashen",
+    "Verdant",
+    "Iron",
+    "Silent",
+    "Radiant",
+    "Broken",
+    "Emerald",
+    "Crimson",
+    "Hollow",
+    "Gilded",
+    "Shattered",
+    "Ember",
+    "Frost",
+    "Obsidian",
+    "Weeping",
+    "Boundless",
+    "Withered",
+    "Stormborn",
+    "Pale",
+    "Sovereign",
+    "Thornclad",
+    "Everdark"
   ],
   "titles": [
-    "Dawn", "Reckoning", "Bloom", "Silence", "Ascendance", "Ruin",
-    "Rebirth", "Tempest", "Concord", "Twilight", "Awakening", "Sorrow",
-    "Covenant", "Wane", "Kindling", "Requiem", "Flourish", "Sundering",
-    "Vigil", "Exodus", "Zenith", "Hush", "Unmaking", "Renewal"
+    "Dawn",
+    "Reckoning",
+    "Bloom",
+    "Silence",
+    "Ascendance",
+    "Ruin",
+    "Rebirth",
+    "Tempest",
+    "Concord",
+    "Twilight",
+    "Awakening",
+    "Sorrow",
+    "Covenant",
+    "Wane",
+    "Kindling",
+    "Requiem",
+    "Flourish",
+    "Sundering",
+    "Vigil",
+    "Exodus",
+    "Zenith",
+    "Hush",
+    "Unmaking",
+    "Renewal"
   ],
   "patterns": [
     "The {prefix} {title}",
@@ -20,12 +60,46 @@
     "Days of {title}",
     "The {title} of the {prefix} Throne"
   ],
-  "descendant_titles": ["the Young", "the Heir", "Scion", "the Reborn", "the Kindled"],
   "trigger_prefixes": {
-    "cataclysm": ["Ashen", "Ember", "Cinder", "Scorched", "Blasted", "Riven"],
-    "collapse": ["Withered", "Hollow", "Fallen", "Waning", "Pale", "Fading"],
-    "conquest": ["Iron", "Crimson", "Bladed", "Bannered", "Thornclad", "Warborn"],
-    "rupture": ["Sundered", "Arcane", "Shimmering", "Warped", "Runed", "Wyrdtouched"],
-    "divine_war": ["Wrathful", "Radiant", "Hallowed", "Godfallen", "Sanctified", "Thunderstruck"]
+    "cataclysm": [
+      "Ashen",
+      "Ember",
+      "Cinder",
+      "Scorched",
+      "Blasted",
+      "Riven"
+    ],
+    "collapse": [
+      "Withered",
+      "Hollow",
+      "Fallen",
+      "Waning",
+      "Pale",
+      "Fading"
+    ],
+    "conquest": [
+      "Iron",
+      "Crimson",
+      "Bladed",
+      "Bannered",
+      "Thornclad",
+      "Warborn"
+    ],
+    "rupture": [
+      "Sundered",
+      "Arcane",
+      "Shimmering",
+      "Warped",
+      "Runed",
+      "Wyrdtouched"
+    ],
+    "divine_war": [
+      "Wrathful",
+      "Radiant",
+      "Hallowed",
+      "Godfallen",
+      "Sanctified",
+      "Thunderstruck"
+    ]
   }
 }

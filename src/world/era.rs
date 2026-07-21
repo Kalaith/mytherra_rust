@@ -186,7 +186,6 @@ mod tests {
             prefixes: vec!["Golden".into(), "Ashen".into()],
             titles: vec!["Dawn".into(), "Ruin".into()],
             patterns: vec!["The Age of {title}".into(), "The {prefix} {title}".into()],
-            descendant_titles: vec![],
             trigger_prefixes: Default::default(),
         }
     }
@@ -237,7 +236,6 @@ mod tests {
             prefixes: vec!["Generic".into()],
             titles: vec!["Age".into()],
             patterns: vec!["The {prefix} {title}".into()],
-            descendant_titles: vec![],
             trigger_prefixes: Default::default(),
         };
         b.trigger_prefixes.cataclysm = vec!["Cataclysmic".into()];

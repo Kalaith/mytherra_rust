@@ -48,3 +48,12 @@ pub struct HeroSeed {
     pub level: u32,
     pub age: u32,
 }
+
+/// Name parts a hero born during play draws from (`hero_names.json`): a given
+/// name and a surname combine into a proper name — "Kael Ironwood" — so an
+/// era's heirs read like the seeded roster, not a string of epithets (GDD 5.4).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HeroNameBank {
+    pub first_names: Vec<String>,
+    pub surnames: Vec<String>,
+}
