@@ -339,7 +339,9 @@
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
     "region_sack": "The great city of {settlement} is sacked as {region} falls.",
     "region_founded": "{founder} leads settlers out of {parent} to found the frontier of {frontier}.",
-    "weather_natural": "{intensity} {pattern} sweep across {region}."
+    "weather_natural": "{intensity} {pattern} sweep across {region}.",
+    "weather_withered": "The {pattern} over {region} parch {node} until it withers to ruin.",
+    "weather_quickened": "The {pattern} over {region} coax {node} into full flourish."
   },
   "genesis": {
     "breakaway_names": [

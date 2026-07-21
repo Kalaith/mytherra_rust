@@ -152,6 +152,11 @@ pub struct WeatherBalance {
     /// Beneficial weather (net gain of prosperity) instead leaves a delayed
     /// bounty — a bountiful harvest per unit of the shaped intensity's magnitude.
     pub aftermath_bloom: f32,
+    /// Per-tick chance a front shifts one of the resource nodes it governs a
+    /// rung along its living ladder (GDD 5.6 <-> 5.3), scaled by the front's
+    /// remaining magnitude. A cataclysmic drought parches a farm far faster than
+    /// a gentle one; 0 leaves the land's resources indifferent to the skies.
+    pub resource_shift_chance: f32,
 }
 
 /// Pantheon tool tuning (GDD 5.6).

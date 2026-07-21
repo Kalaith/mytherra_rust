@@ -227,6 +227,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     weather::tick_weather(
         &mut world.weather,
         &mut world.regions,
+        &mut world.resource_nodes,
         &data.weather_patterns,
         &data.weather_intensities,
         &mut world.rng,

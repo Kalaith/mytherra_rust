@@ -1,6 +1,6 @@
 //! Weather content types: patterns and intensities (GDD 5.6).
 
-use crate::data::ClimateType;
+use crate::data::{ClimateType, ResourceType};
 use serde::{Deserialize, Serialize};
 
 /// A weather pattern's per-magnitude-unit effect on a region's stats.
@@ -17,6 +17,15 @@ pub struct WeatherPattern {
     /// the player can still shape any pattern anywhere.
     #[serde(default)]
     pub climates: Vec<ClimateType>,
+    /// Resource kinds this weather batters as it holds (GDD 5.6 <-> 5.3): a
+    /// drought parches farmland, a storm flattens forests. A front presses the
+    /// matching nodes a rung down their living ladder each tick.
+    #[serde(default)]
+    pub withers: Vec<ResourceType>,
+    /// Resource kinds this weather nurtures: rains and bloomtide coax farmland
+    /// and manasprings a rung up toward flourishing.
+    #[serde(default)]
+    pub quickens: Vec<ResourceType>,
 }
 
 /// A weather intensity: how strong (and how costly) a shaped pattern is.

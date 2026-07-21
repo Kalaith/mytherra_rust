@@ -454,6 +454,10 @@ pub struct ChronicleText {
     pub region_sack: String,
     pub region_founded: String,
     pub weather_natural: String,
+    /// A weather front drives a resource node to ruin or into full flourish
+    /// (GDD 5.6 <-> 5.3); slots `{pattern}`, `{node}`, `{region}`.
+    pub weather_withered: String,
+    pub weather_quickened: String,
 }
 
 /// Fill `{name}` placeholders in a template with the given key/value pairs.
