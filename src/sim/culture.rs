@@ -7,7 +7,7 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Culture, CultureBalance, HeroRole, RegionBalance, ResourceType};
 use crate::world::{
-    Chronicle, EventKind, Hero, Landmark, Region, ResourceNode, Settlement, TradeRoute,
+    Building, Chronicle, EventKind, Hero, Landmark, Region, ResourceNode, Settlement, TradeRoute,
 };
 use macroquad_toolkit::math::approach;
 
@@ -18,6 +18,7 @@ pub fn tick_culture(
     landmarks: &[Landmark],
     resources: &[ResourceNode],
     settlements: &[Settlement],
+    buildings: &[Building],
     trade_routes: &[TradeRoute],
     balance: &CultureBalance,
     region_balance: &RegionBalance,
@@ -61,6 +62,20 @@ pub fn tick_culture(
         }
         for route in trade_routes.iter().filter(|t| t.touches(&region.id)) {
             scores[Culture::Mercantile.index()] += balance.trade_weight * route.volume;
+        }
+        // The works a people raise speak for their character: each building in the
+        // region adds to the culture it embodies (a Forge to the martial, a Temple
+        // to the mystical), reinforcing the region's identity over the ages.
+        for building in buildings {
+            let Some(culture) = building.culture else {
+                continue;
+            };
+            let in_region = settlements
+                .iter()
+                .any(|s| s.id == building.settlement_id && s.region_id == region.id);
+            if in_region {
+                scores[culture.index()] += balance.building_weight;
+            }
         }
 
         // Flip the dominant culture only past the inertia margin.
@@ -147,6 +162,60 @@ mod tests {
     use crate::world::WorldState;
 
     #[test]
+    fn the_works_a_people_raise_reinforce_their_culture() {
+        // A pastoral region with no other signals, but whose one settlement holds
+        // several forges, should harden martial as its works speak for it (GDD 6).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut region = world.regions[0].clone();
+        region.culture = Culture::Pastoral;
+        let region_id = region.id.clone();
+        let mut regions = vec![region];
+        // Prosperity 0 so the settlement lends no mercantile pull of its own,
+        // isolating the buildings' contribution.
+        let settlements = vec![Settlement {
+            id: "s".to_owned(),
+            name: "S".to_owned(),
+            region_id: region_id.clone(),
+            population: 1000.0,
+            prosperity: 0.0,
+        }];
+        let buildings: Vec<Building> = (0..5)
+            .map(|i| Building {
+                id: format!("f{i}"),
+                name: "Forge".to_owned(),
+                settlement_id: "s".to_owned(),
+                type_id: "forge".to_owned(),
+                prosperity_bonus: 0.0,
+                culture: Some(Culture::Martial),
+            })
+            .collect();
+        let thresholds = &data.balance.settlement.tier_thresholds;
+        for _ in 0..3 {
+            tick_culture(
+                &mut regions,
+                &[],
+                &[],
+                &[],
+                &settlements,
+                &buildings,
+                &[],
+                &data.balance.culture,
+                &data.balance.region,
+                thresholds,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        }
+        assert_eq!(
+            regions[0].culture,
+            Culture::Martial,
+            "a land of forges should harden martial"
+        );
+    }
+
+    #[test]
     fn culture_role_yields_a_role_of_that_culture() {
         // Each culture's archetypal role maps back to that same culture, so heirs
         // born to a land's culture reinforce it.
@@ -189,6 +258,7 @@ mod tests {
             &world.landmarks,
             &world.resource_nodes,
             &world.settlements,
+            &world.buildings,
             &world.trade_routes,
             &data.balance.culture,
             &data.balance.region,
@@ -224,6 +294,7 @@ mod tests {
             &world.landmarks,
             &world.resource_nodes,
             &world.settlements,
+            &world.buildings,
             &world.trade_routes,
             &data.balance.culture,
             &data.balance.region,
@@ -251,6 +322,7 @@ mod tests {
             &world.landmarks,
             &world.resource_nodes,
             &world.settlements,
+            &world.buildings,
             &world.trade_routes,
             &data.balance.culture,
             &data.balance.region,
@@ -292,6 +364,7 @@ mod tests {
                     &[],
                     &settlements,
                     &[],
+                    &[],
                     &data.balance.culture,
                     &data.balance.region,
                     thresholds,
@@ -328,6 +401,7 @@ mod tests {
                 &world.landmarks,
                 &world.resource_nodes,
                 &world.settlements,
+                &world.buildings,
                 &world.trade_routes,
                 &data.balance.culture,
                 &data.balance.region,

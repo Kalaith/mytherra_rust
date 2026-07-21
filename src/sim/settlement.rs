@@ -274,6 +274,7 @@ pub fn tick_construction(
             settlement_id: settlement.id.clone(),
             type_id: chosen.id.clone(),
             prosperity_bonus: chosen.prosperity_bonus,
+            culture: chosen.culture,
         });
         chronicle.push(
             year,

@@ -89,6 +89,11 @@ pub struct CultureBalance {
     pub landmark_weight: f32,
     pub resource_weight: f32,
     pub settlement_weight: f32,
+    /// Culture score a building lends its region toward the culture it embodies
+    /// (GDD 6 <-> 5.2): the works a people raise express and reinforce their
+    /// character, so a land of forges hardens martial and one of temples turns
+    /// mystical — a slow feedback the player can lean on or fight.
+    pub building_weight: f32,
     /// How much a settlement's *size tier* amplifies its Mercantile pull (GDD
     /// 5.2): each tier above a hamlet adds this fraction, so a great city is a
     /// far stronger engine of commerce than a village of the same prosperity —
