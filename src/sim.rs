@@ -115,6 +115,17 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.year,
     );
 
+    resource::tick_resource_discovery(
+        &mut world.resource_nodes,
+        &world.regions,
+        &mut world.resource_seq,
+        &data.balance.resource,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
     trade::tick_trade(
         &world.trade_routes,
         &mut world.regions,

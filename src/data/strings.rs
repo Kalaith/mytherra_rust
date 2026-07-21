@@ -438,6 +438,11 @@ pub struct ChronicleText {
     pub resource_flourishes: String,
     pub resource_corrupts: String,
     pub resource_depletes: String,
+    /// Prospectors open a newly discovered resource node (GDD 5.3); slots
+    /// `{node}`, `{region}`, `{type}`.
+    pub resource_discovered: String,
+    /// Name pattern for a discovered node; slots `{region}`, `{type}`.
+    pub resource_node_name: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_sack: String,

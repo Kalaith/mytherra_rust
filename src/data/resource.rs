@@ -15,6 +15,20 @@ pub enum ResourceType {
     Manaspring,
 }
 
+impl ResourceType {
+    /// Display name, used when prospectors open a newly discovered node.
+    pub fn label(self) -> &'static str {
+        match self {
+            ResourceType::Farmland => "Farmland",
+            ResourceType::Mine => "Mine",
+            ResourceType::Forest => "Woodland",
+            ResourceType::Fishery => "Fishery",
+            ResourceType::Quarry => "Quarry",
+            ResourceType::Manaspring => "Manaspring",
+        }
+    }
+}
+
 /// A node's position in its status state machine (GDD 5.3). Output scales from
 /// depleted (nothing) up to flourishing (best).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

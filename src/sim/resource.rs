@@ -63,6 +63,69 @@ pub fn tick_resources(
     }
 }
 
+/// Occasionally open a wholly new resource node in a prospering, populous region
+/// (GDD 5.3): the counterpart to settlement founding, and the way a region born
+/// resource-barren — a frontier, a young breakaway — eventually develops its own
+/// wealth. The node's type follows the region's culture, so the land grows
+/// resources that reinforce its character (GDD 5.3 <-> 5.2). It starts Active, so
+/// it adds nothing at once, only the potential to flourish. Deterministic given
+/// the RNG state.
+#[allow(clippy::too_many_arguments)]
+pub fn tick_resource_discovery(
+    nodes: &mut Vec<ResourceNode>,
+    regions: &[Region],
+    seq: &mut u64,
+    balance: &ResourceBalance,
+    rng: &mut SeededRng,
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    year: u32,
+) {
+    for region in regions.iter() {
+        if region.prosperity < balance.discovery_min_prosperity
+            || region.population < balance.discovery_min_population
+        {
+            continue;
+        }
+        let node_count = nodes.iter().filter(|n| n.region_id == region.id).count();
+        if node_count >= balance.discovery_max_per_region {
+            continue;
+        }
+        if !rng.chance(balance.discovery_chance) {
+            continue;
+        }
+
+        *seq += 1;
+        let resource_type = region.culture.favored_resource();
+        let name = fill(
+            &text.resource_node_name,
+            &[
+                ("region", region.name.clone()),
+                ("type", resource_type.label().to_owned()),
+            ],
+        );
+        nodes.push(ResourceNode {
+            id: format!("{}-node-{}", region.id, *seq),
+            name: name.clone(),
+            region_id: region.id.clone(),
+            resource_type,
+            status: ResourceStatus::Active,
+        });
+        chronicle.push(
+            year,
+            EventKind::Region,
+            fill(
+                &text.resource_discovered,
+                &[
+                    ("node", name),
+                    ("region", region.name.clone()),
+                    ("type", resource_type.label().to_owned()),
+                ],
+            ),
+        );
+    }
+}
+
 /// The chronicle line for a node entering one of its dramatic states, or `None`
 /// for the ordinary middle states that aren't worth a line.
 fn notable_line(status: ResourceStatus, text: &ChronicleText) -> Option<&str> {
@@ -338,6 +401,90 @@ mod tests {
                 .iter_newest()
                 .any(|e| e.message.contains(&node_name) && e.message.contains("corruption")),
             "a node falling to corruption should be chronicled by name"
+        );
+    }
+
+    #[test]
+    fn a_prospering_region_discovers_a_culture_fitting_node() {
+        use crate::data::Culture;
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.resource.clone();
+        balance.discovery_chance = 1.0; // certain this tick
+        balance.discovery_max_per_region = 100; // don't cap in the test
+
+        let mut world = WorldState::new(&data);
+        world.regions.truncate(1);
+        world.regions[0].culture = Culture::Mystical; // favors a manaspring
+        world.regions[0].prosperity = balance.discovery_min_prosperity + 5.0;
+        world.regions[0].population = balance.discovery_min_population + 100.0;
+        let region_id = world.regions[0].id.clone();
+        // Only pre-existing nodes belong elsewhere, so any node in this region is
+        // freshly discovered.
+        world.resource_nodes.retain(|n| n.region_id != region_id);
+        let before = world.resource_nodes.len();
+
+        tick_resource_discovery(
+            &mut world.resource_nodes,
+            &world.regions,
+            &mut world.resource_seq,
+            &balance,
+            &mut world.rng,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert_eq!(
+            world.resource_nodes.len(),
+            before + 1,
+            "a node was discovered"
+        );
+        let node = world
+            .resource_nodes
+            .iter()
+            .find(|n| n.region_id == region_id)
+            .unwrap();
+        assert_eq!(
+            node.resource_type,
+            ResourceType::Manaspring,
+            "a mystical land should open a manaspring"
+        );
+        assert_eq!(
+            node.status,
+            ResourceStatus::Active,
+            "a fresh node starts Active — potential, not instant bounty"
+        );
+    }
+
+    #[test]
+    fn a_poor_or_thin_region_discovers_nothing() {
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.resource.clone();
+        balance.discovery_chance = 1.0;
+
+        let mut world = WorldState::new(&data);
+        world.regions.truncate(1);
+        // Prosperous but under-populated: the gate holds.
+        world.regions[0].prosperity = balance.discovery_min_prosperity + 5.0;
+        world.regions[0].population = balance.discovery_min_population - 1.0;
+        let region_id = world.regions[0].id.clone();
+        world.resource_nodes.retain(|n| n.region_id != region_id);
+        let before = world.resource_nodes.len();
+
+        tick_resource_discovery(
+            &mut world.resource_nodes,
+            &world.regions,
+            &mut world.resource_seq,
+            &balance,
+            &mut world.rng,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+        assert_eq!(
+            world.resource_nodes.len(),
+            before,
+            "an under-populated region should discover nothing"
         );
     }
 

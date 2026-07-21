@@ -28,6 +28,17 @@ pub struct ResourceBalance {
     /// can drag its region down with it until the region is calmed.
     pub corrupted_chaos: f32,
     pub unstable_danger: f32,
+    /// Resource discovery (GDD 5.3): a prospering, populous region occasionally
+    /// opens a wholly new node — the counterpart to settlement founding, and the
+    /// way a frontier region born resource-barren eventually develops its own
+    /// wealth. Per-region chance each tick, gated on prosperity and population,
+    /// capped per region. A discovered node starts Active (output 1.0, so it adds
+    /// nothing at once — only the potential to flourish), and its type follows the
+    /// region's culture (`Culture::favored_resource`).
+    pub discovery_chance: f32,
+    pub discovery_min_prosperity: f32,
+    pub discovery_min_population: f32,
+    pub discovery_max_per_region: usize,
     pub outputs: ResourceOutputs,
 }
 

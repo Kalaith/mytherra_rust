@@ -68,6 +68,22 @@ impl Culture {
             Culture::Pastoral => 4,
         }
     }
+
+    /// The resource a land of this character is likeliest to open when its
+    /// prospectors strike out (GDD 5.3 <-> 5.2): a mystical land uncovers a
+    /// manaspring, a martial one a mine, an agrarian one new farmland — so a new
+    /// region grows resources that reinforce the culture it was born with, the
+    /// counterpart to how its heroes and myths already reflect its character.
+    pub fn favored_resource(self) -> crate::data::ResourceType {
+        use crate::data::ResourceType;
+        match self {
+            Culture::Scholarly => ResourceType::Forest,
+            Culture::Martial => ResourceType::Mine,
+            Culture::Mystical => ResourceType::Manaspring,
+            Culture::Mercantile => ResourceType::Fishery,
+            Culture::Pastoral => ResourceType::Farmland,
+        }
+    }
 }
 
 /// A region's seeded starting state, as authored in `regions.json`.

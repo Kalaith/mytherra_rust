@@ -108,6 +108,10 @@ pub struct WorldState {
     #[serde(default)]
     pub landmark_seq: u64,
     pub resource_nodes: Vec<ResourceNode>,
+    /// Monotonic counter for unique ids of resource nodes discovered mid-run
+    /// (GDD 5.3), so no two prospected nodes ever collide.
+    #[serde(default)]
+    pub resource_seq: u64,
     pub landmarks: Vec<Landmark>,
     pub trade_routes: Vec<TradeRoute>,
     pub buildings: Vec<Building>,
@@ -190,6 +194,7 @@ impl WorldState {
             secession_momentum: 0.0,
             settlements,
             resource_nodes,
+            resource_seq: 0,
             landmarks,
             trade_routes,
             buildings,

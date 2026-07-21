@@ -544,6 +544,10 @@
     "manaspring_magic_scale": 0.6,
     "corrupted_chaos": 0.8,
     "unstable_danger": 0.8,
+    "discovery_chance": 0.01,
+    "discovery_min_prosperity": 65.0,
+    "discovery_min_population": 4000.0,
+    "discovery_max_per_region": 4,
     "outputs": {
       "active": 1.0,
       "blessed": 1.25,

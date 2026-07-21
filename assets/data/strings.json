@@ -331,6 +331,8 @@
     "resource_flourishes": "{node} flourishes, its bounty overflowing across {region}.",
     "resource_corrupts": "{node} festers into corruption, poisoning the land of {region}.",
     "resource_depletes": "{node} is worked to exhaustion and runs dry in {region}.",
+    "resource_discovered": "Prospectors of {region} open {node}, a new {type} for the land.",
+    "resource_node_name": "{region} {type}",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
     "region_sack": "The great city of {settlement} is sacked as {region} falls.",
