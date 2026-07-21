@@ -298,8 +298,29 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.chronicle.push(
             world.year,
             EventKind::Divine,
-            fill(&data.strings.chronicle.deity_ascendant, &[("deity", name)]),
+            fill(
+                &data.strings.chronicle.deity_ascendant,
+                &[("deity", name.clone())],
+            ),
         );
+        // A god crested to the height of wrath is remembered in myth: the age
+        // turns the divine gaze into a tale for the player to promote, themed to
+        // the deity's own domain (GDD 5.6 pantheon <-> myths).
+        if let Some(stat) = world
+            .pantheon
+            .iter()
+            .find(|d| d.name == name)
+            .map(|d| d.effect_stat)
+        {
+            myth::seed_divine_myth(
+                &mut world.myth_candidates,
+                &mut world.myth_seq,
+                &name,
+                stat.into(),
+                &world.regions,
+                data,
+            );
+        }
     }
 
     let era_progress = world.era.pressure / data.balance.era.breaking_threshold.max(1.0);

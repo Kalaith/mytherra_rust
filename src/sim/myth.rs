@@ -201,6 +201,59 @@ pub fn seed_hero_legend(
     );
 }
 
+/// Seed a myth candidate born of a god crested to the height of wrath (GDD 5.6
+/// pantheon <-> myths): the age remembers the divine gaze as a tale themed to
+/// the deity's domain, rooted in the region where that domain burns brightest,
+/// at full resonance. The tale's cultural shape is drawn from an authored theme
+/// of the same domain, so a divine myth carries the same weight as any other.
+/// Deterministic (no RNG); the player still chooses whether to promote it, and
+/// it is skipped once the candidate pool is saturated so a stormy pantheon can't
+/// flood the board.
+pub fn seed_divine_myth(
+    candidates: &mut Vec<MythCandidate>,
+    seq: &mut u64,
+    deity_name: &str,
+    stat: MythStat,
+    regions: &[Region],
+    data: &GameData,
+) {
+    let balance = &data.balance.myth;
+    if candidates.len() >= balance.candidate_count * 2 {
+        return;
+    }
+    // A god's wrath is remembered where its domain runs strongest.
+    let Some(region) = regions
+        .iter()
+        .max_by(|a, b| region_stat(a, stat).total_cmp(&region_stat(b, stat)))
+    else {
+        return;
+    };
+    let Some(theme) = data.myth_themes.iter().find(|t| t.stat == stat) else {
+        return;
+    };
+    *seq += 1;
+    candidates.insert(
+        0,
+        MythCandidate {
+            id: format!("myth-{seq}"),
+            title: fill(
+                &data.strings.divine.divine_myth_title,
+                &[
+                    ("deity", deity_name.to_owned()),
+                    ("region", region.name.clone()),
+                ],
+            ),
+            theme_name: theme.name.clone(),
+            stat,
+            cultural_effect: theme.cultural_effect,
+            stat_effect: theme.stat_effect,
+            region_id: region.id.clone(),
+            region_name: region.name.clone(),
+            resonance: balance.resonance_max,
+        },
+    );
+}
+
 /// A region's value of the stat a myth theme is about.
 fn region_stat(region: &Region, stat: MythStat) -> f32 {
     match stat {
@@ -298,6 +351,71 @@ mod tests {
         assert!(
             in_magical > 220,
             "magic myths should overwhelmingly favour the magical region ({in_magical}/300)"
+        );
+    }
+
+    #[test]
+    fn a_crested_god_is_remembered_in_myth_where_its_domain_burns() {
+        // A god of danger crested to wrath seeds a Danger-themed candidate rooted
+        // in the region where danger runs highest, attributed to the deity by
+        // name and at full resonance (GDD 5.6 pantheon <-> myths).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.myth_candidates.clear();
+        world.regions.truncate(2);
+        world.regions[0].danger = 20.0;
+        world.regions[1].danger = 95.0;
+        let dire_id = world.regions[1].id.clone();
+        let dire_name = world.regions[1].name.clone();
+
+        seed_divine_myth(
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            "Mordath",
+            MythStat::Danger,
+            &world.regions,
+            &data,
+        );
+
+        assert_eq!(world.myth_candidates.len(), 1);
+        let seeded = &world.myth_candidates[0]; // inserted at the front
+        assert_eq!(seeded.stat, MythStat::Danger);
+        assert_eq!(
+            seeded.region_id, dire_id,
+            "rooted where the domain burns brightest"
+        );
+        assert!(
+            seeded.title.contains("Mordath") && seeded.title.contains(&dire_name),
+            "the tale names the god and its land: {}",
+            seeded.title
+        );
+        assert_eq!(
+            seeded.resonance, data.balance.myth.resonance_max,
+            "a divine tale rises at full resonance"
+        );
+    }
+
+    #[test]
+    fn divine_myths_stop_at_the_board_ceiling() {
+        // However stormy the pantheon, divine myths never flood the board past
+        // its ceiling — the player's promotion queue stays legible.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let cap = data.balance.myth.candidate_count * 2;
+        for _ in 0..cap * 2 {
+            seed_divine_myth(
+                &mut world.myth_candidates,
+                &mut world.myth_seq,
+                "Mordath",
+                MythStat::Danger,
+                &world.regions,
+                &data,
+            );
+        }
+        assert!(
+            world.myth_candidates.len() <= cap,
+            "divine myths overflowed the board ({} > {cap})",
+            world.myth_candidates.len()
         );
     }
 

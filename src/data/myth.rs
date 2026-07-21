@@ -1,5 +1,6 @@
 //! Myth content types: the themes a legend can carry (GDD 5.6).
 
+use super::PantheonStat;
 use serde::{Deserialize, Serialize};
 
 /// Which region stat a myth's echo nudges (besides cultural influence).
@@ -10,6 +11,19 @@ pub enum MythStat {
     Chaos,
     Danger,
     Magic,
+}
+
+impl From<PantheonStat> for MythStat {
+    /// The pantheon and myths share the same four domains, so a god's wrath maps
+    /// cleanly onto the tale that remembers it (GDD 5.6 pantheon <-> myths).
+    fn from(stat: PantheonStat) -> Self {
+        match stat {
+            PantheonStat::Prosperity => MythStat::Prosperity,
+            PantheonStat::Chaos => MythStat::Chaos,
+            PantheonStat::Danger => MythStat::Danger,
+            PantheonStat::Magic => MythStat::Magic,
+        }
+    }
 }
 
 /// An authored myth theme: how strongly it spreads culture and its secondary
