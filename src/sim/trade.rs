@@ -2,12 +2,13 @@
 //! nudges their prosperity — and cultural influence — toward the pair's average,
 //! so wealth and ideas both spread along the network. Deterministic: no RNG.
 
-use crate::data::{RegionBalance, TradeBalance};
-use crate::world::{Region, TradeRoute};
+use crate::data::{HeroRole, RegionBalance, TradeBalance};
+use crate::world::{Hero, Region, TradeRoute};
 
 pub fn tick_trade(
     routes: &[TradeRoute],
     regions: &mut [Region],
+    heroes: &[Hero],
     balance: &TradeBalance,
     region_balance: &RegionBalance,
 ) {
@@ -22,12 +23,27 @@ pub fn tick_trade(
             continue;
         }
 
+        // Merchants plying the road swell what its caravans carry: every living
+        // Merchant hero at either endpoint adds to the route's effective volume,
+        // so the wealth it spreads grows with the traders who call it home (GDD
+        // 5.2 <-> 5.4) — the Merchant role's economic counterpart to a Warrior's
+        // conquest might.
+        let merchants = heroes
+            .iter()
+            .filter(|h| {
+                h.is_alive
+                    && h.role == HeroRole::Merchant
+                    && (h.region_id == route.region_a || h.region_id == route.region_b)
+            })
+            .count();
+        let volume = route.volume + merchants as f32 * balance.merchant_volume_bonus;
+
         // Wealth: a flat bonus plus drift toward the pair's average prosperity.
         // The bonus is throttled by the more perilous endpoint's danger — trade
         // falters where the road runs through a war zone (GDD 5.2).
         let peril = regions[a].danger.max(regions[b].danger);
         let safety = (1.0 - peril * balance.peril_penalty).clamp(balance.min_safety, 1.0);
-        let bonus = balance.prosperity_bonus * route.volume * safety;
+        let bonus = balance.prosperity_bonus * volume * safety;
         let (pa, pb) = (regions[a].prosperity, regions[b].prosperity);
         let avg = (pa + pb) * 0.5;
         let delta_a = bonus + (avg - pa) * balance.equalize_rate;
@@ -82,6 +98,7 @@ mod tests {
         tick_trade(
             &world.trade_routes,
             &mut world.regions,
+            &world.heroes,
             &data.balance.trade,
             &data.balance.region,
         );
@@ -115,6 +132,7 @@ mod tests {
             tick_trade(
                 &world.trade_routes,
                 &mut world.regions,
+                &world.heroes,
                 &data.balance.trade,
                 &data.balance.region,
             );
@@ -152,6 +170,7 @@ mod tests {
         tick_trade(
             &world.trade_routes,
             &mut world.regions,
+            &world.heroes,
             &data.balance.trade,
             &data.balance.region,
         );
@@ -186,6 +205,7 @@ mod tests {
         tick_trade(
             &world.trade_routes,
             &mut world.regions,
+            &world.heroes,
             &data.balance.trade,
             &data.balance.region,
         );
@@ -193,6 +213,57 @@ mod tests {
         assert!(
             gap_after < gap_before,
             "arcana should travel the road, narrowing the magic gap"
+        );
+    }
+
+    #[test]
+    fn a_merchant_hero_swells_the_wealth_a_route_carries() {
+        // The same route enriches its endpoints more when a Merchant hero plies
+        // it than when the land holds none (GDD 5.2 <-> 5.4). Both endpoints start
+        // equal, so the equalize term is zero and only the volume-scaled bonus
+        // moves prosperity.
+        let data = GameData::load().unwrap();
+        let gain = |role: crate::data::HeroRole| {
+            let mut world = WorldState::new(&data);
+            let ai = world
+                .regions
+                .iter()
+                .position(|r| r.id == "aldermoor")
+                .unwrap();
+            let ki = world
+                .regions
+                .iter()
+                .position(|r| r.id == "kharzul")
+                .unwrap();
+            world.regions[ai].prosperity = 50.0;
+            world.regions[ki].prosperity = 50.0;
+            world.regions[ai].danger = 0.0;
+            world.regions[ki].danger = 0.0;
+            // A single hero of the given role living at one endpoint.
+            world.heroes = vec![Hero {
+                id: "h".to_owned(),
+                name: "H".to_owned(),
+                role,
+                region_id: world.regions[ai].id.clone(),
+                level: 5,
+                age: 30,
+                is_alive: true,
+                renown: 0.0,
+            }];
+            let before = world.regions[ai].prosperity;
+            tick_trade(
+                &world.trade_routes,
+                &mut world.regions,
+                &world.heroes,
+                &data.balance.trade,
+                &data.balance.region,
+            );
+            world.regions[ai].prosperity - before
+        };
+
+        assert!(
+            gain(HeroRole::Merchant) > gain(HeroRole::Warrior),
+            "a merchant should carry more wealth down the road than a warrior does"
         );
     }
 }

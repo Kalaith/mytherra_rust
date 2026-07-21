@@ -129,6 +129,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     trade::tick_trade(
         &world.trade_routes,
         &mut world.regions,
+        &world.heroes,
         &data.balance.trade,
         &data.balance.region,
     );

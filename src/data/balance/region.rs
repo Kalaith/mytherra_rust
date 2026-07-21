@@ -154,4 +154,10 @@ pub struct TradeBalance {
     /// `clamp(1 - peril * peril_penalty, min_safety, 1)`.
     pub peril_penalty: f32,
     pub min_safety: f32,
+    /// Effective route volume each living Merchant hero at either endpoint adds
+    /// (GDD 5.2 <-> 5.4): a merchant plies the road, so a land's caravans carry
+    /// more wealth for every trader who calls it home. This gives the Merchant
+    /// role real economic weight — the counterpart to how a Warrior lends conquest
+    /// might — so hero role now shapes the trade network, not only culture.
+    pub merchant_volume_bonus: f32,
 }
