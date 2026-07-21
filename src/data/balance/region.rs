@@ -160,4 +160,19 @@ pub struct TradeBalance {
     /// role real economic weight — the counterpart to how a Warrior lends conquest
     /// might — so hero role now shapes the trade network, not only culture.
     pub merchant_volume_bonus: f32,
+    /// Per-tick chance a prospering region forges a new trade route (GDD 5.2):
+    /// the trade network was the last part of the world to stay fixed while the
+    /// map itself grows — a fractured, conquered, or frontier region was born
+    /// economically isolated and never joined the roads. Now wealth reaches for
+    /// wealth, so the caravan network grows with the map, the way towns, wonders,
+    /// and resource nodes already do.
+    pub found_chance: f32,
+    /// Both endpoints of a newly forged route must clear this prosperity.
+    pub found_min_prosperity: f32,
+    /// A region joins at most this many routes, so the network densifies without
+    /// every land wiring to every other.
+    pub found_max_routes_per_region: usize,
+    /// Starting volume of a forged route — thinner than the seeded arteries, a
+    /// young road that thickens as its endpoints prosper and merchants ply it.
+    pub found_volume: f32,
 }

@@ -148,6 +148,17 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
     );
 
+    trade::tick_trade_founding(
+        &mut world.trade_routes,
+        &world.regions,
+        &mut world.trade_seq,
+        &data.balance.trade,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
     culture::tick_culture(
         &mut world.regions,
         &world.heroes,

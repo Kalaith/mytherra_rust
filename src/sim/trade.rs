@@ -2,8 +2,10 @@
 //! nudges their prosperity — and cultural influence — toward the pair's average,
 //! so wealth and ideas both spread along the network. Deterministic: no RNG.
 
-use crate::data::{HeroRole, RegionBalance, TradeBalance};
-use crate::world::{Hero, Region, TradeRoute};
+use crate::data::strings::ChronicleText;
+use crate::data::{fill, HeroRole, RegionBalance, TradeBalance};
+use crate::world::{Chronicle, EventKind, Hero, Region, TradeRoute};
+use macroquad_toolkit::rng::SeededRng;
 
 pub fn tick_trade(
     routes: &[TradeRoute],
@@ -69,6 +71,99 @@ pub fn tick_trade(
         regions[a].adjust_culture(culture + (cavg - ca) * balance.culture_equalize);
         regions[b].adjust_culture(culture + (cavg - cb) * balance.culture_equalize);
     }
+}
+
+/// Occasionally forge a new trade route from a prospering region to the richest
+/// market it isn't yet tied to (GDD 5.2): the counterpart to settlement founding,
+/// resource discovery, and landmark raising, and the way a region born
+/// economically isolated — a breakaway, a conquest, a frontier — is drawn into
+/// the caravan network once its own wealth rises. Wealth reaches for wealth, so a
+/// new road binds the founder to the most prosperous eligible partner.
+/// Deterministic given the RNG state.
+#[allow(clippy::too_many_arguments)]
+pub fn tick_trade_founding(
+    routes: &mut Vec<TradeRoute>,
+    regions: &[Region],
+    seq: &mut u64,
+    balance: &TradeBalance,
+    rng: &mut SeededRng,
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    year: u32,
+) {
+    for region in regions {
+        if region.prosperity < balance.found_min_prosperity
+            || route_count(routes, &region.id) >= balance.found_max_routes_per_region
+        {
+            continue;
+        }
+        if !rng.chance(balance.found_chance) {
+            continue;
+        }
+
+        // Wealth reaches for wealth: bind to the most prosperous region not yet
+        // tied to this one and still under its own route cap. Ties break by id so
+        // the choice is deterministic.
+        let partner = regions
+            .iter()
+            .filter(|o| {
+                o.id != region.id
+                    && o.prosperity >= balance.found_min_prosperity
+                    && route_count(routes, &o.id) < balance.found_max_routes_per_region
+                    && !connected(routes, &region.id, &o.id)
+            })
+            .max_by(|x, y| {
+                x.prosperity
+                    .total_cmp(&y.prosperity)
+                    .then_with(|| x.id.cmp(&y.id))
+            });
+        let Some(partner) = partner else {
+            continue;
+        };
+
+        *seq += 1;
+        let name = fill(
+            &text.trade_route_name,
+            &[
+                ("region_a", region.name.clone()),
+                ("region_b", partner.name.clone()),
+            ],
+        );
+        routes.push(TradeRoute {
+            id: format!("route-{seq}"),
+            name: name.clone(),
+            region_a: region.id.clone(),
+            region_b: partner.id.clone(),
+            volume: balance.found_volume,
+        });
+        chronicle.push(
+            year,
+            EventKind::Region,
+            fill(
+                &text.trade_route_forged,
+                &[
+                    ("route", name),
+                    ("region_a", region.name.clone()),
+                    ("region_b", partner.name.clone()),
+                ],
+            ),
+        );
+    }
+}
+
+/// How many routes touch a region.
+fn route_count(routes: &[TradeRoute], region_id: &str) -> usize {
+    routes
+        .iter()
+        .filter(|r| r.region_a == region_id || r.region_b == region_id)
+        .count()
+}
+
+/// Whether a route already ties these two regions together (either direction).
+fn connected(routes: &[TradeRoute], a: &str, b: &str) -> bool {
+    routes
+        .iter()
+        .any(|r| (r.region_a == a && r.region_b == b) || (r.region_a == b && r.region_b == a))
 }
 
 #[cfg(test)]
@@ -265,5 +360,124 @@ mod tests {
             gain(HeroRole::Merchant) > gain(HeroRole::Warrior),
             "a merchant should carry more wealth down the road than a warrior does"
         );
+    }
+
+    #[test]
+    fn a_prospering_isolated_region_is_drawn_into_the_network() {
+        // A fifth region, prosperous but tied to no road, should be bound into the
+        // caravan network — to the richest eligible partner (GDD 5.2).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut balance = data.balance.trade.clone();
+        balance.found_chance = 1.0; // certain this tick
+        balance.found_max_routes_per_region = 10; // don't cap in this test
+
+        // A new, unconnected, prosperous region — as if just born of a fracture.
+        let newcomer = Region {
+            id: "frontier".to_owned(),
+            name: "Frontier".to_owned(),
+            ..world.regions[0].clone()
+        };
+        world.regions.push(newcomer);
+        for r in &mut world.regions {
+            r.prosperity = 70.0; // every land clears the founding gate
+        }
+        let before = world.trade_routes.len();
+
+        tick_trade_founding(
+            &mut world.trade_routes,
+            &world.regions,
+            &mut world.trade_seq,
+            &balance,
+            &mut world.rng,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert!(
+            world.trade_routes.len() > before,
+            "a prospering isolated region should gain at least one route"
+        );
+        assert!(
+            world
+                .trade_routes
+                .iter()
+                .any(|r| r.region_a == "frontier" || r.region_b == "frontier"),
+            "the newcomer should be tied into the network"
+        );
+    }
+
+    #[test]
+    fn a_poor_region_forges_no_route() {
+        // Below the prosperity gate, no road is forged however lucky the roll.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut balance = data.balance.trade.clone();
+        balance.found_chance = 1.0;
+        for r in &mut world.regions {
+            r.prosperity = balance.found_min_prosperity - 10.0;
+        }
+        let before = world.trade_routes.len();
+
+        tick_trade_founding(
+            &mut world.trade_routes,
+            &world.regions,
+            &mut world.trade_seq,
+            &balance,
+            &mut world.rng,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+        assert_eq!(
+            world.trade_routes.len(),
+            before,
+            "a struggling realm forges no new roads"
+        );
+    }
+
+    #[test]
+    fn a_forged_route_never_duplicates_an_existing_one() {
+        // Run founding hard for many ticks; every route stays a unique unordered
+        // pair, so no two regions are ever bound twice.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut balance = data.balance.trade.clone();
+        balance.found_chance = 1.0;
+        balance.found_max_routes_per_region = 100;
+        for r in &mut world.regions {
+            r.prosperity = 90.0;
+        }
+
+        for _ in 0..50 {
+            tick_trade_founding(
+                &mut world.trade_routes,
+                &world.regions,
+                &mut world.trade_seq,
+                &balance,
+                &mut world.rng,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        }
+
+        let mut pairs: Vec<(String, String)> = world
+            .trade_routes
+            .iter()
+            .map(|r| {
+                let (x, y) = (r.region_a.clone(), r.region_b.clone());
+                if x <= y {
+                    (x, y)
+                } else {
+                    (y, x)
+                }
+            })
+            .collect();
+        let total = pairs.len();
+        pairs.sort();
+        pairs.dedup();
+        assert_eq!(total, pairs.len(), "no two routes bind the same pair");
     }
 }

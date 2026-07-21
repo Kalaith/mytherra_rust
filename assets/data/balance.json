@@ -536,7 +536,11 @@
     "magic_equalize": 0.02,
     "peril_penalty": 0.008,
     "min_safety": 0.2,
-    "merchant_volume_bonus": 0.15
+    "merchant_volume_bonus": 0.15,
+    "found_chance": 0.02,
+    "found_min_prosperity": 55.0,
+    "found_max_routes_per_region": 4,
+    "found_volume": 1.0
   },
   "resource": {
     "stress_chaos": 0.4,

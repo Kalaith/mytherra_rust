@@ -337,6 +337,8 @@
     "resource_depletes": "{node} is worked to exhaustion and runs dry in {region}.",
     "resource_discovered": "Prospectors of {region} open {node}, a new {type} for the land.",
     "resource_node_name": "{region} {type}",
+    "trade_route_forged": "Merchants forge {route}, a new road binding {region_a} to {region_b}.",
+    "trade_route_name": "The {region_a}–{region_b} Road",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
     "region_sack": "The great city of {settlement} is sacked as {region} falls.",

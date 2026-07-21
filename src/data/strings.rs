@@ -456,6 +456,11 @@ pub struct ChronicleText {
     pub resource_discovered: String,
     /// Name pattern for a discovered node; slots `{region}`, `{type}`.
     pub resource_node_name: String,
+    /// A new trade route is forged between two prospering regions (GDD 5.2);
+    /// slots `{route}`, `{region_a}`, `{region_b}`.
+    pub trade_route_forged: String,
+    /// Name pattern for a forged route; slots `{region_a}`, `{region_b}`.
+    pub trade_route_name: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_sack: String,

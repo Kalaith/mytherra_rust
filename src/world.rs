@@ -114,6 +114,10 @@ pub struct WorldState {
     pub resource_seq: u64,
     pub landmarks: Vec<Landmark>,
     pub trade_routes: Vec<TradeRoute>,
+    /// Monotonic counter for unique ids of trade routes forged mid-run (GDD 5.2),
+    /// so no two founded routes ever collide.
+    #[serde(default)]
+    pub trade_seq: u64,
     pub buildings: Vec<Building>,
     pub heroes: Vec<Hero>,
     /// Monotonic counter for unique descendant-hero ids.
@@ -197,6 +201,7 @@ impl WorldState {
             resource_seq: 0,
             landmarks,
             trade_routes,
+            trade_seq: 0,
             buildings,
             heroes,
             settlement_seq: 0,
