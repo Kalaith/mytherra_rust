@@ -4,22 +4,47 @@
 //! "resource pressure" term region drift (5.2) left stubbed. Randomness flows
 //! through the world RNG.
 
-use crate::data::{RegionBalance, ResourceBalance, ResourceStatus};
-use crate::world::{Region, ResourceNode};
+use crate::data::strings::ChronicleText;
+use crate::data::{fill, RegionBalance, ResourceBalance, ResourceStatus};
+use crate::world::{Chronicle, EventKind, Region, ResourceNode};
 use macroquad_toolkit::rng::SeededRng;
 
+#[allow(clippy::too_many_arguments)]
 pub fn tick_resources(
     nodes: &mut [ResourceNode],
     regions: &mut [Region],
     rng: &mut SeededRng,
     balance: &ResourceBalance,
     region_balance: &RegionBalance,
+    chronicle: &mut Chronicle,
+    text: &ChronicleText,
+    year: u32,
 ) {
     for node in nodes.iter_mut() {
         let Some(idx) = regions.iter().position(|r| r.id == node.region_id) else {
             continue;
         };
+        let before = node.status;
         node.status = next_status(node.status, &regions[idx], rng, balance);
+
+        // A node crossing into one of its dramatic states — a peak, a corruption,
+        // or an exhaustion — is a moment worth marking; the ordinary churn between
+        // the middle states stays quiet (GDD 5.3).
+        if node.status != before {
+            if let Some(line) = notable_line(node.status, text) {
+                chronicle.push(
+                    year,
+                    EventKind::Region,
+                    fill(
+                        line,
+                        &[
+                            ("node", node.name.clone()),
+                            ("region", regions[idx].name.clone()),
+                        ],
+                    ),
+                );
+            }
+        }
 
         // A healthy node lifts its region; a degraded one drags it down. A
         // hazardous node poisons the land besides: a corrupted node bleeds chaos,
@@ -28,6 +53,17 @@ pub fn tick_resources(
         let contribution = (output - 1.0) * balance.region_output_scale;
         let (chaos, danger) = status_hazard(node.status, balance);
         regions[idx].apply_deltas(contribution, chaos, danger, 0.0, region_balance);
+    }
+}
+
+/// The chronicle line for a node entering one of its dramatic states, or `None`
+/// for the ordinary middle states that aren't worth a line.
+fn notable_line(status: ResourceStatus, text: &ChronicleText) -> Option<&str> {
+    match status {
+        ResourceStatus::Flourishing => Some(&text.resource_flourishes),
+        ResourceStatus::Corrupted => Some(&text.resource_corrupts),
+        ResourceStatus::Depleted => Some(&text.resource_depletes),
+        _ => None,
     }
 }
 
@@ -191,12 +227,58 @@ mod tests {
             &mut world.rng,
             &balance,
             &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
         );
 
         assert_eq!(world.resource_nodes[0].status, ResourceStatus::Corrupted);
         assert!(
             world.regions[ridx].chaos > chaos_before,
             "a corrupted node should spread chaos into its region"
+        );
+    }
+
+    #[test]
+    fn a_node_falling_into_a_dramatic_state_is_chronicled() {
+        // Force a Contested node in a chaos+danger-wracked region to corrupt this
+        // tick, and confirm the fall is written into the chronicle by name.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut balance = data.balance.resource.clone();
+        balance.corrupt_base = 1.0; // certain corruption from Contested
+        balance.recover_base = 0.0;
+
+        world.resource_nodes.truncate(1);
+        world.resource_nodes[0].status = ResourceStatus::Contested;
+        let node_name = world.resource_nodes[0].name.clone();
+        let region_id = world.resource_nodes[0].region_id.clone();
+        let ridx = world
+            .regions
+            .iter()
+            .position(|r| r.id == region_id)
+            .unwrap();
+        world.regions[ridx].chaos = 90.0;
+        world.regions[ridx].danger = 90.0;
+
+        tick_resources(
+            &mut world.resource_nodes,
+            &mut world.regions,
+            &mut world.rng,
+            &balance,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert_eq!(world.resource_nodes[0].status, ResourceStatus::Corrupted);
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains(&node_name) && e.message.contains("corruption")),
+            "a node falling to corruption should be chronicled by name"
         );
     }
 
@@ -212,6 +294,9 @@ mod tests {
                     &mut world.rng,
                     &data.balance.resource,
                     &data.balance.region,
+                    &mut world.chronicle,
+                    &data.strings.chronicle,
+                    world.year,
                 );
             }
             world

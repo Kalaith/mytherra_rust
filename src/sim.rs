@@ -110,6 +110,9 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.rng,
         &data.balance.resource,
         &data.balance.region,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
     );
 
     trade::tick_trade(

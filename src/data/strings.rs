@@ -420,6 +420,11 @@ pub struct ChronicleText {
     pub settlement_declines: String,
     pub landmark_raised: String,
     pub landmark_razed: String,
+    /// A resource node crossing into one of its dramatic states (GDD 5.3):
+    /// flourishing to its peak, falling to corruption, or run dry.
+    pub resource_flourishes: String,
+    pub resource_corrupts: String,
+    pub resource_depletes: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_sack: String,
