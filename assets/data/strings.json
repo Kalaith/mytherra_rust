@@ -40,7 +40,7 @@
     "standing_summary": "{nudges} divine nudges  |  {spent} favor spent  |  {goals}/{total} goals",
     "region_meta": "Population {pop}   Resonance x{effect} effect, x{cost} cost",
     "region_subtitle": "{status}  |  {culture}",
-    "favor_meter": "Favor {favor}/{max}",
+    "favor_meter": "Favor {favor}/{max}  ·  +{income}/yr",
     "level_meter": "Level {level}  ({xp}/{next} xp)",
     "action_cost": "{cost} favor",
     "year_badge": "Year {year}",

@@ -20,8 +20,22 @@ mod speculation;
 mod trade;
 mod weather;
 
-use crate::data::{fill, GameData};
-use crate::world::{EventKind, Hero, PlayerState, WorldState};
+use crate::data::{fill, GameData, PlayerBalance};
+use crate::world::{EventKind, Hero, PlayerState, Region, WorldState};
+
+/// Favor the world's faithful lands tithe their god this tick (GDD 5.1 <-> 5.4):
+/// each region's divine resonance above the neutral baseline pours a little power
+/// back to the deity it serves, summed across the world and floored to whole
+/// favor. So a world of hallowed lands — consecrated by the player or tended by
+/// its Clerics — sustains more divine action than a faithless one, closing the
+/// favor loop. A land at or below the baseline tithes nothing.
+pub fn faith_tithe(regions: &[Region], balance: &PlayerBalance) -> i64 {
+    let devotion: f32 = regions
+        .iter()
+        .map(|r| (r.divine_resonance - balance.favor_tithe_baseline).max(0.0))
+        .sum();
+    (devotion * balance.favor_per_resonance) as i64
+}
 
 /// Advance the entire world by one tick: age every region, credit passive
 /// favor, and record the chronicle entries a returning player would read.
@@ -305,7 +319,8 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     era::tick_era(world, player, data);
 
-    player.recover(&data.config, &data.balance.player);
+    let tithe = faith_tithe(&world.regions, &data.balance.player);
+    player.recover(tithe, &data.config, &data.balance.player);
 
     // The chronicle records notable events, not the passing of each year — the
     // year and favor already live in the HUD, so no per-tick heartbeat clutters
@@ -362,6 +377,36 @@ fn newly_legendary<'a>(before: &[String], heroes: &'a [Hero], bar: f32) -> Vec<&
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn faithful_lands_tithe_favor_and_faithless_ones_do_not() {
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.player;
+        let mut world = WorldState::new(&data);
+        world.regions.truncate(2);
+
+        // Both at the neutral baseline: no land is faithful, so no tithe.
+        for r in &mut world.regions {
+            r.divine_resonance = balance.favor_tithe_baseline;
+        }
+        assert_eq!(
+            faith_tithe(&world.regions, balance),
+            0,
+            "lands at the baseline tithe nothing"
+        );
+
+        // One hallowed land pours favor back; a faithless (below-baseline) one adds
+        // nothing, never a negative.
+        world.regions[0].divine_resonance = balance.favor_tithe_baseline + 100.0;
+        world.regions[1].divine_resonance = balance.favor_tithe_baseline - 30.0;
+        let expected = (100.0 * balance.favor_per_resonance) as i64;
+        assert_eq!(
+            faith_tithe(&world.regions, balance),
+            expected,
+            "only resonance above the baseline tithes, and never below zero"
+        );
+        assert!(expected > 0, "a hallowed land should tithe real favor");
+    }
 
     #[test]
     fn only_a_fresh_living_crossing_into_legend_is_reported() {

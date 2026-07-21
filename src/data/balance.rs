@@ -79,6 +79,17 @@ pub struct PlayerBalance {
     /// than being pure vanity. Awarded as experience, not favor, so it is never
     /// clipped by the favor ceiling and compounds into a higher standing.
     pub achievement_experience: i64,
+    /// Favor a faithful land tithes its god each tick, per point of divine
+    /// resonance above the neutral baseline (GDD 5.1 <-> 5.4): the devout pour
+    /// power back to the deity they serve, so a world of hallowed lands sustains
+    /// more divine action than a faithless one. This closes the favor loop —
+    /// consecrating a region (or letting its Clerics tend it) now pays a standing
+    /// income, not only cheaper and stronger actions on that one land.
+    pub favor_per_resonance: f32,
+    /// The resonance a region must exceed before it tithes — the neutral point
+    /// (50) at which a land is neither faithful nor faithless, matching the
+    /// cost/effect-multiplier pivot in `Region`.
+    pub favor_tithe_baseline: f32,
 }
 
 /// Settings-screen tuning (GDD 10): the selectable auto-tick cadences, in real

@@ -568,7 +568,9 @@
     "level_cost_step": 60,
     "max_favor_per_level": 40,
     "favor_per_tick_per_level": 1,
-    "achievement_experience": 60
+    "achievement_experience": 60,
+    "favor_per_resonance": 0.03,
+    "favor_tithe_baseline": 50.0
   },
   "settings": {
     "tick_speed_presets": [

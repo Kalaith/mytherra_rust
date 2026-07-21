@@ -104,9 +104,12 @@ impl PlayerState {
         config.favor_per_tick + (self.level as i64 - 1) * balance.favor_per_tick_per_level
     }
 
-    /// Passive per-tick favor recovery, capped at the standing's ceiling.
-    pub fn recover(&mut self, config: &GameConfig, balance: &PlayerBalance) {
-        self.favor = (self.favor + self.favor_recovery(config, balance))
+    /// Passive per-tick favor recovery, capped at the standing's ceiling. The
+    /// `tithe` is the extra favor the world's faithful lands pour back this tick
+    /// (GDD 5.1 <-> 5.4), computed from region resonance by the sim; folding it in
+    /// here keeps the single favor ceiling authoritative.
+    pub fn recover(&mut self, tithe: i64, config: &GameConfig, balance: &PlayerBalance) {
+        self.favor = (self.favor + self.favor_recovery(config, balance) + tithe)
             .min(self.max_favor(config, balance));
     }
 
@@ -155,6 +158,8 @@ mod tests {
             max_favor_per_level: 40,
             favor_per_tick_per_level: 1,
             achievement_experience: 60,
+            favor_per_resonance: 0.03,
+            favor_tithe_baseline: 50.0,
         }
     }
 
@@ -180,7 +185,7 @@ mod tests {
         let bal = player_balance();
         let mut player = PlayerState::new(&cfg);
         player.favor = cfg.max_favor - 5;
-        player.recover(&cfg, &bal);
+        player.recover(0, &cfg, &bal);
         assert_eq!(player.favor, cfg.max_favor);
     }
 
@@ -204,7 +209,7 @@ mod tests {
 
         // Recovery now fills toward the raised ceiling, not the base one.
         player.favor = base_cap;
-        player.recover(&cfg, &bal);
+        player.recover(0, &cfg, &bal);
         assert!(player.favor > base_cap);
     }
 
