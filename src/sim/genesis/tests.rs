@@ -63,6 +63,51 @@ fn sustained_turmoil_fractures_a_region() {
 }
 
 #[test]
+fn a_breakaway_carries_off_its_share_of_resource_nodes() {
+    // A fracture should divide the parent's resource nodes, not only its towns,
+    // so a breakaway is born a full economic citizen (GDD 5.2). With certain
+    // defection the split is deterministic: every node on the seceding land goes.
+    let mut data = GameData::load().unwrap();
+    data.balance.genesis.node_defect_chance = 1.0;
+    let mut world = primed_world(&data);
+    let parent_id = world.regions[0].id.clone();
+
+    // Gather every node onto the fracturing region so there's a clear pool to
+    // divide, and confirm the seed world actually has nodes to move.
+    for node in &mut world.resource_nodes {
+        node.region_id = parent_id.clone();
+    }
+    assert!(
+        !world.resource_nodes.is_empty(),
+        "seed world should have resource nodes"
+    );
+
+    let mut child_id = None;
+    for _ in 0..200 {
+        world.regions[0].chaos = 95.0;
+        world.regions[0].danger = 95.0;
+        world.regions[0].refresh_status(&data.balance.region);
+        tick_genesis(&mut world, &data);
+        if let Some(r) = world.regions.iter().find(|r| r.id.contains("-rift-")) {
+            child_id = Some(r.id.clone());
+            break;
+        }
+    }
+    let child_id = child_id.expect("the region never fractured");
+    assert!(
+        world.resource_nodes.iter().any(|n| n.region_id == child_id),
+        "a breakaway should carry off resource nodes from its parent"
+    );
+    assert!(
+        !world
+            .resource_nodes
+            .iter()
+            .any(|n| n.region_id == parent_id),
+        "under certain defection every node on the seceding land goes with it"
+    );
+}
+
+#[test]
 fn a_knowledge_relic_quells_secession() {
     use crate::data::{ArtifactFocus, ArtifactSeed};
     use crate::world::Artifact;

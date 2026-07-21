@@ -97,6 +97,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
     fracture::run(
         regions,
         settlements,
+        resource_nodes,
         heroes,
         civilization,
         trade_routes,

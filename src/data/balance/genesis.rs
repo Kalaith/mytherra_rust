@@ -59,6 +59,13 @@ pub struct GenesisBalance {
     pub population_split: f32,
     /// Per-settlement chance that a town in the parent defects to the breakaway.
     pub settlement_defect_chance: f32,
+    /// Per-node chance that a resource node in the parent is carried off by the
+    /// breakaway (GDD 5.2): the seceding land takes its mines, farms, and
+    /// manasprings with it, so a fracture divides the parent's wealth the way a
+    /// conquest seizes it — kept below the town defect rate, since territory
+    /// splits less readily than allegiance. A breakaway is thus a full economic
+    /// citizen, its carried nodes feeding it and able to corrupt or flourish.
+    pub node_defect_chance: f32,
     /// Breakaway starting chaos — it is born in revolt.
     pub child_chaos: f32,
     /// Breakaway starting prosperity — a frontier starts poor.

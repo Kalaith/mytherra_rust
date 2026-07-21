@@ -52,6 +52,7 @@
     "founder_min_level": 5,
     "population_split": 0.35,
     "settlement_defect_chance": 0.5,
+    "node_defect_chance": 0.4,
     "child_chaos": 70.0,
     "child_prosperity": 30.0,
     "child_danger_carry": 0.9,

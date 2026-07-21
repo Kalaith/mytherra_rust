@@ -6,7 +6,8 @@
 use crate::data::strings::{ChronicleText, GenesisText};
 use crate::data::{fill, ArtifactFocus, Culture, GenesisBalance, RegionBalance, RegionSeed};
 use crate::world::{
-    Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, Settlement, TradeRoute,
+    Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, ResourceNode, Settlement,
+    TradeRoute,
 };
 use macroquad_toolkit::rng::SeededRng;
 
@@ -71,6 +72,7 @@ fn pick_founder(heroes: &[Hero], region_id: &str, balance: &GenesisBalance) -> O
 pub(super) fn run(
     regions: &mut Vec<Region>,
     settlements: &mut [Settlement],
+    resource_nodes: &mut [ResourceNode],
     heroes: &mut [Hero],
     civ: &mut Vec<RegionAgendas>,
     trade_routes: &mut Vec<TradeRoute>,
@@ -143,6 +145,17 @@ pub(super) fn run(
     for town in settlements.iter_mut() {
         if town.region_id == parent_id && rng.chance(balance.settlement_defect_chance) {
             town.region_id = child_id.clone();
+        }
+    }
+
+    // The seceding land carries off a share of the parent's resource nodes too —
+    // the mines, farms, and manasprings on the ground it takes — so a breakaway
+    // is born a full economic citizen the way a conquest transfers the loser's
+    // wealth wholesale (GDD 5.2). Rolled after the towns and with the same RNG, so
+    // the split stays deterministic for a given seed.
+    for node in resource_nodes.iter_mut() {
+        if node.region_id == parent_id && rng.chance(balance.node_defect_chance) {
+            node.region_id = child_id.clone();
         }
     }
 
