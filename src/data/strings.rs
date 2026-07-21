@@ -59,7 +59,9 @@ pub struct GenesisText {
     pub course_line: String,
     /// Genesis-outlook lines on the region detail (one shown at a time).
     pub outlook_frontier: String,
+    pub outlook_frontier_eager: String,
     pub outlook_vulnerable: String,
+    pub outlook_bracing: String,
     pub outlook_defended: String,
     pub outlook_warded: String,
 }

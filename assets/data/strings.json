@@ -357,7 +357,9 @@
     "might_line": "Military might: {might}",
     "course_line": "Prevailing course: {agenda}",
     "outlook_frontier": "Frontier-ready — settlers may strike out to found new lands.",
+    "outlook_frontier_eager": "Expansion-minded and frontier-ready — eager to found new lands.",
     "outlook_vulnerable": "Undefended in crisis — ripe for a stronger neighbour's conquest.",
+    "outlook_bracing": "Bracing in crisis — a defensive people resist conquest, but not outright.",
     "outlook_defended": "A champion holds the line against conquest.",
     "outlook_warded": "A Protection ward turns back any conquest while it stands."
   },

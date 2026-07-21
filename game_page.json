@@ -1,24 +1,50 @@
 {
   "title": "Mytherra",
-  "status": { "text": "Playable", "class": "playable" },
+  "status": {
+    "text": "Playable",
+    "class": "playable"
+  },
   "controls_hint": "Click the canvas, then press Space to let the years turn",
   "canvas_rendering": "pixelated",
   "about": [
-    "You are a minor deity watching one living world &mdash; a world many other deities watch too. You don't command mortals. You nudge regions toward prosperity or ruin, cultivate champions from the hero roster, forge artifacts, shape weather and myth, sway the pantheon, and wager at the Divine Observatory on what the world will do next.",
-    "Everything unfolds on its own: regions fracture, conquer, and found new frontiers; heroes migrate, earn renown, and pass into legend; gods stir as their domains rise; and every hundred-year age ends in a cataclysm, collapse, conquest, magical rupture, or divine war that remakes the map. Your favor is limited &mdash; spend it where it counts, and read the portents before the age turns."
+    "You are a minor god among many. Nudge mortals toward glory or ruin, raise legendary champions, and wager on a world that never stops turning."
   ],
   "controls": [
-    { "key": "Mouse", "desc": "Switch tabs, select regions/heroes, take divine actions" },
-    { "key": "Space", "desc": "Advance the world one year" },
-    { "key": "S", "desc": "Save the world" },
-    { "key": "L", "desc": "Load the saved world" },
-    { "key": "N", "desc": "Begin a new world" }
+    {
+      "key": "Mouse",
+      "desc": "Switch tabs, select regions/heroes, take divine actions"
+    },
+    {
+      "key": "Space",
+      "desc": "Advance the world one year"
+    },
+    {
+      "key": "S",
+      "desc": "Save the world"
+    },
+    {
+      "key": "L",
+      "desc": "Load the saved world"
+    },
+    {
+      "key": "N",
+      "desc": "Begin a new world"
+    }
   ],
   "controls_note": "The Settings screen also offers auto-tick pacing, so the years can turn on their own while you watch and intervene.",
   "details": [
-    { "label": "Genre", "value": "God-game / World Sim" },
-    { "label": "Engine", "value": "Macroquad + Toolkit" },
-    { "label": "Platform", "value": "Browser, Windows" }
+    {
+      "label": "Genre",
+      "value": "God-game / World Sim"
+    },
+    {
+      "label": "Engine",
+      "value": "Macroquad + Toolkit"
+    },
+    {
+      "label": "Platform",
+      "value": "Browser, Windows"
+    }
   ],
   "repository": "https://github.com/Kalaith/mytherra_rust"
 }

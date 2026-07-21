@@ -513,10 +513,31 @@ fn action_tone(id: &str) -> ButtonTone {
 fn genesis_outlook(ctx: &UiContext<'_>, region: &Region) -> Option<(String, Color)> {
     let g = &ctx.data.strings.genesis;
     let frontier = &ctx.data.balance.frontier;
+    // The region's prevailing civilization course now shapes genesis (GDD 5.6 <->
+    // 5.2): Expansion eggs on frontier founding, Defense braces against conquest.
+    let course = ctx
+        .world
+        .civilization
+        .iter()
+        .find(|c| c.region_id == region.id)
+        .and_then(|entry| {
+            crate::world::dominant_agenda(
+                &ctx.data.agendas,
+                region,
+                entry,
+                ctx.data.balance.civilization.apply_threshold,
+            )
+        })
+        .map(|i| ctx.data.agendas[i].id.as_str());
+
     if region.status == RegionStatus::Thriving
         && region.population >= frontier.parent_min_population
     {
-        return Some((g.outlook_frontier.clone(), dark::POSITIVE));
+        return Some(if course == Some("expansion") {
+            (g.outlook_frontier_eager.clone(), dark::POSITIVE)
+        } else {
+            (g.outlook_frontier.clone(), dark::POSITIVE)
+        });
     }
     if region.status.is_crisis() {
         let conquest = &ctx.data.balance.conquest;
@@ -532,8 +553,12 @@ fn genesis_outlook(ctx: &UiContext<'_>, region: &Region) -> Option<(String, Colo
         let defended = ctx.world.heroes.iter().any(|h| {
             h.is_alive && h.region_id == region.id && h.level >= conquest.defender_min_level
         });
+        // Escalating protection: an outright shield (ward, hero), then a Defense
+        // people's graded resistance, then nothing.
         return Some(if defended {
             (g.outlook_defended.clone(), dark::ACCENT)
+        } else if course == Some("defense") {
+            (g.outlook_bracing.clone(), dark::WARNING)
         } else {
             (g.outlook_vulnerable.clone(), dark::NEGATIVE)
         });
