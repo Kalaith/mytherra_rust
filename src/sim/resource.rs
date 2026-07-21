@@ -5,7 +5,7 @@
 //! through the world RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, RegionBalance, ResourceBalance, ResourceStatus};
+use crate::data::{fill, RegionBalance, ResourceBalance, ResourceStatus, ResourceType};
 use crate::world::{Chronicle, EventKind, Region, ResourceNode};
 use macroquad_toolkit::rng::SeededRng;
 
@@ -50,9 +50,16 @@ pub fn tick_resources(
         // hazardous node poisons the land besides: a corrupted node bleeds chaos,
         // an unstable one danger (GDD 5.3).
         let output = node.output(&balance.outputs);
-        let contribution = (output - 1.0) * balance.region_output_scale;
         let (chaos, danger) = status_hazard(node.status, balance);
-        regions[idx].apply_deltas(contribution, chaos, danger, 0.0, region_balance);
+        // A manaspring's yield wells up as arcane power (magic affinity) rather
+        // than granary prosperity, so an arcane resource makes a mystical land and
+        // a corrupted one drains it (GDD 5.3 <-> 5.6).
+        let (prosperity_c, magic_c) = if node.resource_type == ResourceType::Manaspring {
+            (0.0, (output - 1.0) * balance.manaspring_magic_scale)
+        } else {
+            ((output - 1.0) * balance.region_output_scale, 0.0)
+        };
+        regions[idx].apply_deltas(prosperity_c, chaos, danger, magic_c, region_balance);
     }
 }
 
@@ -197,6 +204,58 @@ mod tests {
         );
         assert_eq!(status_hazard(ResourceStatus::Flourishing, &b), (0.0, 0.0));
         assert_eq!(status_hazard(ResourceStatus::Active, &b), (0.0, 0.0));
+    }
+
+    #[test]
+    fn a_flourishing_manaspring_wells_up_magic_not_prosperity() {
+        // A thriving manaspring raises its region's magic affinity and leaves its
+        // prosperity untouched, while a farm does the reverse (GDD 5.3 <-> 5.6).
+        let data = GameData::load().unwrap();
+        // Freeze the status machine so the node stays put, isolating its yield.
+        let mut balance = data.balance.resource.clone();
+        balance.degrade_base = 0.0;
+        balance.degrade_stress = 0.0;
+        balance.recover_base = 0.0;
+        balance.improve_base = 0.0;
+
+        let gains = |resource_type: ResourceType| {
+            let mut world = WorldState::new(&data);
+            world.regions.truncate(1);
+            world.regions[0].prosperity = 50.0;
+            world.regions[0].magic_affinity = 50.0;
+            world.regions[0].chaos = 20.0; // calm, so no degrade/hazard
+            world.regions[0].danger = 20.0;
+            let region_id = world.regions[0].id.clone();
+            world.resource_nodes.truncate(1);
+            world.resource_nodes[0].resource_type = resource_type;
+            world.resource_nodes[0].region_id = region_id;
+            world.resource_nodes[0].status = ResourceStatus::Flourishing;
+            tick_resources(
+                &mut world.resource_nodes,
+                &mut world.regions,
+                &mut world.rng,
+                &balance,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            (
+                world.regions[0].prosperity - 50.0,
+                world.regions[0].magic_affinity - 50.0,
+            )
+        };
+
+        let (mana_prosp, mana_magic) = gains(ResourceType::Manaspring);
+        assert!(
+            mana_magic > 0.0 && mana_prosp.abs() < f32::EPSILON,
+            "a manaspring should feed magic, not prosperity ({mana_prosp}, {mana_magic})"
+        );
+        let (farm_prosp, farm_magic) = gains(ResourceType::Farmland);
+        assert!(
+            farm_prosp > 0.0 && farm_magic.abs() < f32::EPSILON,
+            "a farm should feed prosperity, not magic ({farm_prosp}, {farm_magic})"
+        );
     }
 
     #[test]

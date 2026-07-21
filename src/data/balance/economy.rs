@@ -16,6 +16,12 @@ pub struct ResourceBalance {
     pub corrupt_base: f32,
     pub corrupt_danger: f32,
     pub region_output_scale: f32,
+    /// A manaspring is a wellspring of the arcane, not the granary a farm or mine
+    /// is (GDD 5.3 <-> 5.6): its yield feeds the region's magic affinity rather
+    /// than its prosperity, scaled by this. So an arcane resource makes a mystical
+    /// land — and a corrupted manaspring drains it — giving the resource type a
+    /// role beyond its economic output.
+    pub manaspring_magic_scale: f32,
     /// A hazardous node poisons its region, not just its ledger (GDD 5.3): a
     /// corrupted node bleeds chaos as the taint spreads, an unstable one bleeds
     /// danger. This feeds the very stress that degraded it, so a neglected node
