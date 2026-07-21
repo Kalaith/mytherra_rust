@@ -4,7 +4,7 @@
 //! of a fracture — it removes a region rather than adding one.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, ArtifactFocus, ConquestBalance, RegionBalance};
+use crate::data::{fill, Agenda, ArtifactFocus, ConquestBalance, RegionBalance};
 use crate::world::{
     Artifact, Chronicle, EventKind, Hero, Landmark, Region, RegionAgendas, ResourceNode,
     Settlement, TradeRoute, WeatherEvent,
@@ -55,14 +55,37 @@ fn is_warded(artifacts: &[Artifact], region_id: &str, balance: &ConquestBalance)
     })
 }
 
+/// Extra might-gap needed to overrun a region whose prevailing civilization
+/// course is Defense (GDD 5.2 <-> 5.6): a graded resistance, short of the outright
+/// shield a hero or ward gives.
+fn defense_margin(
+    target: &Region,
+    civ: &[RegionAgendas],
+    agendas: &[Agenda],
+    apply_threshold: f32,
+    balance: &ConquestBalance,
+) -> f32 {
+    let Some(entry) = civ.iter().find(|c| c.region_id == target.id) else {
+        return 0.0;
+    };
+    match crate::world::dominant_agenda(agendas, target, entry, apply_threshold) {
+        Some(i) if agendas[i].id == "defense" => balance.defense_margin_bonus,
+        _ => 0.0,
+    }
+}
+
 /// The strongest aggressor / weakest eligible target pairing, if any conquest is
 /// on. Deterministic: ranked by the might gap, ties broken toward earlier
 /// regions.
+#[allow(clippy::too_many_arguments)]
 fn pick(
     regions: &[Region],
     heroes: &[Hero],
     trade_routes: &[TradeRoute],
     artifacts: &[Artifact],
+    civ: &[RegionAgendas],
+    agendas: &[Agenda],
+    apply_threshold: f32,
     balance: &ConquestBalance,
 ) -> Option<(usize, usize)> {
     if regions.len() <= balance.min_regions {
@@ -79,7 +102,10 @@ fn pick(
                 continue;
             }
             let gap = a_might - conquest_might(target, heroes, artifacts, balance);
-            if gap < balance.conquest_margin
+            // A defensive people demand a wider margin before they can be overrun.
+            let margin = balance.conquest_margin
+                + defense_margin(target, civ, agendas, apply_threshold, balance);
+            if gap < margin
                 || has_defender(heroes, &target.id, balance)
                 || is_warded(artifacts, &target.id, balance)
             {
@@ -114,6 +140,8 @@ pub(super) fn run(
     heroes: &mut [Hero],
     trade_routes: &mut Vec<TradeRoute>,
     civilization: &mut Vec<RegionAgendas>,
+    agendas: &[Agenda],
+    apply_threshold: f32,
     conquest_momentum: &mut f32,
     balance: &ConquestBalance,
     region_balance: &RegionBalance,
@@ -121,8 +149,16 @@ pub(super) fn run(
     text: &ChronicleText,
     year: u32,
 ) {
-    let Some((winner_idx, loser_idx)) = pick(regions, heroes, trade_routes, artifacts, balance)
-    else {
+    let Some((winner_idx, loser_idx)) = pick(
+        regions,
+        heroes,
+        trade_routes,
+        artifacts,
+        civilization,
+        agendas,
+        apply_threshold,
+        balance,
+    ) else {
         return;
     };
 
@@ -258,5 +294,31 @@ mod tests {
         assert!(has_defender(&veteran, "aldermoor", &balance));
         // ...and a defender guards only its own home.
         assert!(!has_defender(&famous, "kharzul", &balance));
+    }
+
+    #[test]
+    fn a_region_set_on_defense_demands_a_wider_margin() {
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.conquest;
+        let threshold = data.balance.civilization.apply_threshold;
+        let target = crate::world::WorldState::new(&data).regions[0].clone();
+        let defense = data.agendas.iter().position(|a| a.id == "defense").unwrap();
+
+        // Boost Defense to the region's prevailing course.
+        let mut entry = crate::world::RegionAgendas::new(target.id.clone(), data.agendas.len());
+        entry.boosts[defense] = 500.0;
+        let civ = vec![entry];
+        assert!(
+            (defense_margin(&target, &civ, &data.agendas, threshold, balance)
+                - balance.defense_margin_bonus)
+                .abs()
+                < f32::EPSILON,
+            "a defense-course region should widen the required conquest margin"
+        );
+        // A region with no civilization entry demands nothing extra.
+        assert_eq!(
+            defense_margin(&target, &[], &data.agendas, threshold, balance),
+            0.0
+        );
     }
 }

@@ -102,6 +102,11 @@ pub struct ConquestBalance {
     pub aggressor_min_might: f32,
     /// The aggressor's might must exceed the target's by this margin.
     pub conquest_margin: f32,
+    /// Extra might-gap an aggressor must clear to overrun a region whose prevailing
+    /// civilization course is Defense (GDD 5.2 <-> 5.6): a people set on defense
+    /// are harder to conquer — a graded resistance the player can raise with the
+    /// Advance verb, short of the outright shield a hero or a ward provides.
+    pub defense_margin_bonus: f32,
     /// A living hero of at least this level shields its region from conquest —
     /// the same calibre of hero who would instead lead it to secede.
     pub defender_min_level: u32,
