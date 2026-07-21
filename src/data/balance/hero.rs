@@ -103,6 +103,11 @@ pub struct LevelUpCurve {
     /// Level-up chance is scaled by `1 + region danger * crucible_coeff`, so a
     /// warrior who flows toward peril is tempered by it.
     pub crucible_coeff: f32,
+    /// A hero in their element grows faster (GDD 5.4 <-> 5.2): when a hero's kin
+    /// culture matches the region's dominant culture — a warrior in a martial
+    /// land, a mage in a mystical one — their level-up chance gains this fraction.
+    /// So a land's character shapes how fast the heroes who suit it rise.
+    pub culture_match_bonus: f32,
     /// Only levels that are a multiple of this are worth a chronicle line, so the
     /// Event Log marks a hero's milestones rather than every step of a steady
     /// climb (GDD 10). Heroes still gain every level and its renown silently.

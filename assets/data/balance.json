@@ -125,6 +125,7 @@
       "high_tier_mult": 0.3,
       "decay": 0.95,
       "crucible_coeff": 0.006,
+      "culture_match_bonus": 0.4,
       "chronicle_interval": 5
     },
     "death": {

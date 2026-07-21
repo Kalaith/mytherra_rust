@@ -28,9 +28,13 @@ pub fn tick_heroes(
         }
 
         // Trial by fire: a hero grows faster in a dangerous land than a placid
-        // one (GDD 5.4), so peril tempers those who dwell in it.
-        let danger = region_danger(regions, &hero.region_id);
-        if rng.chance(hero.level_up_chance_in(danger, balance)) {
+        // one (GDD 5.4), so peril tempers those who dwell in it — and faster still
+        // in a land whose character suits their calling (a warrior in a martial
+        // land), so a region's culture shapes the heroes who rise in it.
+        let home = regions.iter().find(|r| r.id == hero.region_id);
+        let danger = home.map(|r| r.danger).unwrap_or(0.0);
+        let culture_match = home.is_some_and(|r| r.culture == hero_culture(hero.role));
+        if rng.chance(hero.level_up_chance_in(danger, culture_match, balance)) {
             hero.level += 1;
             hero.renown += balance.renown.per_level;
             // Chronicle only milestone levels, so a hero's steady climb marks the

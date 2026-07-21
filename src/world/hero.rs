@@ -68,8 +68,19 @@ impl Hero {
 
     /// Level-up chance tempered by the peril of the hero's region: a hero forged
     /// in a dangerous land grows faster than one in a placid one (GDD 5.4).
-    pub fn level_up_chance_in(&self, region_danger: f32, balance: &HeroBalance) -> f32 {
-        self.level_up_chance(balance) * (1.0 + region_danger * balance.level_up.crucible_coeff)
+    pub fn level_up_chance_in(
+        &self,
+        region_danger: f32,
+        culture_match: bool,
+        balance: &HeroBalance,
+    ) -> f32 {
+        let crucible = 1.0 + region_danger * balance.level_up.crucible_coeff;
+        let kinship = if culture_match {
+            1.0 + balance.level_up.culture_match_bonus
+        } else {
+            1.0
+        };
+        self.level_up_chance(balance) * crucible * kinship
     }
 }
 
@@ -110,13 +121,32 @@ mod tests {
         let b = balance();
         let h = hero(5);
         assert!(
-            h.level_up_chance_in(100.0, &b) > h.level_up_chance_in(0.0, &b),
+            h.level_up_chance_in(100.0, false, &b) > h.level_up_chance_in(0.0, false, &b),
             "a hero in a dangerous land should grow faster than one at peace"
         );
         assert_eq!(
-            h.level_up_chance_in(0.0, &b),
+            h.level_up_chance_in(0.0, false, &b),
             h.level_up_chance(&b),
-            "a placid region leaves the base growth chance untouched"
+            "a placid region with no kinship leaves the base growth chance untouched"
+        );
+    }
+
+    #[test]
+    fn a_hero_in_their_element_grows_faster() {
+        // A calm land that suits a hero's calling still quickens their growth
+        // above the bare base, purely through the culture-kinship bonus (GDD 5.4).
+        let b = balance();
+        let h = hero(5);
+        assert!(
+            h.level_up_chance_in(0.0, true, &b) > h.level_up_chance_in(0.0, false, &b),
+            "a hero whose calling suits the land should grow faster than one adrift"
+        );
+        assert!(
+            (h.level_up_chance_in(0.0, true, &b)
+                - h.level_up_chance(&b) * (1.0 + b.level_up.culture_match_bonus))
+                .abs()
+                < f32::EPSILON,
+            "kinship adds exactly its bonus fraction"
         );
     }
 
