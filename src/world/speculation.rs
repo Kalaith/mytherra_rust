@@ -3,7 +3,7 @@
 //! without a data lookup, and carries simulated crowd stakes so the crowd-lean
 //! payout adjustment is meaningful in this local build.
 
-use crate::data::{BetPredicate, TargetKind};
+use crate::data::{BetPredicate, HeroRole, TargetKind};
 use crate::world::{Hero, Region, Settlement};
 use macroquad_toolkit::math::clamp01;
 use serde::{Deserialize, Serialize};
@@ -180,7 +180,19 @@ impl SpeculationEvent {
                 .unwrap_or(0.5),
             BetPredicate::RegionResonanceAtLeast => self
                 .region(regions)
-                .map(|r| clamp01(r.divine_resonance / self.threshold.max(1.0)))
+                .map(|r| {
+                    let current = clamp01(r.divine_resonance / self.threshold.max(1.0));
+                    // A land served by living Clerics is being consecrated over
+                    // time (GDD 5.4 <-> 5.1), so even a humble resonance trends
+                    // toward the bar — the crowd prices in the devout, the way it
+                    // prices in a strong defender for a conquest wager. Each
+                    // resident cleric lends a little confidence, capped at 1.
+                    let clerics = heroes
+                        .iter()
+                        .filter(|h| h.is_alive && h.role == HeroRole::Cleric && h.region_id == r.id)
+                        .count();
+                    clamp01(current + clerics as f32 * 0.12)
+                })
                 .unwrap_or(0.5),
             BetPredicate::RegionCrisis => self
                 .region(regions)
@@ -463,8 +475,36 @@ mod tests {
             !event.is_satisfied(&[], &regions, &[], 1),
             "50 falls short of 80"
         );
-        // Likelihood tracks the ratio to the bar.
+        // With no clerics, likelihood tracks the raw ratio to the bar.
         assert!((event.likelihood(&[], &regions, &[], 0.0) - 50.0 / 80.0).abs() < 0.01);
+
+        // The crowd reads the devout: a resident living Cleric lends confidence
+        // that the land will grow hallowed, so the odds rise above the raw ratio.
+        let barren = event.likelihood(&[], &regions, &[], 0.0);
+        let served = event.likelihood(&[hero_cleric("kharzul", true)], &regions, &[], 0.0);
+        assert!(
+            served > barren,
+            "a land served by a cleric should read likelier to grow hallowed"
+        );
+        // A fallen cleric tends no faith, so it does not move the odds.
+        let fallen = event.likelihood(&[hero_cleric("kharzul", false)], &regions, &[], 0.0);
+        assert!(
+            (fallen - barren).abs() < 1e-6,
+            "the dead consecrate nothing"
+        );
+    }
+
+    fn hero_cleric(region_id: &str, alive: bool) -> Hero {
+        Hero {
+            id: "cleric".to_owned(),
+            name: "Cleric".to_owned(),
+            role: HeroRole::Cleric,
+            region_id: region_id.to_owned(),
+            level: 5,
+            age: 40,
+            is_alive: alive,
+            renown: 0.0,
+        }
     }
 
     #[test]
