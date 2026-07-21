@@ -4,7 +4,7 @@
 //! authored in JSON), and unlock state persists in the player's save.
 
 use crate::data::GameData;
-use crate::world::{bet_record, PlayerState, WorldState};
+use crate::world::{bet_record, MagicState, PlayerState, WorldState};
 
 /// Whether the achievement `id` has been earned by the current state.
 fn earned(id: &str, world: &WorldState, player: &PlayerState, data: &GameData) -> bool {
@@ -28,6 +28,22 @@ fn earned(id: &str, world: &WorldState, player: &PlayerState, data: &GameData) -
         // A living myth only exists once the player has promoted a candidate.
         "mythwright" => !world.myths.is_empty(),
         "free_spender" => player.favor_spent >= 1000,
+        // A metropolis is the top settlement tier: population past the last of the
+        // size thresholds.
+        "metropolis" => {
+            let thresholds = &data.balance.settlement.tier_thresholds;
+            world
+                .settlements
+                .iter()
+                .any(|s| s.tier(thresholds) >= thresholds.len())
+        }
+        "archmage" => world
+            .magic_paths
+            .iter()
+            .any(|p| p.state == MagicState::Known),
+        // The map grew: genesis (a fracture or frontier founding) added a region
+        // beyond the seeded set.
+        "new_lands" => world.regions.len() > data.regions.len(),
         _ => false,
     }
 }
@@ -132,5 +148,37 @@ mod tests {
         let unlocked = check(&world, &mut player, &data);
         assert!(unlocked.iter().any(|n| n == "The Meddler"));
         assert!(unlocked.iter().any(|n| n == "Open-Handed"));
+    }
+
+    #[test]
+    fn world_milestones_unlock_their_goals() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+        player
+            .achievements
+            .sync_definitions(data.achievements.clone());
+
+        // None of the three world milestones hold at a fresh start.
+        let fresh = check(&world, &mut player, &data);
+        for name in ["The Great City", "Archmage", "New Lands"] {
+            assert!(
+                !fresh.iter().any(|n| n == name),
+                "{name} unlocked too early"
+            );
+        }
+
+        // A metropolis, a mastered magic school, and a newly-born region.
+        let top = data.balance.settlement.tier_thresholds.last().unwrap();
+        world.settlements[0].population = top + 10_000.0;
+        world.magic_paths[0].state = MagicState::Known;
+        let mut newborn = world.regions[0].clone();
+        newborn.id = "rift-test".to_owned();
+        world.regions.push(newborn);
+
+        let unlocked = check(&world, &mut player, &data);
+        assert!(unlocked.iter().any(|n| n == "The Great City"));
+        assert!(unlocked.iter().any(|n| n == "Archmage"));
+        assert!(unlocked.iter().any(|n| n == "New Lands"));
     }
 }

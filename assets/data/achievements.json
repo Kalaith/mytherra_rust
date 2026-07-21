@@ -8,5 +8,8 @@
   { "id": "prophet", "name": "The Prophet", "description": "Win ten wagers at the Divine Observatory." },
   { "id": "meddler", "name": "The Meddler", "description": "Nudge the world twenty-five times." },
   { "id": "mythwright", "name": "Mythwright", "description": "Raise a candidate tale into a living myth." },
-  { "id": "free_spender", "name": "Open-Handed", "description": "Pour a thousand favor into the world." }
+  { "id": "free_spender", "name": "Open-Handed", "description": "Pour a thousand favor into the world." },
+  { "id": "metropolis", "name": "The Great City", "description": "See a settlement swell into a metropolis." },
+  { "id": "archmage", "name": "Archmage", "description": "Guide a school of magic to fully Known mastery." },
+  { "id": "new_lands", "name": "New Lands", "description": "Watch the map grow as a new region is born." }
 ]
