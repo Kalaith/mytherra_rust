@@ -187,6 +187,13 @@ pub struct FrontierBalance {
     /// to found frontiers more readily, so the player's Advance-agenda nudge on a
     /// thriving region becomes a lever on where the map grows.
     pub expansion_found_chance: f32,
+    /// Founding-chance bonus a region gains per living Ranger dwelling in it (GDD
+    /// 5.2 <-> 5.4): rangers are the pathfinders who scout the wilds and find the
+    /// way to virgin land, so a land with wardens strikes out to found frontiers
+    /// more readily. This is the Ranger role's own domain — the counterpart to a
+    /// Cleric tending faith and a Merchant swelling trade — turning heroes into a
+    /// driver of where the map grows, not only who defends it.
+    pub ranger_found_chance: f32,
     /// Fraction of the home region's population that leaves to settle.
     pub settler_fraction: f32,
     /// The world will never grow past this many regions by founding.

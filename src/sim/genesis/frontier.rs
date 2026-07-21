@@ -6,7 +6,9 @@
 //! driven by success — so a well-tended world grows new regions of its own.
 
 use crate::data::strings::{ChronicleText, GenesisText};
-use crate::data::{fill, Agenda, ArtifactFocus, FrontierBalance, RegionBalance, RegionSeed};
+use crate::data::{
+    fill, Agenda, ArtifactFocus, FrontierBalance, HeroRole, RegionBalance, RegionSeed,
+};
 use crate::world::{
     Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, RegionStatus, TradeRoute,
 };
@@ -41,6 +43,16 @@ fn expansion_bonus(
     }
 }
 
+/// Founding-chance bonus a region gains from the living Rangers dwelling in it —
+/// the pathfinders who scout the way to new land (GDD 5.2 <-> 5.4).
+fn ranger_bonus(region_id: &str, heroes: &[Hero], balance: &FrontierBalance) -> f32 {
+    let rangers = heroes
+        .iter()
+        .filter(|h| h.is_alive && h.role == HeroRole::Ranger && h.region_id == region_id)
+        .count();
+    rangers as f32 * balance.ranger_found_chance
+}
+
 /// A founding hero: a veteran living in a thriving, populous region. Scanned in
 /// index order; each eligible hero rolls the founding chance, so selection is
 /// deterministic for a given RNG state.
@@ -70,7 +82,8 @@ fn pick(
         }
         let chance = balance.found_chance
             + prosperity_bonus(&region.id, artifacts, balance)
-            + expansion_bonus(region, civ, agendas, apply_threshold, balance);
+            + expansion_bonus(region, civ, agendas, apply_threshold, balance)
+            + ranger_bonus(&region.id, heroes, balance);
         if rng.chance(chance) {
             return Some((hi, ri));
         }
@@ -290,6 +303,46 @@ mod tests {
         assert_eq!(
             expansion_bonus(&region, &[], &data.agendas, threshold, frontier),
             0.0
+        );
+    }
+
+    #[test]
+    fn resident_rangers_lend_a_founding_bonus() {
+        use crate::data::{HeroRole, HeroSeed};
+        let data = GameData::load().unwrap();
+        let frontier = &data.balance.frontier;
+        let ranger = |id: &str, region: &str, alive: bool| {
+            let mut h = Hero::from_seed(&HeroSeed {
+                id: id.to_owned(),
+                name: id.to_owned(),
+                role: HeroRole::Ranger,
+                region_id: region.to_owned(),
+                level: 10,
+                age: 30,
+            });
+            h.is_alive = alive;
+            h
+        };
+        let mut scout = ranger("scout2", "home", true);
+        scout.role = HeroRole::Warrior; // a warrior is no pathfinder
+
+        let heroes = vec![
+            ranger("pathfinder", "home", true), // counts
+            ranger("second", "home", true),     // counts
+            ranger("distant", "away", true),    // wrong region
+            ranger("fallen", "home", false),    // dead
+            scout,                              // wrong role
+        ];
+        // Two living rangers at home -> exactly two steps of the bonus.
+        assert!(
+            (ranger_bonus("home", &heroes, frontier) - 2.0 * frontier.ranger_found_chance).abs()
+                < f32::EPSILON,
+            "two resident rangers should lend exactly two steps of the founding bonus"
+        );
+        assert_eq!(
+            ranger_bonus("elsewhere", &heroes, frontier),
+            0.0,
+            "a land with no rangers gains nothing"
         );
     }
 
