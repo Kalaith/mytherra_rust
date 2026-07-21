@@ -10,6 +10,7 @@ use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
 
 mod detail;
+mod town;
 
 pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let area = content_rect();
