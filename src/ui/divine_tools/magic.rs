@@ -52,6 +52,25 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
     );
     y += 22.0;
 
+    // Knowledge relics are a second lever on research beside scholars (GDD 5.6):
+    // note them when any exist, so the player can read forging Knowledge relics as
+    // a way to hasten the arcane — the Artifacts tool feeding the Magic tool.
+    let relics = ctx
+        .world
+        .artifacts
+        .iter()
+        .filter(|a| a.focus == crate::data::ArtifactFocus::Knowledge)
+        .count();
+    if relics > 0 {
+        draw_ui_text_ex(
+            &fill(&strings.magic_relics, &[("count", relics.to_string())]),
+            content.x,
+            y,
+            TextStyle::new(14.0, Color::new(0.6, 0.55, 0.9, 1.0)).params(),
+        );
+        y += 22.0;
+    }
+
     for path in &ctx.world.magic_paths {
         draw_path(ctx, path, Rect::new(content.x, y, content.w, 74.0), actions);
         y += 80.0;

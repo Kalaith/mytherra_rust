@@ -4,8 +4,8 @@
 //! legend grow in attuned lands. Deterministic: no RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, HeroRole, MagicBalance, MagicStat, RegionBalance};
-use crate::world::{Chronicle, EventKind, Hero, MagicPath, MagicState, Region};
+use crate::data::{fill, ArtifactFocus, HeroRole, MagicBalance, MagicStat, RegionBalance};
+use crate::world::{Artifact, Chronicle, EventKind, Hero, MagicPath, MagicState, Region};
 
 /// Advance every research path by one tick and apply mature paths' effects.
 #[allow(clippy::too_many_arguments)]
@@ -13,6 +13,7 @@ pub fn tick_magic(
     paths: &mut [MagicPath],
     regions: &mut [Region],
     heroes: &mut [Hero],
+    artifacts: &[Artifact],
     balance: &MagicBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -31,12 +32,23 @@ pub fn tick_magic(
         .count();
     let scholar_evidence = learned as f32 * balance.evidence_per_scholar;
 
+    // A relic of knowledge is itself a font of understanding: every Knowledge-
+    // focus artifact hastens research by its power, so the Artifacts tool feeds
+    // the Magic tool (GDD 5.6). Distinct from a relic's affinity nudge — this is
+    // insight into the arcane (evidence), not the ambient magic of the land.
+    let relic_evidence = artifacts
+        .iter()
+        .filter(|a| a.focus == ArtifactFocus::Knowledge)
+        .map(|a| a.power as f32 * balance.evidence_per_knowledge_relic)
+        .sum::<f32>();
+
     for path in paths.iter_mut() {
         path.progress =
             (path.progress + balance.progress_per_tick + avg_magic * balance.magic_affinity_coeff)
                 .min(balance.stat_cap);
         path.evidence =
-            (path.evidence + balance.evidence_per_tick + scholar_evidence).min(balance.stat_cap);
+            (path.evidence + balance.evidence_per_tick + scholar_evidence + relic_evidence)
+                .min(balance.stat_cap);
         path.recompute_state(balance);
 
         if path.state == MagicState::Known && !path.announced_known {
@@ -132,6 +144,7 @@ mod tests {
             &mut world.magic_paths,
             &mut world.regions,
             &mut world.heroes,
+            &world.artifacts,
             &data.balance.magic,
             &data.balance.region,
             &mut world.chronicle,
@@ -192,6 +205,7 @@ mod tests {
             &mut world.magic_paths,
             &mut world.regions,
             &mut world.heroes,
+            &world.artifacts,
             &data.balance.magic,
             &data.balance.region,
             &mut world.chronicle,
@@ -249,6 +263,7 @@ mod tests {
                 &mut world.magic_paths,
                 &mut world.regions,
                 &mut world.heroes,
+                &world.artifacts,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -267,6 +282,63 @@ mod tests {
     }
 
     #[test]
+    fn a_knowledge_relic_hastens_the_understanding_of_magic() {
+        use crate::data::ArtifactFocus;
+        let data = GameData::load().unwrap();
+        // Evidence a fresh Dormant path accrues in one tick, given the relics
+        // present. Heroes cleared so only the relic contribution varies.
+        let evidence_after = |relics: Vec<Artifact>| {
+            let mut world = WorldState::new(&data);
+            world.heroes.clear();
+            world.artifacts = relics;
+            world.magic_paths.clear();
+            world.magic_paths.push(MagicPath {
+                id: "p".to_owned(),
+                name: "Test Art".to_owned(),
+                description: String::new(),
+                effect_stat: MagicStat::Magic,
+                effect_per_tick: 0.0,
+                progress: 0.0,
+                evidence: 0.0,
+                state: MagicState::Dormant,
+                announced_known: false,
+            });
+            tick_magic(
+                &mut world.magic_paths,
+                &mut world.regions,
+                &mut world.heroes,
+                &world.artifacts,
+                &data.balance.magic,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.magic_paths[0].evidence
+        };
+
+        let relic = |focus: ArtifactFocus| Artifact {
+            id: "relic".to_owned(),
+            name: "Test Relic".to_owned(),
+            focus,
+            power: 5,
+            instability: 0.0,
+            region_id: "aldermoor".to_owned(),
+        };
+        let with_knowledge = evidence_after(vec![relic(ArtifactFocus::Knowledge)]);
+        let without = evidence_after(vec![]);
+        let with_war = evidence_after(vec![relic(ArtifactFocus::War)]);
+        assert!(
+            with_knowledge > without,
+            "a Knowledge relic should hasten research ({with_knowledge} vs {without})"
+        );
+        assert_eq!(
+            with_war, without,
+            "only Knowledge-focus relics feed research, not a War relic"
+        );
+    }
+
+    #[test]
     fn research_paths_mature_over_time() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
@@ -275,6 +347,7 @@ mod tests {
                 &mut world.magic_paths,
                 &mut world.regions,
                 &mut world.heroes,
+                &world.artifacts,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,

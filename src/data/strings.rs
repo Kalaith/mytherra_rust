@@ -251,6 +251,8 @@ pub struct DivineText {
     pub magic_evidence: String,
     pub magic_scholars: String,
     pub magic_no_scholars: String,
+    /// Magic-panel line noting Knowledge relics feeding research; `{count}`.
+    pub magic_relics: String,
     pub magic_dormant: String,
     pub magic_emerging: String,
     pub magic_known: String,

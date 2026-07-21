@@ -135,6 +135,7 @@
     "magic_evidence": "evidence {evidence}",
     "magic_scholars": "{count} scholars and mages quicken every path.",
     "magic_no_scholars": "No learned minds study the arcane; discovery creeps.",
+    "magic_relics": "{count} relics of knowledge lend their insight.",
     "magic_dormant": "Dormant",
     "magic_emerging": "Emerging",
     "magic_known": "Known",

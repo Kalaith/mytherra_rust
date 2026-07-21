@@ -260,4 +260,11 @@ pub struct MagicBalance {
     /// so a learned age masters magic sooner than an unlettered one — giving
     /// scholars and mages a hand in research, not only in their land's culture.
     pub evidence_per_scholar: f32,
+    /// Extra evidence each point of a Knowledge-focus relic's power adds to every
+    /// path per tick (GDD 5.6): a relic of knowledge is itself a font of arcane
+    /// understanding, so the Artifacts tool feeds the Magic tool — the player who
+    /// forges Knowledge relics masters magic sooner, a second lever on research
+    /// beside cultivating scholars. Distinct from the relic's raw affinity nudge:
+    /// this hastens *understanding* (evidence), not the world's ambient magic.
+    pub evidence_per_knowledge_relic: f32,
 }

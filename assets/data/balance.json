@@ -341,7 +341,8 @@
     "affinity_base": 0.5,
     "affinity_coeff": 0.01,
     "known_renown_per_tick": 0.35,
-    "evidence_per_scholar": 0.12
+    "evidence_per_scholar": 0.12,
+    "evidence_per_knowledge_relic": 0.05
   },
   "myth": {
     "promote_cost": 22,

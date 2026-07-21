@@ -64,6 +64,16 @@ impl Game {
             for _ in 0..45 {
                 self.run_tick();
             }
+            // A standing Knowledge relic so the research-momentum line noting
+            // relics of knowledge is visible in the capture (GDD 5.6).
+            self.world.artifacts.push(crate::world::Artifact {
+                id: "capture-knowledge-relic".to_owned(),
+                name: "Codex of the Deep".to_owned(),
+                focus: crate::data::ArtifactFocus::Knowledge,
+                power: 5,
+                instability: 0.0,
+                region_id: self.world.regions[0].id.clone(),
+            });
         }
         if scene == "myths" {
             for _ in 0..2 {
