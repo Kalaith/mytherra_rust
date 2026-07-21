@@ -21,6 +21,11 @@ pub struct Building {
     /// loadable; `None` fits any culture.
     #[serde(default)]
     pub culture: Option<Culture>,
+    /// Divine resonance this building raises in its region each tick, resolved
+    /// from its type at creation (GDD 6 <-> 5.1): a Temple hallows the land around
+    /// it. `serde(default)` keeps older saves loadable.
+    #[serde(default)]
+    pub resonance_bonus: f32,
 }
 
 impl Building {
@@ -33,6 +38,7 @@ impl Building {
             type_id: seed.type_id.clone(),
             prosperity_bonus: ty.map(|t| t.prosperity_bonus).unwrap_or(0.0),
             culture: ty.and_then(|t| t.culture),
+            resonance_bonus: ty.map(|t| t.resonance_bonus).unwrap_or(0.0),
         }
     }
 }

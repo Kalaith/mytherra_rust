@@ -181,6 +181,7 @@ mod tests {
                 type_id: "forge".to_owned(),
                 prosperity_bonus: 0.0,
                 culture: Some(Culture::Martial),
+                resonance_bonus: 0.0,
             })
             .collect();
         let thresholds = &data.balance.settlement.tier_thresholds;

@@ -15,6 +15,13 @@ pub struct BuildingType {
     /// dominant culture favours raising it (GDD 5.2 <-> 6). `None` fits anywhere.
     #[serde(default)]
     pub culture: Option<Culture>,
+    /// Divine resonance this building raises in its region each tick (GDD 6 <->
+    /// 5.1): a Temple is a house of worship, so a land studded with them grows
+    /// faithful over time — the built counterpart to a Cleric tending faith, and a
+    /// third path (beside consecration and clerics) to the favor a hallowed land
+    /// tithes. `serde(default)` leaves the secular building types at zero.
+    #[serde(default)]
+    pub resonance_bonus: f32,
 }
 
 /// A seeded building (`buildings.json`) placed in a settlement.

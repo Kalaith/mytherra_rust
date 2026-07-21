@@ -41,6 +41,19 @@ pub fn tick_settlements(
             .map(|b| b.prosperity_bonus)
             .sum();
         let supporting = (region_prosperity + building_bonus).clamp(0.0, 100.0);
+
+        // A settlement's houses of worship hallow the land around them (GDD 6 <->
+        // 5.1): every Temple raises its region's divine resonance a little each
+        // tick — a built path to faith beside a Cleric's tending and the player's
+        // consecration, so a temple-studded land grows faithful and tithes more.
+        let resonance_bonus: f32 = buildings
+            .iter()
+            .filter(|b| b.settlement_id == settlement.id)
+            .map(|b| b.resonance_bonus)
+            .sum();
+        if resonance_bonus > 0.0 {
+            regions[idx].add_resonance(resonance_bonus);
+        }
         let target = supporting;
 
         // The land feeds only so many: population swells toward a capacity set by
@@ -275,6 +288,7 @@ pub fn tick_construction(
             type_id: chosen.id.clone(),
             prosperity_bonus: chosen.prosperity_bonus,
             culture: chosen.culture,
+            resonance_bonus: chosen.resonance_bonus,
         });
         chronicle.push(
             year,
@@ -349,6 +363,54 @@ mod tests {
         for (s, was) in world.settlements.iter().zip(before) {
             assert!(s.population > was);
         }
+    }
+
+    #[test]
+    fn a_temple_hallows_the_land_around_it() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let settlement = world.settlements[0].clone();
+        let ridx = world
+            .regions
+            .iter()
+            .position(|r| r.id == settlement.region_id)
+            .unwrap();
+        world.regions[ridx].divine_resonance = 50.0;
+        let before = world.regions[ridx].divine_resonance;
+
+        // Isolate a single temple's contribution: clear the seed buildings, then
+        // stand one temple (resonance bonus) and one secular hall (none) in the
+        // settlement.
+        world.buildings.clear();
+        let building = |id: &str, resonance: f32| Building {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            settlement_id: settlement.id.clone(),
+            type_id: id.to_owned(),
+            prosperity_bonus: 3.0,
+            culture: None,
+            resonance_bonus: resonance,
+        };
+        world.buildings.push(building("temple", 0.5));
+        world.buildings.push(building("market", 0.0));
+
+        tick_settlements(
+            &mut world.settlements,
+            &world.buildings,
+            &mut world.regions,
+            &data.balance.settlement,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            &data.strings.ui.settlement_tiers,
+            world.year,
+        );
+
+        // Only the temple hallows the land, and by exactly its bonus.
+        assert!(
+            (world.regions[ridx].divine_resonance - (before + 0.5)).abs() < 1e-4,
+            "a temple should raise its region's resonance by exactly its bonus"
+        );
     }
 
     #[test]
