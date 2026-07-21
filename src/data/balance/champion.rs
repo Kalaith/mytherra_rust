@@ -20,6 +20,11 @@ pub struct ChampionBalance {
     /// guards or enriches its home, not only when a quest resolves — so the
     /// player's investment pays off every tick, not just at rivalry moments.
     pub passive_scale: f32,
+    /// Secession pressure a champion bleeds off its region each tick, per rank
+    /// (GDD 5.4 <-> 5.2): a beloved champion holds their homeland together just by
+    /// dwelling there, so cultivating one is a standing guard against fracture —
+    /// the counterpart to the shield a strong hero raises against conquest.
+    pub passive_strife: f32,
     pub quest: QuestParams,
     pub rivalry: RivalryParams,
     pub focuses: ChampionFocuses,

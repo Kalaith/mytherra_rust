@@ -63,6 +63,12 @@ pub fn tick_champions(
                 focus.resolve_magic * scale,
                 region_balance,
             );
+            // A beloved champion holds their homeland together just by dwelling in
+            // it: their presence continuously bleeds off the secession pressure
+            // that would fracture the region (GDD 5.4 <-> 5.2), scaled by rank —
+            // so cultivating a champion is a standing guard against fracture, the
+            // mirror of the shield a strong hero gives against conquest.
+            region.adjust_strife(-balance.passive_strife * champion.rank as f32);
         }
 
         champion.quest_progress += champion.quest_step(heroes[idx].level, balance);
@@ -294,6 +300,44 @@ mod tests {
         assert!(
             world.regions[region_idx].danger < danger_before,
             "a Valor champion's presence should still hold back danger"
+        );
+    }
+
+    #[test]
+    fn a_champion_holds_its_homeland_together() {
+        // A champion passively bleeds its region's secession pressure every tick,
+        // without completing a quest — a standing guard against fracture (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let hero = world.heroes[0].clone();
+        let region_idx = world
+            .regions
+            .iter()
+            .position(|r| r.id == hero.region_id)
+            .unwrap();
+        world.regions[region_idx].strife = 40.0;
+        let strife_before = world.regions[region_idx].strife;
+
+        let mut champion = Champion::designate(hero.id.clone(), ChampionFocus::Valor);
+        champion.rank = 5;
+        champion.quest_progress = 0.0; // no quest resolves this tick
+        let mut champions = vec![champion];
+
+        tick_champions(
+            &mut champions,
+            &mut world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert_eq!(champions[0].quests, 0, "no quest resolved this tick");
+        assert!(
+            world.regions[region_idx].strife < strife_before,
+            "a champion's presence should bleed off secession pressure"
         );
     }
 
