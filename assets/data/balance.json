@@ -97,7 +97,8 @@
     "sack_prosperity_loss": 18.0,
     "min_regions": 3,
     "momentum_gain": 20.0,
-    "momentum_cap": 60.0
+    "momentum_cap": 60.0,
+    "ally_aid": 0.5
   },
   "frontier": {
     "founder_min_level": 12,

@@ -6,7 +6,7 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Agenda, ArtifactFocus, ConquestBalance, RegionBalance};
 use crate::world::{
-    Artifact, Chronicle, EventKind, Hero, Landmark, Region, RegionAgendas, ResourceNode,
+    Artifact, Chronicle, EventKind, Hero, Landmark, Pact, Region, RegionAgendas, ResourceNode,
     Settlement, TradeRoute, WeatherEvent,
 };
 
@@ -43,6 +43,36 @@ fn conquest_might(
         &balance.hero_might_weights,
     );
     region.might(balance) + war + heroic
+}
+
+/// A region's full might to resist annexation: its own conquest might, plus the
+/// aid its sworn allies lend to its defence (GDD 5.2). Allies stand against the
+/// swallowing of a friend, so a land with mighty allies is harder to conquer —
+/// used only for a *target*, since friends defend but do not help you annex.
+fn defended_might(
+    region: &Region,
+    regions: &[Region],
+    heroes: &[Hero],
+    artifacts: &[Artifact],
+    pacts: &[Pact],
+    balance: &ConquestBalance,
+) -> f32 {
+    let own = conquest_might(region, heroes, artifacts, balance);
+    let aid: f32 = pacts
+        .iter()
+        .filter_map(|p| {
+            if p.region_a == region.id {
+                Some(p.region_b.as_str())
+            } else if p.region_b == region.id {
+                Some(p.region_a.as_str())
+            } else {
+                None
+            }
+        })
+        .filter_map(|ally_id| regions.iter().find(|r| r.id == ally_id))
+        .map(|ally| conquest_might(ally, heroes, artifacts, balance) * balance.ally_aid)
+        .sum();
+    own + aid
 }
 
 /// Is the region warded by a Protection artifact strong enough to turn back a
@@ -86,6 +116,7 @@ fn pick(
     artifacts: &[Artifact],
     civ: &[RegionAgendas],
     agendas: &[Agenda],
+    pacts: &[Pact],
     apply_threshold: f32,
     balance: &ConquestBalance,
 ) -> Option<(usize, usize)> {
@@ -99,10 +130,16 @@ fn pick(
             continue;
         }
         for (ti, target) in regions.iter().enumerate() {
-            if ti == ai || !target.status.is_crisis() {
+            // A people does not annex a sworn ally, and one is spared even in
+            // crisis (GDD 5.2): the alliance stays the hand of conquest as it stays
+            // the sword of war.
+            if ti == ai
+                || !target.status.is_crisis()
+                || pacts.iter().any(|p| p.binds(&aggressor.id, &target.id))
+            {
                 continue;
             }
-            let gap = a_might - conquest_might(target, heroes, artifacts, balance);
+            let gap = a_might - defended_might(target, regions, heroes, artifacts, pacts, balance);
             // Both peoples' courses shape the margin: a Defense target demands a
             // wider gap and a Rivalry one lies more exposed; a Rivalry aggressor
             // will forgo margin to strike where a Defense-minded one holds off.
@@ -144,6 +181,7 @@ pub(super) fn run(
     heroes: &mut [Hero],
     trade_routes: &mut Vec<TradeRoute>,
     civilization: &mut Vec<RegionAgendas>,
+    pacts: &[Pact],
     agendas: &[Agenda],
     apply_threshold: f32,
     conquest_momentum: &mut f32,
@@ -160,6 +198,7 @@ pub(super) fn run(
         artifacts,
         civilization,
         agendas,
+        pacts,
         apply_threshold,
         balance,
     ) else {

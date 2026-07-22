@@ -164,6 +164,13 @@ pub struct ConquestBalance {
     /// pressure, GDD 5.7), and the ceiling that momentum can reach.
     pub momentum_gain: f32,
     pub momentum_cap: f32,
+    /// Fraction of a sworn ally's conquest might that it lends to a region's
+    /// defence against annexation (GDD 5.2 <-> 5.2): allies stand against the
+    /// swallowing of a friend as they stand against its defeat in war, so a land
+    /// with mighty allies is harder to conquer — the alliance is a shield against
+    /// annexation, not only against open battle. Applied to a target's might, never
+    /// an aggressor's: friends defend, they do not help you annex.
+    pub ally_aid: f32,
 }
 
 /// Frontier-founding tuning: the third genesis path and the mirror of a fracture

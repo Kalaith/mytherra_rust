@@ -349,6 +349,68 @@ fn a_defended_region_resists_conquest() {
 }
 
 #[test]
+fn a_region_with_a_mighty_ally_resists_conquest() {
+    // The same defenceless crisis region that would be annexed alone is spared
+    // when a mighty ally is sworn to its defence — the ally lends the might, and
+    // being an ally itself never falls upon a friend (GDD 5.2).
+    use crate::world::Pact;
+
+    // Whether the loser survives one genesis tick, with or without a sworn ally.
+    let survives = |with_ally: bool| {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let loser_id = world.regions[0].id.clone();
+        let ally_id = world.regions[2].id.clone();
+
+        // Winner (kharzul) can annex; loser (aldermoor) in crisis and undefended.
+        let winner = &mut world.regions[1];
+        winner.prosperity = 90.0;
+        winner.population = 40000.0;
+        winner.chaos = 20.0;
+        winner.danger = 20.0;
+        winner.refresh_status(&data.balance.region);
+        let loser = &mut world.regions[0];
+        loser.prosperity = 8.0;
+        loser.chaos = 90.0;
+        loser.danger = 90.0;
+        loser.population = 3000.0;
+        loser.refresh_status(&data.balance.region);
+        for hero in &mut world.heroes {
+            if hero.region_id == loser_id {
+                hero.level = 1;
+            }
+        }
+        world.artifacts.retain(|a| a.region_id != loser_id);
+
+        // A mighty, populous ally sworn to the loser marches to its defence.
+        let ally = world.regions.iter_mut().find(|r| r.id == ally_id).unwrap();
+        ally.prosperity = 100.0;
+        ally.population = 200000.0;
+        ally.refresh_status(&data.balance.region);
+        if with_ally {
+            world.pacts.push(Pact {
+                id: "p".to_owned(),
+                region_a: loser_id.clone(),
+                region_b: ally_id,
+                age: 5,
+            });
+        }
+
+        tick_genesis(&mut world, &data);
+        world.regions.iter().any(|r| r.id == loser_id)
+    };
+
+    assert!(
+        !survives(false),
+        "undefended and friendless, the crisis region should be annexed"
+    );
+    assert!(
+        survives(true),
+        "a mighty ally's aid should turn back the conquest"
+    );
+}
+
+#[test]
 fn a_protection_ward_turns_back_conquest() {
     use crate::data::{ArtifactFocus, ArtifactSeed};
     use crate::world::Artifact;
