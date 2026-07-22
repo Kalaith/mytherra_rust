@@ -325,7 +325,12 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.year,
     );
 
-    hero::tick_faith(&world.heroes, &mut world.regions, &data.balance.hero);
+    hero::tick_faith(
+        &world.heroes,
+        &mut world.regions,
+        &world.plagues,
+        &data.balance.hero,
+    );
     hero::tick_garrison(
         &world.heroes,
         &mut world.regions,

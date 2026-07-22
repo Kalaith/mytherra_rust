@@ -5,7 +5,7 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, HeroBalance, HeroRole, MigrationBalance, RegionBalance};
 use crate::sim::culture::hero_culture;
-use crate::world::{Chronicle, EventKind, Hero, Landmark, Region, Settlement};
+use crate::world::{Chronicle, EventKind, Hero, Landmark, Plague, Region, Settlement};
 use macroquad_toolkit::rng::SeededRng;
 
 /// Advance every living hero by one world tick.
@@ -119,23 +119,37 @@ fn region_fame(heroes: &[Hero], regions: &[Region]) -> Vec<f32> {
         .collect()
 }
 
-/// A land's resident Clerics tend its faith: each living Cleric raises their home
-/// region's divine resonance a little every tick (GDD 5.4 <-> 5.1), so a land
-/// served by the devout grows more receptive to divine will over time — the
+/// A land tends and turns to its faith (GDD 5.4 <-> 5.1). Two forces raise a
+/// region's divine resonance each tick: the resident Clerics who tend it — the
 /// passive, favor-free counterpart to the player's consecration, and the Cleric
-/// role's own domain beside the Warrior's might and the Merchant's trade.
-/// Deterministic: no RNG.
-pub fn tick_faith(heroes: &[Hero], regions: &mut [Region], balance: &HeroBalance) {
-    if balance.cleric_resonance_per_tick <= 0.0 {
-        return;
-    }
+/// role's own domain — and affliction itself, for a land gripped by famine or
+/// pestilence crowds its temples as the desperate beg deliverance. So faith grows
+/// both where the devout dwell and where the world's scourges fall, and a
+/// comfortable land forgets the gods a suffering one turns to. Deterministic: no
+/// RNG.
+pub fn tick_faith(
+    heroes: &[Hero],
+    regions: &mut [Region],
+    plagues: &[Plague],
+    balance: &HeroBalance,
+) {
     for region in regions.iter_mut() {
         let clerics = heroes
             .iter()
             .filter(|h| h.is_alive && h.role == HeroRole::Cleric && h.region_id == region.id)
             .count();
-        if clerics > 0 {
-            region.add_resonance(clerics as f32 * balance.cleric_resonance_per_tick);
+        let mut gain = clerics as f32 * balance.cleric_resonance_per_tick;
+
+        // Catastrophe drives the desperate to prayer: a famine-struck or
+        // plague-ridden land turns to the gods, its faith surging while the
+        // affliction lasts.
+        let afflicted = region.famine || plagues.iter().any(|p| p.region_id == region.id);
+        if afflicted {
+            gain += balance.affliction_resonance_per_tick;
+        }
+
+        if gain != 0.0 {
+            region.add_resonance(gain);
         }
     }
 }
@@ -344,7 +358,7 @@ mod tests {
         fallen.is_alive = false;
         let cleric = hero("holy", HeroRole::Cleric, "home");
 
-        tick_faith(&[cleric, warrior, fallen], &mut regions, balance);
+        tick_faith(&[cleric, warrior, fallen], &mut regions, &[], balance);
 
         assert!(
             (regions[0].divine_resonance - (50.0 + balance.cleric_resonance_per_tick)).abs() < 1e-4,
@@ -353,6 +367,44 @@ mod tests {
         assert_eq!(
             regions[1].divine_resonance, 50.0,
             "a land with no clerics keeps its faith unchanged"
+        );
+    }
+
+    #[test]
+    fn affliction_drives_the_people_to_prayer() {
+        use crate::world::Plague;
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.hero;
+        // Three cleric-less regions at the resonance baseline: one calm, one in
+        // famine, one gripped by plague. Only the afflicted turn to the gods.
+        let mut regions = vec![
+            region("calm", 60.0, 20.0, 40.0, 40.0),
+            region("starving", 60.0, 20.0, 40.0, 40.0),
+            region("plagued", 60.0, 20.0, 40.0, 40.0),
+        ];
+        regions[1].famine = true;
+        let plagues = vec![Plague {
+            id: "p".to_owned(),
+            name: "The Test Fever".to_owned(),
+            region_id: "plagued".to_owned(),
+            severity: 1.0,
+            age: 0,
+        }];
+
+        tick_faith(&[], &mut regions, &plagues, balance);
+
+        assert_eq!(
+            regions[0].divine_resonance, 50.0,
+            "a calm, unafflicted land's faith holds steady"
+        );
+        let expected = 50.0 + balance.affliction_resonance_per_tick;
+        assert!(
+            (regions[1].divine_resonance - expected).abs() < 1e-4,
+            "a starving land turns to prayer"
+        );
+        assert!(
+            (regions[2].divine_resonance - expected).abs() < 1e-4,
+            "a plague-ridden land turns to prayer"
         );
     }
 

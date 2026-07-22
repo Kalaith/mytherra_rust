@@ -20,6 +20,13 @@ pub struct HeroBalance {
     /// Merchant swelling trade and a Scholar hastening magic; unlike a player's
     /// consecration it costs no favor, accruing slowly wherever clerics dwell.
     pub cleric_resonance_per_tick: f32,
+    /// Divine resonance a region gains each tick while it is gripped by an
+    /// affliction — a famine or an active plague (GDD 5.1 <-> 5.3). Catastrophe
+    /// drives the desperate to prayer: the frightened crowd the temples to beg
+    /// deliverance, and a suffering land turns to the gods where a comfortable one
+    /// forgets them. This is the faith economy's one response to the world's
+    /// scourges — suffering as a wellspring of devotion, not only of death.
+    pub affliction_resonance_per_tick: f32,
     /// Danger a region loses per tick per level of the living Warriors garrisoned
     /// in it (GDD 5.4 <-> 5.2): fighting heroes keep the everyday peace, so a land
     /// defended by seasoned warriors grows safer over time. This is the passive,

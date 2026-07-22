@@ -197,6 +197,7 @@
       ]
     },
     "cleric_resonance_per_tick": 0.15,
+    "affliction_resonance_per_tick": 0.2,
     "warrior_danger_relief": 0.02
   },
   "house": {
