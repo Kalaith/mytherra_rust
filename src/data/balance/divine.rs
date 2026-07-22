@@ -286,4 +286,11 @@ pub struct MagicBalance {
     /// beside cultivating scholars. Distinct from the relic's raw affinity nudge:
     /// this hastens *understanding* (evidence), not the world's ambient magic.
     pub evidence_per_knowledge_relic: f32,
+    /// Evidence a scholarly or mystical landmark contributes to every path per
+    /// tick, per point of its cultural weight — its influence times its stature
+    /// (GDD 5.6 <-> 5.2): the great libraries and arcane towers of the world are
+    /// the houses of its learning, so a land studded with such wonders masters
+    /// magic sooner, and an ancient one more than a new-raised one. The built,
+    /// enduring counterpart to a living scholar's study.
+    pub evidence_per_learned_landmark: f32,
 }

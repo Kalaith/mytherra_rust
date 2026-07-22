@@ -4,8 +4,8 @@
 //! legend grow in attuned lands. Deterministic: no RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, ArtifactFocus, HeroRole, MagicBalance, MagicStat, RegionBalance};
-use crate::world::{Artifact, Chronicle, EventKind, Hero, MagicPath, MagicState, Region};
+use crate::data::{fill, ArtifactFocus, Culture, HeroRole, MagicBalance, MagicStat, RegionBalance};
+use crate::world::{Artifact, Chronicle, EventKind, Hero, Landmark, MagicPath, MagicState, Region};
 
 /// Advance every research path by one tick and apply mature paths' effects.
 #[allow(clippy::too_many_arguments)]
@@ -14,6 +14,7 @@ pub fn tick_magic(
     regions: &mut [Region],
     heroes: &mut [Hero],
     artifacts: &[Artifact],
+    landmarks: &[Landmark],
     balance: &MagicBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -42,13 +43,27 @@ pub fn tick_magic(
         .map(|a| a.power as f32 * balance.evidence_per_knowledge_relic)
         .sum::<f32>();
 
+    // The great libraries and arcane towers are the houses of the world's
+    // learning: every scholarly or mystical wonder hastens research by its
+    // cultural weight — its influence times its storied stature — so a land of
+    // such wonders masters magic sooner, an ancient one more than a new (GDD 5.6
+    // <-> 5.2).
+    let landmark_evidence = landmarks
+        .iter()
+        .filter(|l| matches!(l.culture, Culture::Scholarly | Culture::Mystical))
+        .map(|l| l.influence * l.stature * balance.evidence_per_learned_landmark)
+        .sum::<f32>();
+
     for path in paths.iter_mut() {
         path.progress =
             (path.progress + balance.progress_per_tick + avg_magic * balance.magic_affinity_coeff)
                 .min(balance.stat_cap);
-        path.evidence =
-            (path.evidence + balance.evidence_per_tick + scholar_evidence + relic_evidence)
-                .min(balance.stat_cap);
+        path.evidence = (path.evidence
+            + balance.evidence_per_tick
+            + scholar_evidence
+            + relic_evidence
+            + landmark_evidence)
+            .min(balance.stat_cap);
         path.recompute_state(balance);
 
         if path.state == MagicState::Known && !path.announced_known {
@@ -145,6 +160,7 @@ mod tests {
             &mut world.regions,
             &mut world.heroes,
             &world.artifacts,
+            &world.landmarks,
             &data.balance.magic,
             &data.balance.region,
             &mut world.chronicle,
@@ -206,6 +222,7 @@ mod tests {
             &mut world.regions,
             &mut world.heroes,
             &world.artifacts,
+            &world.landmarks,
             &data.balance.magic,
             &data.balance.region,
             &mut world.chronicle,
@@ -264,6 +281,7 @@ mod tests {
                 &mut world.regions,
                 &mut world.heroes,
                 &world.artifacts,
+                &world.landmarks,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -308,6 +326,7 @@ mod tests {
                 &mut world.regions,
                 &mut world.heroes,
                 &world.artifacts,
+                &world.landmarks,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -339,6 +358,67 @@ mod tests {
     }
 
     #[test]
+    fn learned_landmarks_hasten_the_understanding_of_magic() {
+        use crate::data::LandmarkSeed;
+        use crate::world::Landmark;
+        let data = GameData::load().unwrap();
+        // Evidence a fresh Dormant path accrues in one tick, given the wonders
+        // present; heroes and relics cleared so only the landmarks vary.
+        let evidence_after = |landmarks: Vec<Landmark>| {
+            let mut world = WorldState::new(&data);
+            world.heroes.clear();
+            world.artifacts.clear();
+            world.landmarks = landmarks;
+            world.magic_paths.clear();
+            world.magic_paths.push(MagicPath {
+                id: "p".to_owned(),
+                name: "Test Art".to_owned(),
+                description: String::new(),
+                effect_stat: MagicStat::Magic,
+                effect_per_tick: 0.0,
+                progress: 0.0,
+                evidence: 0.0,
+                state: MagicState::Dormant,
+                announced_known: false,
+            });
+            tick_magic(
+                &mut world.magic_paths,
+                &mut world.regions,
+                &mut world.heroes,
+                &world.artifacts,
+                &world.landmarks,
+                &data.balance.magic,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.magic_paths[0].evidence
+        };
+
+        let wonder = |culture: Culture| {
+            Landmark::from_seed(&LandmarkSeed {
+                id: "w".to_owned(),
+                name: "The Tower".to_owned(),
+                region_id: "aldermoor".to_owned(),
+                culture,
+                influence: 3.0,
+            })
+        };
+        let with_tower = evidence_after(vec![wonder(Culture::Mystical)]);
+        let without = evidence_after(vec![]);
+        let with_forge = evidence_after(vec![wonder(Culture::Martial)]);
+        assert!(
+            with_tower > without,
+            "an arcane tower should hasten research ({with_tower} vs {without})"
+        );
+        assert_eq!(
+            with_forge, without,
+            "only scholarly and mystical wonders feed research, not a martial one"
+        );
+    }
+
+    #[test]
     fn research_paths_mature_over_time() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
@@ -348,6 +428,7 @@ mod tests {
                 &mut world.regions,
                 &mut world.heroes,
                 &world.artifacts,
+                &world.landmarks,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
