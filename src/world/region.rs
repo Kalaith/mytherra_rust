@@ -72,8 +72,25 @@ pub struct Region {
     /// revolt — eventually fractures the region in two (`sim/genesis.rs`).
     #[serde(default)]
     pub strife: f32,
+    /// Food security (GDD 5.3): the fullness of the region's granaries, 0-100.
+    /// Replenished by fair weather, prosperity, and a farming culture; drawn down
+    /// by chaos and by more mouths than the land can feed. When it falls too low
+    /// the region enters `famine`; `sim/famine.rs` owns the whole cycle.
+    #[serde(default = "default_harvest")]
+    pub harvest: f32,
+    /// Whether the region is presently gripped by famine — starving, restive, and
+    /// bleeding its people to safer lands (GDD 5.3). Hysteretic: set when harvest
+    /// falls past the onset floor, cleared only once it climbs back to relief.
+    #[serde(default)]
+    pub famine: bool,
     /// Stats at the start of the current tick; `stat - prev.stat` is its trend.
     pub prev: StatSnapshot,
+}
+
+/// A region's starting granary fullness when a save predates the harvest field —
+/// a comfortable surplus, so an old world doesn't load straight into famine.
+fn default_harvest() -> f32 {
+    70.0
 }
 
 impl Region {
@@ -96,6 +113,8 @@ impl Region {
             divine_resonance: clamp_stat(seed.divine_resonance),
             status: RegionStatus::Peaceful,
             strife: 0.0,
+            harvest: default_harvest(),
+            famine: false,
             prev: StatSnapshot {
                 prosperity,
                 chaos,

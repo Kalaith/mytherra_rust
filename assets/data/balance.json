@@ -595,10 +595,25 @@
     "flee_threshold": 55.0,
     "plague_peril": 25.0,
     "monster_peril": 20.0,
+    "famine_peril": 22.0,
     "flee_rate": 0.02,
     "haven_max_peril": 40.0,
     "notable_flight": 400.0,
     "haven_strain": 0.0015
+  },
+  "famine": {
+    "base_regrowth": 1.0,
+    "pastoral_bonus": 1.0,
+    "weather_coeff": 0.12,
+    "chaos_comfort": 40.0,
+    "chaos_strain": 0.28,
+    "prosperity_comfort": 50.0,
+    "dearth_strain": 0.16,
+    "onset": 25.0,
+    "relief": 50.0,
+    "famine_chaos": 0.4,
+    "famine_prosperity": 0.4,
+    "famine_mortality": 0.008
   },
   "resource": {
     "stress_chaos": 0.4,

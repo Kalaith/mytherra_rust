@@ -512,6 +512,10 @@ pub struct ChronicleText {
     /// A notable flight of refugees from a perilous settlement to a safe haven
     /// (GDD 5.3); slots `{source}`, `{haven}`.
     pub refugee_flight: String,
+    /// A region's granaries run dry and famine takes hold, or the dearth finally
+    /// breaks as the harvest returns (GDD 5.3); slots `{region}`.
+    pub famine_begins: String,
+    pub famine_breaks: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_sack: String,

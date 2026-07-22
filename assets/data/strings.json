@@ -363,6 +363,8 @@
     "pact_formed": "{region_a} and {region_b} swear an alliance, bound by kinship and commerce.",
     "pact_dissolved": "The alliance between {region_a} and {region_b} lapses as their paths diverge.",
     "refugee_flight": "Refugees abandon {source} in droves, fleeing for the safety of {haven}.",
+    "famine_begins": "The granaries of {region} run dry, and famine grips the land.",
+    "famine_breaks": "The harvest returns to {region}, and the long famine is broken at last.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
     "region_sack": "The great city of {settlement} is sacked as {region} falls.",

@@ -32,6 +32,9 @@ pub fn tick_refugees(
         if monsters.iter().any(|m| m.region_id == region.id) {
             p += balance.monster_peril;
         }
+        if region.famine {
+            p += balance.famine_peril;
+        }
         p
     };
 

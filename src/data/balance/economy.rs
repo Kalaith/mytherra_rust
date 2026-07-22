@@ -66,6 +66,9 @@ pub struct RefugeeBalance {
     pub plague_peril: f32,
     /// Peril a stalking beast adds to a region.
     pub monster_peril: f32,
+    /// Peril a region in the grip of famine adds (GDD 5.3 <-> 5.3): the starving
+    /// take to the roads, so a dearth drives flight just as danger and plague do.
+    pub famine_peril: f32,
     /// Fraction of a fleeing settlement's people who leave each tick, per unit of
     /// the region's peril as a fraction of 100.
     pub flee_rate: f32,
@@ -199,4 +202,48 @@ pub struct SettlementBalance {
     /// thresholds its population meets or exceeds, so crossing one — a village
     /// swelling into a town, or a city dwindling back — is a chronicled milestone.
     pub tier_thresholds: Vec<f32>,
+}
+
+/// Famine tuning (GDD 5.3): the food economy beneath every other system. A
+/// region's granaries fill from fair weather, prosperity, and a farming culture,
+/// and empty under chaos and the sheer weight of its people. When they run dry
+/// the land starves — restive, poorer, and shedding its people to safer ground —
+/// until the harvest recovers. Deterministic: harvest is read straight from
+/// world state, no roll decides a dearth.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FamineBalance {
+    /// Baseline granary refill each tick — the land's own fertility, before any
+    /// strain. A calm, tolerably prosperous region has no strain, so this alone
+    /// fills its granary back to plenty.
+    pub base_regrowth: f32,
+    /// Extra harvest a pastoral (farming/herding) region gathers each tick.
+    pub pastoral_bonus: f32,
+    /// Harvest gained per unit of a fair weather front's prosperity effect times
+    /// its magnitude (lost to a foul one): a good season feeds, a storm blights.
+    pub weather_coeff: f32,
+    /// Chaos below which disorder costs the granary nothing; only war and unrest
+    /// *past* this comfort line spoil stores and leave fields untended. The world
+    /// self-regulates into a moderate band, so a flat chaos drain would either
+    /// never bite or starve everyone — the threshold makes famine a mark of the
+    /// genuinely troubled land, not the ordinary one.
+    pub chaos_comfort: f32,
+    /// Harvest drawn down per point of chaos above `chaos_comfort`.
+    pub chaos_strain: f32,
+    /// Prosperity above which want costs the granary nothing; only true poverty
+    /// *below* this line starves a land faster than it can farm.
+    pub prosperity_comfort: f32,
+    /// Harvest drawn down per point of prosperity below `prosperity_comfort`.
+    pub dearth_strain: f32,
+    /// Harvest at or below which a fed region tips into famine.
+    pub onset: f32,
+    /// Harvest a starving region must climb back to before the famine breaks;
+    /// kept above `onset` so a dearth doesn't flicker on the threshold.
+    pub relief: f32,
+    /// Chaos a famine adds to its region each tick — hunger breeds unrest.
+    pub famine_chaos: f32,
+    /// Prosperity a famine strips from its region each tick.
+    pub famine_prosperity: f32,
+    /// Fraction of a settlement's people lost each tick of famine — the slow toll
+    /// of starvation, on top of the flight the refugee system drives.
+    pub famine_mortality: f32,
 }

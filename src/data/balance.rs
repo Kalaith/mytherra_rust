@@ -49,6 +49,7 @@ pub struct Balance {
     pub plague: PlagueBalance,
     pub monster: MonsterBalance,
     pub refugee: RefugeeBalance,
+    pub famine: FamineBalance,
     pub resource: ResourceBalance,
     pub culture: CultureBalance,
     pub trade: TradeBalance,

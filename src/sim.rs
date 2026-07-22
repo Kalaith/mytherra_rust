@@ -7,6 +7,7 @@ mod civilization;
 mod consequence;
 mod culture;
 mod era;
+mod famine;
 mod genesis;
 mod hero;
 mod house;
@@ -255,6 +256,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
 
     // The masses flee the perils just tallied — danger, plague, and beast — for
     // the safest haven, reshaping where the world's people live (GDD 5.3).
+    // The granaries fill or fail before the people decide whether to flee, so a
+    // land newly gripped by famine drives its refugees this same tick (GDD 5.3).
+    famine::tick_famine(
+        &mut world.regions,
+        &mut world.settlements,
+        &world.weather,
+        &data.balance.famine,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
     refugee::tick_refugees(
         &mut world.settlements,
         &mut world.regions,
