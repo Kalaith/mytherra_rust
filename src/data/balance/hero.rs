@@ -20,6 +20,13 @@ pub struct HeroBalance {
     /// Merchant swelling trade and a Scholar hastening magic; unlike a player's
     /// consecration it costs no favor, accruing slowly wherever clerics dwell.
     pub cleric_resonance_per_tick: f32,
+    /// Danger a region loses per tick per level of the living Warriors garrisoned
+    /// in it (GDD 5.4 <-> 5.2): fighting heroes keep the everyday peace, so a land
+    /// defended by seasoned warriors grows safer over time. This is the passive,
+    /// day-to-day counterpart to the conquest might those same warriors lend when
+    /// a border war comes (`resident_might`) — the Warrior role's per-tick domain
+    /// beside the Cleric's faith and the Merchant's trade.
+    pub warrior_danger_relief: f32,
 }
 
 /// Hero fame tuning (GDD 5.4): how renown accrues, the danger-death it staves

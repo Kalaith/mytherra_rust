@@ -194,7 +194,8 @@
         180.0
       ]
     },
-    "cleric_resonance_per_tick": 0.15
+    "cleric_resonance_per_tick": 0.15,
+    "warrior_danger_relief": 0.02
   },
   "champion": {
     "max_roster": 3,

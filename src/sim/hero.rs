@@ -3,7 +3,7 @@
 //! sim stays deterministic and auditable.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, HeroBalance, HeroRole, MigrationBalance};
+use crate::data::{fill, HeroBalance, HeroRole, MigrationBalance, RegionBalance};
 use crate::sim::culture::hero_culture;
 use crate::world::{Chronicle, EventKind, Hero, Landmark, Region, Settlement};
 use macroquad_toolkit::rng::SeededRng;
@@ -113,6 +113,39 @@ pub fn tick_faith(heroes: &[Hero], regions: &mut [Region], balance: &HeroBalance
             .count();
         if clerics > 0 {
             region.add_resonance(clerics as f32 * balance.cleric_resonance_per_tick);
+        }
+    }
+}
+
+/// A land's resident Warriors garrison it: their presence lowers their home
+/// region's danger a little every tick (GDD 5.4 <-> 5.2), scaled by their levels,
+/// so a land defended by seasoned fighters grows safer over time. This is the
+/// passive, day-to-day counterpart to the conquest might those same warriors lend
+/// when a border war comes (`resident_might`) — the Warrior role's per-tick domain
+/// beside the Cleric's faith and the Merchant's trade. Deterministic: no RNG.
+pub fn tick_garrison(
+    heroes: &[Hero],
+    regions: &mut [Region],
+    balance: &HeroBalance,
+    region_balance: &RegionBalance,
+) {
+    if balance.warrior_danger_relief <= 0.0 {
+        return;
+    }
+    for region in regions.iter_mut() {
+        let garrison: u32 = heroes
+            .iter()
+            .filter(|h| h.is_alive && h.role == HeroRole::Warrior && h.region_id == region.id)
+            .map(|h| h.level)
+            .sum();
+        if garrison > 0 {
+            region.apply_deltas(
+                0.0,
+                0.0,
+                -balance.warrior_danger_relief * garrison as f32,
+                0.0,
+                region_balance,
+            );
         }
     }
 }
@@ -294,6 +327,42 @@ mod tests {
         assert_eq!(
             regions[1].divine_resonance, 50.0,
             "a land with no clerics keeps its faith unchanged"
+        );
+    }
+
+    #[test]
+    fn resident_warriors_garrison_their_region_and_lower_its_danger() {
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.hero;
+        // Two regions at equal danger: one garrisoned, one open.
+        let mut regions = vec![
+            region("held", 60.0, 40.0, 40.0, 40.0),
+            region("open", 60.0, 40.0, 40.0, 40.0),
+        ];
+
+        // At the held region: a living warrior (garrisons), a cleric (wrong role),
+        // and a fallen warrior (dead). Only the living warrior lowers danger.
+        let warrior = hero("guard", HeroRole::Warrior, "held"); // level 5
+        let cleric = hero("holy", HeroRole::Cleric, "held");
+        let mut fallen = hero("martyr", HeroRole::Warrior, "held");
+        fallen.is_alive = false;
+
+        tick_garrison(
+            &[warrior, cleric, fallen],
+            &mut regions,
+            balance,
+            &data.balance.region,
+        );
+
+        // Relief is exactly the living warrior's levels times the coefficient.
+        let expected = 40.0 - balance.warrior_danger_relief * 5.0;
+        assert!(
+            (regions[0].danger - expected).abs() < 1e-4,
+            "a garrisoned land should grow safer by its warriors' levels"
+        );
+        assert_eq!(
+            regions[1].danger, 40.0,
+            "an ungarrisoned land keeps its peril"
         );
     }
 
