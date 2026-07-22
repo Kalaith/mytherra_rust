@@ -531,6 +531,7 @@
     "myth_weight": 2.5,
     "influence_base": 50.0,
     "influence_per_landmark": 12.0,
+    "influence_per_house_prestige": 0.02,
     "influence_rate": 0.5,
     "landmark_aura": 0.15,
     "landmark_found_chance": 0.004,

@@ -7,7 +7,7 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Culture, CultureBalance, HeroRole, RegionBalance, ResourceType};
 use crate::world::{
-    Building, Chronicle, EventKind, Hero, Landmark, Myth, Region, ResourceNode, Settlement,
+    Building, Chronicle, EventKind, Hero, House, Landmark, Myth, Region, ResourceNode, Settlement,
     TradeRoute,
 };
 use macroquad_toolkit::math::approach;
@@ -22,6 +22,7 @@ pub fn tick_culture(
     buildings: &[Building],
     trade_routes: &[TradeRoute],
     myths: &[Myth],
+    houses: &[House],
     balance: &CultureBalance,
     region_balance: &RegionBalance,
     tier_thresholds: &[f32],
@@ -116,9 +117,17 @@ pub fn tick_culture(
             );
         }
 
-        // Cultural influence reverts toward a landmark-density target.
+        // Cultural influence reverts toward a target set by landmark density and
+        // the prestige of the noble houses seated here — a land of great wonders
+        // and great lords is a renowned one (GDD 5.2 <-> 5.4).
+        let house_prestige: f32 = houses
+            .iter()
+            .filter(|h| h.seat_region_id == region.id)
+            .map(|h| h.prestige.max(0.0))
+            .sum();
         let target = (balance.influence_base
-            + landmark_count as f32 * balance.influence_per_landmark)
+            + landmark_count as f32 * balance.influence_per_landmark
+            + house_prestige * balance.influence_per_house_prestige)
             .clamp(0.0, 100.0);
         region.cultural_influence =
             approach(region.cultural_influence, target, balance.influence_rate);
@@ -209,6 +218,7 @@ mod tests {
                 &buildings,
                 &[],
                 &[],
+                &[],
                 &data.balance.culture,
                 &data.balance.region,
                 thresholds,
@@ -270,6 +280,7 @@ mod tests {
             &world.buildings,
             &world.trade_routes,
             &world.myths,
+            &world.houses,
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -307,6 +318,7 @@ mod tests {
             &world.buildings,
             &world.trade_routes,
             &world.myths,
+            &world.houses,
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -336,6 +348,7 @@ mod tests {
             &world.buildings,
             &world.trade_routes,
             &world.myths,
+            &world.houses,
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -378,6 +391,7 @@ mod tests {
                     &[],
                     &[],
                     &[],
+                    &[],
                     &data.balance.culture,
                     &data.balance.region,
                     thresholds,
@@ -417,6 +431,7 @@ mod tests {
                 &world.buildings,
                 &world.trade_routes,
                 &world.myths,
+                &world.houses,
                 &data.balance.culture,
                 &data.balance.region,
                 &data.balance.settlement.tier_thresholds,
@@ -427,6 +442,59 @@ mod tests {
         }
         let hearthmoor = world.regions.iter().find(|r| r.id == "hearthmoor").unwrap();
         assert_eq!(hearthmoor.culture, Culture::Pastoral);
+    }
+
+    #[test]
+    fn a_great_houses_seat_grows_in_cultural_influence() {
+        // A region that is the seat of a prestigious noble house reverts toward a
+        // higher cultural-influence target than the same region with none (GDD 5.2
+        // <-> 5.4).
+        use crate::world::House;
+        let data = GameData::load().unwrap();
+
+        let settled_influence = |seat_prestige: Option<f32>| {
+            let mut world = WorldState::new(&data);
+            world.regions.truncate(1);
+            let region_id = world.regions[0].id.clone();
+            world.regions[0].cultural_influence = 0.0;
+            world.landmarks.clear();
+            world.houses.clear();
+            if let Some(prestige) = seat_prestige {
+                world.houses.push(House {
+                    id: "h".to_owned(),
+                    name: "The House of Test".to_owned(),
+                    seat_region_id: region_id.clone(),
+                    founder_name: "Test".to_owned(),
+                    member_ids: vec!["founder".to_owned()],
+                    prestige,
+                });
+            }
+            for _ in 0..200 {
+                tick_culture(
+                    &mut world.regions,
+                    &[],
+                    &world.landmarks,
+                    &[],
+                    &[],
+                    &[],
+                    &[],
+                    &[],
+                    &world.houses,
+                    &data.balance.culture,
+                    &data.balance.region,
+                    &data.balance.settlement.tier_thresholds,
+                    &mut world.chronicle,
+                    &data.strings.chronicle,
+                    world.year,
+                );
+            }
+            world.regions[0].cultural_influence
+        };
+
+        assert!(
+            settled_influence(Some(300.0)) > settled_influence(None),
+            "a region seated by a great house should grow more culturally renowned"
+        );
     }
 
     #[test]
@@ -467,6 +535,7 @@ mod tests {
                 &[],
                 &[],
                 &myths,
+                &[],
                 &data.balance.culture,
                 &data.balance.region,
                 &data.balance.settlement.tier_thresholds,

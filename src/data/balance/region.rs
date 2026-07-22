@@ -116,6 +116,12 @@ pub struct CultureBalance {
     /// Cultural-influence baseline and per-landmark bonus (the reversion target).
     pub influence_base: f32,
     pub influence_per_landmark: f32,
+    /// Cultural influence a region's seated noble houses lend it, per point of
+    /// their prestige (GDD 5.2 <-> 5.4): a land that is the seat of a great house
+    /// is a renowned place, its lords' fame drawing eyes and envy. Folds into the
+    /// same reversion target as landmark density, so it never accumulates without
+    /// bound and ebbs as a house fades.
+    pub influence_per_house_prestige: f32,
     pub influence_rate: f32,
     /// Per-tick stat aura a landmark radiates into its region, per point of its
     /// influence (GDD 5.2): a scholarly or mystical site deepens the arcane, a
