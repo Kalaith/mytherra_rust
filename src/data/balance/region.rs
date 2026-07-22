@@ -219,6 +219,13 @@ pub struct MonsterBalance {
     /// A region needs at least this much danger to be wild enough to breed a
     /// beast at all.
     pub emergence_min_danger: f32,
+    /// Emergence chance a region loses per level of the living Rangers dwelling in
+    /// it (GDD 5.2 <-> 5.4): rangers ward the wilds, culling nascent threats and
+    /// keeping the beasts at bay before they ever stalk forth. This is the Ranger
+    /// role's own per-tick domain — the prevention that complements the hunting
+    /// they lend against a beast already loose, and the wilderness counterpart to
+    /// the Warrior's garrison and the Cleric's tended faith.
+    pub ranger_ward: f32,
     /// A region whose magic affinity clears this line breeds arcane beasts
     /// (wyrms, shades) rather than natural predators.
     pub arcane_magic_threshold: f32,

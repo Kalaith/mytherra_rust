@@ -32,7 +32,7 @@ pub fn tick_monster(
     year: u32,
 ) -> Vec<BeastSlain> {
     spawn_monsters(
-        monsters, regions, types, seq, balance, rng, chronicle, text, year,
+        monsters, regions, heroes, types, seq, balance, rng, chronicle, text, year,
     );
 
     // Menace, growth, and the hunt.
@@ -120,6 +120,7 @@ pub fn tick_monster(
 fn spawn_monsters(
     monsters: &mut Vec<Monster>,
     regions: &[Region],
+    heroes: &[Hero],
     types: &[MonsterType],
     seq: &mut u64,
     balance: &MonsterBalance,
@@ -140,9 +141,13 @@ fn spawn_monsters(
         {
             continue;
         }
-        // Peril breeds beasts: the more dangerous the wilds, the likelier one
-        // stalks forth.
-        let chance = balance.emergence_chance + region.danger * balance.emergence_danger_coeff;
+        // Peril breeds beasts, but resident Rangers ward the wilds against them:
+        // the more dangerous the land the likelier one stalks forth, the more its
+        // rangers patrol the fewer do (GDD 5.2 <-> 5.4).
+        let ward = ranger_ward(heroes, &region.id) * balance.ranger_ward;
+        let chance = (balance.emergence_chance + region.danger * balance.emergence_danger_coeff
+            - ward)
+            .max(0.0);
         if !rng.chance(chance) {
             continue;
         }
@@ -185,6 +190,16 @@ fn hunts(role: HeroRole, arcane: bool) -> bool {
         HeroRole::Mage => arcane,
         _ => false,
     }
+}
+
+/// The combined levels of a region's living Rangers — the strength of its patrol
+/// warding the wilds against beasts before they emerge.
+fn ranger_ward(heroes: &[Hero], region_id: &str) -> f32 {
+    heroes
+        .iter()
+        .filter(|h| h.is_alive && h.role == HeroRole::Ranger && h.region_id == region_id)
+        .map(|h| h.level as f32)
+        .sum()
 }
 
 /// The might a region can bring to bear against a beast, summed over its living
@@ -265,6 +280,43 @@ mod tests {
         assert!(
             emergences(90.0) > emergences(45.0),
             "the more perilous wilds should breed more beasts"
+        );
+    }
+
+    #[test]
+    fn resident_rangers_ward_the_wilds_against_beasts() {
+        // The same perilous region breeds fewer beasts when Rangers patrol it than
+        // when it is left unwarded (GDD 5.2 <-> 5.4).
+        use crate::data::{HeroRole, HeroSeed};
+        let data = GameData::load().unwrap();
+        let emergences = |rangers: usize| {
+            let mut world = WorldState::new(&data);
+            world.regions.truncate(1);
+            world.regions[0].danger = 95.0;
+            world.regions[0].magic_affinity = 0.0;
+            let region_id = world.regions[0].id.clone();
+            world.heroes.retain(|h| h.region_id != region_id);
+            for i in 0..rangers {
+                world.heroes.push(Hero::from_seed(&HeroSeed {
+                    id: format!("r{i}"),
+                    name: format!("Ranger {i}"),
+                    role: HeroRole::Ranger,
+                    region_id: region_id.clone(),
+                    level: 20,
+                    age: 30,
+                }));
+            }
+            let mut count = 0;
+            for _ in 0..600 {
+                world.monsters.clear(); // isolate emergence odds
+                run(&mut world, &data, &data.balance.monster);
+                count += world.monsters.len();
+            }
+            count
+        };
+        assert!(
+            emergences(0) > emergences(4),
+            "a ranger-warded land should breed fewer beasts than an unwarded one"
         );
     }
 

@@ -578,6 +578,7 @@
     "emergence_chance": 0.008,
     "emergence_danger_coeff": 0.0004,
     "emergence_min_danger": 40.0,
+    "ranger_ward": 0.0002,
     "arcane_magic_threshold": 60.0,
     "max_active": 6,
     "ferocity_growth": 0.08,
