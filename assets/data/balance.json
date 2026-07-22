@@ -400,7 +400,8 @@
       1.0,
       1.4
     ],
-    "domain_response": 0.6
+    "domain_response": 0.6,
+    "faith_response": 0.2
   },
   "era": {
     "era_length": 100,

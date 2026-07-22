@@ -187,6 +187,15 @@ pub struct PantheonBalance {
     /// ascendant across the world stirs on its own, so a dangerous age rouses the
     /// war god and a prosperous one both its patron and its nemesis.
     pub domain_response: f32,
+    /// How strongly the world's average divine resonance shifts every deity's
+    /// pressure target (GDD 5.6 <-> 5.1): the gods are more present in a devout
+    /// age, so a world made faithful — by temples, tending clerics, and the
+    /// player's own consecration — rouses the whole pantheon above its resting
+    /// baseline, while a faithless one lets the gods settle and sleep. This ties
+    /// the faith economy to how active the pantheon is overall, distinct from the
+    /// per-region receptiveness resonance already governs when a deity's pressure
+    /// lands.
+    pub faith_response: f32,
     /// Ascending pressure tier thresholds and their effect multipliers.
     pub tiers: Vec<f32>,
     pub tier_mults: Vec<f32>,

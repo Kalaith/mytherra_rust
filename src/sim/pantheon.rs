@@ -19,6 +19,16 @@ pub fn tick_pantheon(
     let snapshot: Vec<(String, f32)> = deities.iter().map(|d| (d.id.clone(), d.pressure)).collect();
     let pressure_of = |id: &str| snapshot.iter().find(|(sid, _)| sid == id).map(|(_, p)| *p);
 
+    // The gods are more present in a devout age: the world's average faith rouses
+    // the whole pantheon above its resting baseline, or lets it sleep in a
+    // faithless one (GDD 5.6 <-> 5.1). Read once — it lifts every deity alike.
+    let avg_resonance = if regions.is_empty() {
+        50.0
+    } else {
+        regions.iter().map(|r| r.divine_resonance).sum::<f32>() / regions.len() as f32
+    };
+    let faith_arousal = (avg_resonance - 50.0) * balance.faith_response;
+
     for deity in deities.iter_mut() {
         deity.cooldown = (deity.cooldown - 1).max(0);
         // A deity stirs toward a baseline shifted by how ascendant its domain is
@@ -30,6 +40,7 @@ pub fn tick_pantheon(
         let ally = pressure_of(&deity.ally_id).unwrap_or(deity.pressure);
         let target = (balance.drift_target
             + (domain - 50.0) * balance.domain_response
+            + faith_arousal
             + (rival - balance.drift_target) * balance.rival_coupling
             + (ally - deity.pressure) * balance.ally_coupling)
             .clamp(0.0, 100.0);
@@ -269,6 +280,41 @@ mod tests {
         assert!(dangerous.pantheon[idx].pressure > baseline);
         assert!(calm.pantheon[idx].pressure < baseline);
         assert!(dangerous.pantheon[idx].pressure > calm.pantheon[idx].pressure);
+    }
+
+    #[test]
+    fn a_devout_world_rouses_the_whole_pantheon() {
+        // Holding every domain stat neutral so only faith differs, a world made
+        // faithful stirs the gods above their resting baseline while a faithless
+        // one lets them settle (GDD 5.6 <-> 5.1).
+        let data = GameData::load().unwrap();
+        let baseline = data.balance.pantheon.drift_target;
+
+        let roused = |resonance: f32| {
+            let mut world = WorldState::new(&data);
+            for r in &mut world.regions {
+                r.prosperity = 50.0;
+                r.chaos = 50.0;
+                r.danger = 50.0;
+                r.magic_affinity = 50.0;
+                r.divine_resonance = resonance;
+            }
+            for d in &mut world.pantheon {
+                d.pressure = baseline;
+            }
+            tick_pantheon(
+                &mut world.pantheon,
+                &mut world.regions,
+                &data.balance.pantheon,
+                &data.balance.region,
+            );
+            world.pantheon.iter().map(|d| d.pressure).sum::<f32>() / world.pantheon.len() as f32
+        };
+
+        assert!(
+            roused(100.0) > roused(0.0),
+            "a devout world should rouse the gods more than a faithless one"
+        );
     }
 
     #[test]
