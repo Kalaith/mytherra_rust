@@ -608,6 +608,8 @@
     "base_regrowth": 1.0,
     "harvest_per_food_node": 0.5,
     "pastoral_bonus": 1.0,
+    "resonance_blessing_floor": 55.0,
+    "harvest_per_resonance": 0.03,
     "weather_coeff": 0.12,
     "chaos_comfort": 40.0,
     "chaos_strain": 0.28,

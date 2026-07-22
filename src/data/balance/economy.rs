@@ -230,6 +230,15 @@ pub struct FamineBalance {
     pub harvest_per_food_node: f32,
     /// Extra harvest a pastoral (farming/herding) region gathers each tick.
     pub pastoral_bonus: f32,
+    /// Divine resonance above which a land's harvest is blessed (GDD 5.3 <-> 5.1);
+    /// set above the neutral 50 so only genuine devotion counts, not an ordinary
+    /// land's baseline faith.
+    pub resonance_blessing_floor: f32,
+    /// Harvest gained per point of resonance above the blessing floor — the gods'
+    /// answer to the prayers a famine stirs. Kept gentle: the resonance a dearth
+    /// raises accrues slowly, so this is a tailwind out of a long famine for the
+    /// devout, never immunity from its onset.
+    pub harvest_per_resonance: f32,
     /// Harvest gained per unit of a fair weather front's prosperity effect times
     /// its magnitude (lost to a foul one): a good season feeds, a storm blights.
     pub weather_coeff: f32,

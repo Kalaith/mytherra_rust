@@ -59,6 +59,16 @@ pub fn tick_famine(
             0.0
         };
 
+        // The gods answer the faithful: a genuinely hallowed land — resonance well
+        // above the neutral baseline — sees its harvest blessed, so faith is the
+        // slow deliverance from the famine that first drove the people to prayer
+        // (GDD 5.3 <-> 5.1). Only devotion past the floor counts, and the surge a
+        // dearth stirs builds over years, so this eases a long famine in a devout
+        // land rather than sparing any land its onset. A faithless land is not
+        // cursed, merely unblessed — the term never runs negative.
+        let blessing = (region.divine_resonance - balance.resonance_blessing_floor).max(0.0)
+            * balance.harvest_per_resonance;
+
         // Strain accrues only past the comfort lines: a calm, tolerably prosperous
         // land farms freely, while war beyond bearing and poverty beyond bearing
         // each spoil the harvest in proportion to how far past the line they run.
@@ -67,10 +77,10 @@ pub fn tick_famine(
             (balance.prosperity_comfort - region.prosperity).max(0.0) * balance.dearth_strain;
 
         // The land's fertility this tick: its own regrowth, the yield of its
-        // fields and fisheries, lifted by a farming people and blessed or cursed
-        // by the weather, then spoiled by whatever war and want press past what
-        // the land can bear.
-        let delta = balance.base_regrowth + food_bounty + pastoral + weather_term
+        // fields and fisheries, lifted by a farming people, a blessing on the
+        // devout, and the fair or foul weather, then spoiled by whatever war and
+        // want press past what the land can bear.
+        let delta = balance.base_regrowth + food_bounty + pastoral + blessing + weather_term
             - chaos_strain
             - dearth_strain;
         region.harvest = (region.harvest + delta).clamp(0.0, 100.0);
@@ -297,6 +307,47 @@ mod tests {
         assert_eq!(
             mined, barren,
             "only fields and fisheries feed the granary, not a mine"
+        );
+    }
+
+    #[test]
+    fn a_hallowed_land_reaps_a_blessed_harvest() {
+        let (world, data) = setup();
+        let b = &data.balance.famine;
+
+        // The one-tick harvest gain a strained region draws at a given faith,
+        // everything else held fixed.
+        let gain_at = |resonance: f32| {
+            let mut world = world.clone();
+            world.regions[0].chaos = 55.0;
+            world.regions[0].prosperity = 45.0;
+            world.regions[0].divine_resonance = resonance;
+            world.regions[0].harvest = 50.0;
+            world.regions[0].famine = false;
+            tick_famine(
+                &mut world.regions,
+                &mut world.settlements,
+                &[],
+                &[],
+                b,
+                &data.balance.resource.outputs,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.regions[0].harvest - 50.0
+        };
+
+        let hallowed = gain_at(90.0);
+        let neutral = gain_at(50.0);
+        let faithless = gain_at(20.0);
+        assert!(
+            hallowed > neutral,
+            "a hallowed land's harvest is blessed ({hallowed} vs {neutral})"
+        );
+        assert_eq!(
+            faithless, neutral,
+            "a land below the blessing floor is unblessed, not cursed"
         );
     }
 }
