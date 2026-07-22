@@ -625,6 +625,22 @@
       "depleted": 0.0
     }
   },
+  "war": {
+    "ignite_chance": 0.01,
+    "ignite_min_belligerence": 120.0,
+    "max_active": 3,
+    "start_intensity": 1.0,
+    "intensity_decay": 0.03,
+    "min_intensity": 0.2,
+    "prosperity_toll": 0.5,
+    "danger_toll": 0.4,
+    "chaos_toll": 0.3,
+    "might_damage": 0.02,
+    "raid_population": 0.005,
+    "stalemate_margin": 15.0,
+    "loser_scar_prosperity": 8.0,
+    "loser_scar_danger": 10.0
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60,

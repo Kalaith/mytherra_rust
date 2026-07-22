@@ -23,6 +23,7 @@ mod resource;
 mod settlement;
 mod speculation;
 mod trade;
+mod war;
 mod weather;
 
 pub use artifact::Artifact;
@@ -47,6 +48,7 @@ pub use resource::ResourceNode;
 pub use settlement::Settlement;
 pub use speculation::SpeculationEvent;
 pub use trade::TradeRoute;
+pub use war::War;
 pub use weather::{weather_cost, WeatherEvent};
 
 use crate::data::GameData;
@@ -158,6 +160,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of beasts that emerge mid-run.
     #[serde(default)]
     pub monster_seq: u64,
+    /// Wars raging between regions (GDD 5.2); ignite dynamically, so this starts
+    /// empty on a fresh world.
+    #[serde(default)]
+    pub wars: Vec<War>,
+    /// Monotonic counter for unique ids of wars that break out mid-run.
+    #[serde(default)]
+    pub war_seq: u64,
     pub magic_paths: Vec<MagicPath>,
     pub myths: Vec<Myth>,
     pub myth_candidates: Vec<MythCandidate>,
@@ -246,6 +255,8 @@ impl WorldState {
             plague_seq: 0,
             monsters: Vec::new(),
             monster_seq: 0,
+            wars: Vec::new(),
+            war_seq: 0,
             magic_paths,
             myths: Vec::new(),
             myth_candidates: Vec::new(),

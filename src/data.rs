@@ -33,7 +33,7 @@ pub use balance::{
     ConquestBalance, CultureBalance, EraBalance, FrontierBalance, GenesisBalance, HeroBalance,
     HeroMightWeights, HouseBalance, MagicBalance, MigrationBalance, MonsterBalance, MythBalance,
     PantheonBalance, PlagueBalance, PlayerBalance, RefugeeBalance, RegionBalance, ResourceBalance,
-    ResourceOutputs, SettlementBalance, TradeBalance, WeatherBalance,
+    ResourceOutputs, SettlementBalance, TradeBalance, WarBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use building::{BuildingSeed, BuildingType};

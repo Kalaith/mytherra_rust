@@ -498,6 +498,12 @@ pub struct ChronicleText {
     pub monster_driven_off: String,
     /// Name pattern for an emerging beast; slots `{beast}`, `{region}`.
     pub monster_name: String,
+    /// A war's course (GDD 5.2): it is declared, then ends in a victor or an
+    /// exhausted stalemate. Slots `{aggressor}`, `{defender}`, `{victor}`,
+    /// `{loser}`.
+    pub war_declared: String,
+    pub war_won: String,
+    pub war_stalemate: String,
     /// A notable flight of refugees from a perilous settlement to a safe haven
     /// (GDD 5.3); slots `{source}`, `{haven}`.
     pub refugee_flight: String,

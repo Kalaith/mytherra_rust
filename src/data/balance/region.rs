@@ -247,3 +247,47 @@ pub struct MonsterBalance {
     /// nothing against a natural predator (a spell is no substitute for a spear).
     pub mage_arcane_effectiveness: f32,
 }
+
+/// Inter-region war tuning (GDD 5.2): the prolonged conflicts that break out
+/// between regions, draining both until one prevails. War fills the space between
+/// the civilization system's one-sided rivalry pressure and the outright annexation
+/// of conquest — a war doesn't remove a region, it wears one down, leaving the
+/// loser scarred and ripe for the conquest that may follow.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WarBalance {
+    /// Per-tick chance a belligerent region declares war on the realm's richest
+    /// other region.
+    pub ignite_chance: f32,
+    /// A region's chaos + danger must reach this for it to be belligerent enough
+    /// to make war.
+    pub ignite_min_belligerence: f32,
+    /// Most wars that may rage at once.
+    pub max_active: usize,
+    /// Intensity a fresh war ignites at.
+    pub start_intensity: f32,
+    /// Intensity lost each tick as both sides tire — war-weariness that ends every
+    /// war in time.
+    pub intensity_decay: f32,
+    /// A war below this intensity has burned out and is resolved.
+    pub min_intensity: f32,
+    /// Prosperity a region at war loses each tick, per unit of the war's intensity.
+    pub prosperity_toll: f32,
+    /// Danger and chaos a region at war gains each tick, per unit of intensity.
+    pub danger_toll: f32,
+    pub chaos_toll: f32,
+    /// Extra damage a side takes each tick per point of its opponent's war might
+    /// (the combined levels of the enemy's Warriors and Rangers), scaled by
+    /// intensity: facing a mightier foe is costlier, so martial strength decides
+    /// who bleeds most. Applied to both prosperity (as loss) and danger (as gain).
+    pub might_damage: f32,
+    /// Fraction of a warring region's largest settlement razed each tick, per unit
+    /// of intensity — the human cost of the fighting.
+    pub raid_population: f32,
+    /// War might within this margin of the enemy's counts as an even match, so the
+    /// war ends in an exhausted stalemate rather than a clear victor.
+    pub stalemate_margin: f32,
+    /// Prosperity the loser forfeits and danger it takes on when a war is decided
+    /// against it — the scar of defeat that leaves it ripe for conquest.
+    pub loser_scar_prosperity: f32,
+    pub loser_scar_danger: f32,
+}

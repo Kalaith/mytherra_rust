@@ -52,6 +52,7 @@ pub struct Balance {
     pub resource: ResourceBalance,
     pub culture: CultureBalance,
     pub trade: TradeBalance,
+    pub war: WarBalance,
     pub player: PlayerBalance,
     pub settings: SettingsBalance,
     pub tenor: TenorBalance,

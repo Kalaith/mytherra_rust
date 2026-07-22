@@ -22,6 +22,7 @@ mod resource;
 mod settlement;
 mod speculation;
 mod trade;
+mod war;
 mod weather;
 
 use crate::data::{fill, GameData, PlayerBalance};
@@ -215,6 +216,22 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             data,
         );
     }
+
+    // Belligerent regions fall to war, draining and scarring one another —
+    // wearing down the loser toward the conquest that may follow (GDD 5.2).
+    war::tick_wars(
+        &mut world.wars,
+        &mut world.regions,
+        &mut world.settlements,
+        &world.heroes,
+        &mut world.war_seq,
+        &data.balance.war,
+        &data.balance.region,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
 
     // The masses flee the perils just tallied — danger, plague, and beast — for
     // the safest haven, reshaping where the world's people live (GDD 5.3).
