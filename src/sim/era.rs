@@ -132,6 +132,7 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
     let count = ((rolled as f32 * aftermath.descendant_mult).round() as u32).max(1);
     for _ in 0..count {
         world.hero_seq += 1;
+        let id = format!("descendant-{}", world.hero_seq);
         let (region_id, culture) = regions_info
             .get(world.rng.below(regions_info.len().max(1)))
             .cloned()
@@ -142,19 +143,32 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         } else {
             HeroRole::ALL[world.rng.below(HeroRole::ALL.len())]
         };
+        // A descendant born on a house's ancestral seat is its heir, carrying a
+        // share of its prestige into the world as renown (GDD 5.4 <-> 5.7). The
+        // claim is deterministic, so it never perturbs the transition's rolls.
+        let renown = super::house::maybe_inherit(
+            &mut world.houses,
+            &id,
+            &region_id,
+            &data.balance.house,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+        let age = reincarnate_age(
+            &mut world.rng,
+            balance.reincarnate_age_min,
+            balance.reincarnate_age_max,
+        );
         world.heroes.push(Hero {
-            id: format!("descendant-{}", world.hero_seq),
+            id,
             name: descendant_name(&data.hero_names, &mut world.rng),
             role,
             region_id,
             level: 1,
-            age: reincarnate_age(
-                &mut world.rng,
-                balance.reincarnate_age_min,
-                balance.reincarnate_age_max,
-            ),
+            age,
             is_alive: true,
-            renown: 0.0,
+            renown,
         });
     }
 

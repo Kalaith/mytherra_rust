@@ -9,6 +9,7 @@ mod culture;
 mod era;
 mod genesis;
 mod hero;
+mod house;
 mod landmark;
 mod magic;
 mod monster;
@@ -443,9 +444,10 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             fill(&text.crisis, &[("region", name)]),
         );
     }
-    // A hero crossing into legend is both chronicled and — since a legend needs
-    // no promotion to be told — seeded as a myth candidate about them.
-    let new_legends: Vec<(String, String, String)> =
+    // A hero crossing into legend is chronicled, seeded as a myth candidate about
+    // them, and — since a legend is the seed of a dynasty — founds a noble house
+    // if they don't already carry one (GDD 5.4).
+    let new_legends: Vec<(String, String, f32, String, String)> =
         newly_legendary(&already_legend, &world.heroes, legend_bar)
             .into_iter()
             .map(|h| {
@@ -455,10 +457,16 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
                     .find(|r| r.id == h.region_id)
                     .map(|r| r.name.clone())
                     .unwrap_or_default();
-                (h.name.clone(), h.region_id.clone(), region_name)
+                (
+                    h.id.clone(),
+                    h.name.clone(),
+                    h.renown,
+                    h.region_id.clone(),
+                    region_name,
+                )
             })
             .collect();
-    for (name, region_id, region_name) in new_legends {
+    for (id, name, renown, region_id, region_name) in new_legends {
         world.chronicle.push(
             world.year,
             EventKind::Hero,
@@ -472,7 +480,31 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             &region_name,
             data,
         );
+        house::found_house(
+            &mut world.houses,
+            &mut world.house_seq,
+            &id,
+            &name,
+            renown,
+            &region_id,
+            &region_name,
+            &data.balance.house,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
     }
+
+    // Houses reconcile their prestige with their living line, and any whose blood
+    // has run out and whose fame has faded pass from memory (GDD 5.4).
+    house::tick_houses(
+        &mut world.houses,
+        &world.heroes,
+        &data.balance.house,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
 }
 
 /// Living heroes who have reached `bar` renown this tick but hadn't before, so

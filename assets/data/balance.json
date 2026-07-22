@@ -197,6 +197,12 @@
     "cleric_resonance_per_tick": 0.15,
     "warrior_danger_relief": 0.02
   },
+  "house": {
+    "found_prestige_fraction": 0.5,
+    "prestige_rate": 0.05,
+    "fade_floor": 5.0,
+    "inherit_fraction": 0.3
+  },
   "champion": {
     "max_roster": 3,
     "designate_cost": 20,

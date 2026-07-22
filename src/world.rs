@@ -10,6 +10,7 @@ mod civilization;
 mod consequence;
 mod era;
 mod hero;
+mod house;
 mod landmark;
 mod magic;
 mod monster;
@@ -33,6 +34,7 @@ pub use civilization::{agenda_score, dominant_agenda, spillover_target, RegionAg
 pub use consequence::{ConsequenceEffect, DelayedConsequence};
 pub use era::{compute_scores, generate_era_name, pantheon_wrath, EraRecord, EraState};
 pub use hero::Hero;
+pub use house::House;
 pub use landmark::Landmark;
 pub use magic::{MagicPath, MagicState};
 pub use monster::Monster;
@@ -126,6 +128,13 @@ pub struct WorldState {
     pub heroes: Vec<Hero>,
     /// Monotonic counter for unique descendant-hero ids.
     pub hero_seq: u64,
+    /// The noble houses the world's legends have founded (GDD 5.4); arise
+    /// dynamically, so this starts empty on a fresh world.
+    #[serde(default)]
+    pub houses: Vec<House>,
+    /// Monotonic counter for unique ids of houses founded mid-run.
+    #[serde(default)]
+    pub house_seq: u64,
     pub artifacts: Vec<Artifact>,
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
@@ -225,6 +234,8 @@ impl WorldState {
             settlement_seq: 0,
             landmark_seq: 0,
             hero_seq: 0,
+            houses: Vec::new(),
+            house_seq: 0,
             artifacts,
             artifact_seq: 0,
             pending_consequences: Vec::new(),

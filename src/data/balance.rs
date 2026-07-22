@@ -34,6 +34,7 @@ pub struct Balance {
     pub conquest: ConquestBalance,
     pub frontier: FrontierBalance,
     pub hero: HeroBalance,
+    pub house: HouseBalance,
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
     pub omens: OmensBalance,

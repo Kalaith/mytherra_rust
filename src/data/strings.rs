@@ -424,6 +424,14 @@ pub struct ChronicleText {
     pub hero_legend: String,
     /// The death of a hero who had already passed into legend.
     pub hero_legend_death: String,
+    /// A legend founds a noble house (GDD 5.4); slots `{house}`, `{region}`.
+    pub house_founded: String,
+    /// An heir of an established house is born at an age's turn; slots `{house}`.
+    pub house_heir: String,
+    /// A house whose blood has run out is forgotten; slot `{house}`.
+    pub house_fades: String,
+    /// Name pattern for a founded house; slot `{founder}`.
+    pub house_name: String,
     /// A pantheon deity cresting into the height of its wrath.
     pub deity_ascendant: String,
     pub champion_resolved: String,

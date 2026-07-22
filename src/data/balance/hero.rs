@@ -145,3 +145,23 @@ pub struct DeathParams {
     pub level_divisor: f32,
     pub min_chance: f32,
 }
+
+/// Noble-house tuning (GDD 5.4): the great bloodlines legends found and their
+/// heirs carry across the ages.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HouseBalance {
+    /// Prestige a freshly founded house begins with, as a fraction of its
+    /// founder's renown — a house is only ever as storied as the legend who
+    /// raised it.
+    pub found_prestige_fraction: f32,
+    /// How fast a house's prestige drifts toward the summed renown of its living
+    /// members each tick: it swells while the line thrives and ebbs once its
+    /// blood thins.
+    pub prestige_rate: f32,
+    /// A house with no living members and prestige below this floor is at last
+    /// forgotten.
+    pub fade_floor: f32,
+    /// Renown an heir inherits at birth, as a fraction of their house's prestige
+    /// — the blood of legends is a head start toward legend of one's own.
+    pub inherit_fraction: f32,
+}
