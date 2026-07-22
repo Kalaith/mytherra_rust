@@ -603,6 +603,7 @@
   },
   "famine": {
     "base_regrowth": 1.0,
+    "harvest_per_food_node": 0.5,
     "pastoral_bonus": 1.0,
     "weather_coeff": 0.12,
     "chaos_comfort": 40.0,

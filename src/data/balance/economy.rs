@@ -216,6 +216,11 @@ pub struct FamineBalance {
     /// strain. A calm, tolerably prosperous region has no strain, so this alone
     /// fills its granary back to plenty.
     pub base_regrowth: f32,
+    /// Harvest each producing farmland or fishery adds per tick, scaled by the
+    /// node's status output multiplier (a flourishing field feeds more than a
+    /// struggling one, a depleted node nothing). The fields and the sea are what
+    /// truly fill a granary; a food-rich region rarely starves.
+    pub harvest_per_food_node: f32,
     /// Extra harvest a pastoral (farming/herding) region gathers each tick.
     pub pastoral_bonus: f32,
     /// Harvest gained per unit of a fair weather front's prosperity effect times

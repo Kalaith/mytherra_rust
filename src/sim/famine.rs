@@ -9,14 +9,17 @@
 //! decides a famine, so the seeded stream is untouched.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, Culture, FamineBalance};
-use crate::world::{Chronicle, EventKind, Region, Settlement, WeatherEvent};
+use crate::data::{fill, Culture, FamineBalance, ResourceOutputs, ResourceType};
+use crate::world::{Chronicle, EventKind, Region, ResourceNode, Settlement, WeatherEvent};
 
+#[allow(clippy::too_many_arguments)]
 pub fn tick_famine(
     regions: &mut [Region],
     settlements: &mut [Settlement],
     weather: &[WeatherEvent],
+    resource_nodes: &[ResourceNode],
     balance: &FamineBalance,
+    resource_outputs: &ResourceOutputs,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
@@ -32,6 +35,24 @@ pub fn tick_famine(
             .sum::<f32>()
             * balance.weather_coeff;
 
+        // The fields and the sea: every farmland and fishery in the region feeds
+        // the granary in proportion to its health, so a land rich in fertile,
+        // flourishing ground resists dearth while one whose fields lie corrupted
+        // or spent — the fate war and overwork visit on a node — is left hungry
+        // (GDD 5.3). A depleted node yields nothing, its output multiplier zero.
+        let food_bounty: f32 = resource_nodes
+            .iter()
+            .filter(|n| {
+                n.region_id == region.id
+                    && matches!(
+                        n.resource_type,
+                        ResourceType::Farmland | ResourceType::Fishery
+                    )
+            })
+            .map(|n| n.output(resource_outputs))
+            .sum::<f32>()
+            * balance.harvest_per_food_node;
+
         let pastoral = if region.culture == Culture::Pastoral {
             balance.pastoral_bonus
         } else {
@@ -45,10 +66,13 @@ pub fn tick_famine(
         let dearth_strain =
             (balance.prosperity_comfort - region.prosperity).max(0.0) * balance.dearth_strain;
 
-        // The land's fertility this tick: its own regrowth, lifted by a farming
-        // people and blessed or cursed by the weather, then spoiled by whatever
-        // war and want press past what the land can bear.
-        let delta = balance.base_regrowth + pastoral + weather_term - chaos_strain - dearth_strain;
+        // The land's fertility this tick: its own regrowth, the yield of its
+        // fields and fisheries, lifted by a farming people and blessed or cursed
+        // by the weather, then spoiled by whatever war and want press past what
+        // the land can bear.
+        let delta = balance.base_regrowth + food_bounty + pastoral + weather_term
+            - chaos_strain
+            - dearth_strain;
         region.harvest = (region.harvest + delta).clamp(0.0, 100.0);
 
         // Hysteresis so a dearth doesn't flicker on the threshold: it takes hold
@@ -113,7 +137,9 @@ mod tests {
                 &mut world.regions,
                 &mut world.settlements,
                 &[],
+                &[],
                 b,
+                &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,
                 world.year,
@@ -143,7 +169,9 @@ mod tests {
                 &mut world.regions,
                 &mut world.settlements,
                 &[],
+                &[],
                 b,
+                &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,
                 world.year,
@@ -164,7 +192,9 @@ mod tests {
                 &mut world.regions,
                 &mut world.settlements,
                 &[],
+                &[],
                 b,
+                &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,
                 world.year,
@@ -198,7 +228,9 @@ mod tests {
             &mut world.regions,
             &mut world.settlements,
             &[],
+            &[],
             b,
+            &data.balance.resource.outputs,
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
@@ -206,6 +238,65 @@ mod tests {
         assert!(
             world.settlements[sidx].population < before,
             "a famine should cost its towns people"
+        );
+    }
+
+    #[test]
+    fn fertile_fields_fill_the_granary_where_barren_land_starves() {
+        use crate::data::{ResourceStatus, ResourceType};
+        use crate::world::ResourceNode;
+        let (world, data) = setup();
+        let b = &data.balance.famine;
+        let region_id = world.regions[0].id.clone();
+
+        // The one-tick harvest gain a chaos-strained region draws, given its
+        // resource nodes; everything else about the region held fixed.
+        let gain_with = |nodes: Vec<ResourceNode>| {
+            let mut world = world.clone();
+            world.resource_nodes = nodes;
+            world.regions[0].chaos = 55.0;
+            world.regions[0].prosperity = 45.0;
+            world.regions[0].harvest = 50.0;
+            world.regions[0].famine = false;
+            tick_famine(
+                &mut world.regions,
+                &mut world.settlements,
+                &[],
+                &world.resource_nodes,
+                b,
+                &data.balance.resource.outputs,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.regions[0].harvest - 50.0
+        };
+
+        let node = |resource_type: ResourceType, status: ResourceStatus| ResourceNode {
+            id: "n".to_owned(),
+            name: "N".to_owned(),
+            region_id: region_id.clone(),
+            resource_type,
+            status,
+        };
+        let barren = gain_with(vec![]);
+        let farmed = gain_with(vec![
+            node(ResourceType::Farmland, ResourceStatus::Flourishing),
+            node(ResourceType::Fishery, ResourceStatus::Active),
+        ]);
+        let spent = gain_with(vec![node(ResourceType::Farmland, ResourceStatus::Depleted)]);
+        let mined = gain_with(vec![node(ResourceType::Mine, ResourceStatus::Flourishing)]);
+        assert!(
+            farmed > barren,
+            "fertile fields should feed the granary ({farmed} vs {barren})"
+        );
+        assert_eq!(
+            spent, barren,
+            "a depleted field yields nothing to the granary"
+        );
+        assert_eq!(
+            mined, barren,
+            "only fields and fisheries feed the granary, not a mine"
         );
     }
 }
