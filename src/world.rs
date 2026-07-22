@@ -23,6 +23,7 @@ mod player;
 mod prophecy;
 mod region;
 mod resource;
+mod saint;
 mod settlement;
 mod speculation;
 mod trade;
@@ -51,6 +52,7 @@ pub use player::PlayerState;
 pub use prophecy::{Prophecy, ProphecyKind};
 pub use region::{resident_might, Region, RegionStatus};
 pub use resource::ResourceNode;
+pub use saint::Saint;
 pub use settlement::Settlement;
 pub use speculation::SpeculationEvent;
 pub use trade::TradeRoute;
@@ -150,6 +152,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of Orders founded mid-run.
     #[serde(default)]
     pub order_seq: u64,
+    /// The venerated dead the world's faith remembers (GDD 5.1 <-> 5.4); arise
+    /// dynamically, so this starts empty on a fresh world.
+    #[serde(default)]
+    pub saints: Vec<Saint>,
+    /// Monotonic counter for unique ids of saints canonized mid-run.
+    #[serde(default)]
+    pub saint_seq: u64,
     pub artifacts: Vec<Artifact>,
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
@@ -274,6 +283,8 @@ impl WorldState {
             house_seq: 0,
             orders: Vec::new(),
             order_seq: 0,
+            saints: Vec::new(),
+            saint_seq: 0,
             artifacts,
             artifact_seq: 0,
             pending_consequences: Vec::new(),

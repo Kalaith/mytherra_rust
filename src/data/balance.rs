@@ -36,6 +36,7 @@ pub struct Balance {
     pub hero: HeroBalance,
     pub house: HouseBalance,
     pub order: OrderBalance,
+    pub saint: SaintBalance,
     pub champion: ChampionBalance,
     pub betting: BettingBalance,
     pub omens: OmensBalance,

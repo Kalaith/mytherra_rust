@@ -491,6 +491,13 @@ pub struct ChronicleText {
     pub prophecy_foretold: String,
     pub prophecy_fulfilled: String,
     pub prophecy_averted: String,
+    /// A great dead soul is raised to sainthood by the faithful of its home land,
+    /// or at last fades from living memory (GDD 5.1 <-> 5.4); slots `{saint}`,
+    /// `{region}`. `saint_name` is the pattern the venerated name takes; slot
+    /// `{hero}`.
+    pub saint_canonized: String,
+    pub saint_forgotten: String,
+    pub saint_name: String,
     /// A pantheon deity cresting into the height of its wrath.
     pub deity_ascendant: String,
     pub champion_resolved: String,

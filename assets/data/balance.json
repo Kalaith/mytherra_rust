@@ -217,6 +217,13 @@
     "influence_per_prestige": 0.004,
     "renown_per_prestige": 0.003
   },
+  "saint": {
+    "renown_threshold": 100.0,
+    "start_veneration": 100.0,
+    "veneration_decay": 0.25,
+    "forgotten_floor": 5.0,
+    "resonance_per_veneration": 0.0008
+  },
   "champion": {
     "max_roster": 3,
     "designate_cost": 20,

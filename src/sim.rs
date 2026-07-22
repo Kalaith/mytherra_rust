@@ -23,6 +23,7 @@ mod prophecy;
 mod refugee;
 mod region;
 mod resource;
+mod saint;
 mod settlement;
 mod speculation;
 mod trade;
@@ -592,6 +593,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.order_seq,
         &data.balance.order,
         &data.strings.orders,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    saint::tick_saints(
+        &mut world.saints,
+        &world.heroes,
+        &mut world.regions,
+        &mut world.saint_seq,
+        &data.balance.saint,
+        legend_bar,
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,

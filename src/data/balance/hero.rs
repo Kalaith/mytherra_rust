@@ -214,3 +214,28 @@ pub struct OrderBalance {
     /// young Order confers little; the effect ramps with the Order's standing.
     pub renown_per_prestige: f32,
 }
+
+/// Sainthood tuning (GDD 5.1 <-> 5.4): the veneration of the great dead, the faith
+/// legacy to set beside the House's bloodline and the Order's calling. Pitched so
+/// only the genuinely holy or the genuinely legendary are ever raised, and the
+/// memory that hallows a land fades over generations rather than forever.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaintBalance {
+    /// Renown a dead hero must have earned to be considered for sainthood. A
+    /// Cleric who clears it is venerated for their holiness; a hero of any other
+    /// calling must reach the legend bar besides, so sainthood is the reward of
+    /// the holy or the truly great, not of every renowned soul.
+    pub renown_threshold: f32,
+    /// The veneration a fresh saint is canonized with — the height of the faith's
+    /// devotion, before the slow fade of memory begins.
+    pub start_veneration: f32,
+    /// Veneration a saint loses each tick as memory fades toward the mundane past.
+    pub veneration_decay: f32,
+    /// A saint whose veneration ebbs below this has passed from living memory and
+    /// is forgotten.
+    pub forgotten_floor: f32,
+    /// Divine resonance a saint lends its home region each tick, per point of its
+    /// veneration (GDD 5.1): the remembered example of a holy soul hallows the land
+    /// that keeps it, the more so the fresher and fiercer the devotion.
+    pub resonance_per_veneration: f32,
+}
