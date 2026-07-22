@@ -112,6 +112,7 @@
     "omen_dire": "Dire",
     "omen_forces": "Relics {relics}   ·   Storms {storms}   ·   Myths {myths}",
     "omen_no_forces": "No divine works stir here.",
+    "omen_war": "War rages at the border",
     "omen_plague": "A plague grips the land",
     "omen_beast": "A beast stalks the wilds",
     "omen_horizon": "A generation hence: the omens {outlook}, toward {tier}.{coming}",

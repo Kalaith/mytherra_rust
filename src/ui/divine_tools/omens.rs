@@ -114,10 +114,18 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
             TextStyle::new(13.0, bad_stat_color(projected)).params(),
         );
 
-        // A present plague or beast is the most concrete omen of all — it takes
-        // the forces slot in a warning hue, ahead of the divine-work tally, when
-        // a land is under threat (GDD 5.6 <-> 5.3/5.2).
+        // A present war, plague, or beast is the most concrete omen of all — it
+        // takes the forces slot in a warning hue, ahead of the divine-work tally,
+        // when a land is under threat (GDD 5.6 <-> 5.3/5.2).
         let mut threats: Vec<&str> = Vec::new();
+        if ctx
+            .world
+            .wars
+            .iter()
+            .any(|w| w.aggressor_id == region.id || w.defender_id == region.id)
+        {
+            threats.push(&strings.omen_war);
+        }
         if ctx.world.plagues.iter().any(|p| p.region_id == region.id) {
             threats.push(&strings.omen_plague);
         }

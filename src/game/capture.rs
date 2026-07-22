@@ -168,6 +168,16 @@ impl Game {
                     age: 5,
                 });
             }
+            // A war between two further regions so the forecast surfaces it too.
+            if self.world.regions.len() > 3 {
+                self.world.wars.push(crate::world::War {
+                    id: "capture-war".to_owned(),
+                    aggressor_id: self.world.regions[2].id.clone(),
+                    defender_id: self.world.regions[3].id.clone(),
+                    intensity: 1.0,
+                    age: 4,
+                });
+            }
         }
         if scene == "settings" {
             // Demonstrate the paused state (Resume control + "Paused" header).
