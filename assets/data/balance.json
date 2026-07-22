@@ -561,6 +561,17 @@
     "cleric_relief": 0.06,
     "min_severity": 0.15
   },
+  "monster": {
+    "emergence_chance": 0.008,
+    "emergence_danger_coeff": 0.0004,
+    "emergence_min_danger": 40.0,
+    "arcane_magic_threshold": 60.0,
+    "max_active": 6,
+    "ferocity_growth": 0.08,
+    "slay_per_might": 0.02,
+    "min_ferocity": 0.2,
+    "slay_renown": 15.0
+  },
   "resource": {
     "stress_chaos": 0.4,
     "stress_danger": 0.3,

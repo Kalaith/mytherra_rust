@@ -12,6 +12,7 @@ mod era;
 mod hero;
 mod landmark;
 mod magic;
+mod monster;
 mod myth;
 mod pantheon;
 mod plague;
@@ -34,6 +35,7 @@ pub use era::{compute_scores, generate_era_name, pantheon_wrath, EraRecord, EraS
 pub use hero::Hero;
 pub use landmark::Landmark;
 pub use magic::{MagicPath, MagicState};
+pub use monster::Monster;
 pub use myth::{Myth, MythCandidate};
 pub use pantheon::{adjust_pressure, PantheonDeity};
 pub use plague::Plague;
@@ -140,6 +142,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of plagues that break out mid-run.
     #[serde(default)]
     pub plague_seq: u64,
+    /// Beasts stalking regions (GDD 5.2); emerge dynamically, so this starts
+    /// empty on a fresh world.
+    #[serde(default)]
+    pub monsters: Vec<Monster>,
+    /// Monotonic counter for unique ids of beasts that emerge mid-run.
+    #[serde(default)]
+    pub monster_seq: u64,
     pub magic_paths: Vec<MagicPath>,
     pub myths: Vec<Myth>,
     pub myth_candidates: Vec<MythCandidate>,
@@ -224,6 +233,8 @@ impl WorldState {
             weather: Vec::new(),
             plagues: Vec::new(),
             plague_seq: 0,
+            monsters: Vec::new(),
+            monster_seq: 0,
             magic_paths,
             myths: Vec::new(),
             myth_candidates: Vec::new(),

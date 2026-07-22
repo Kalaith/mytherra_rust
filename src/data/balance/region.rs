@@ -181,3 +181,34 @@ pub struct TradeBalance {
     /// young road that thickens as its endpoints prosper and merchants ply it.
     pub found_volume: f32,
 }
+
+/// Bestiary tuning (GDD 5.2): the beasts that stalk the wild places. Peril breeds
+/// them, they menace the land and raid its towns, and resident Warriors and
+/// Rangers hunt them down — the embodied threat behind the abstract danger stat.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MonsterBalance {
+    /// Base per-tick chance a beast emerges in an eligible region.
+    pub emergence_chance: f32,
+    /// Extra emergence chance per point of the region's danger — beasts breed
+    /// where the wilds are perilous.
+    pub emergence_danger_coeff: f32,
+    /// A region needs at least this much danger to be wild enough to breed a
+    /// beast at all.
+    pub emergence_min_danger: f32,
+    /// A region whose magic affinity clears this line breeds arcane beasts
+    /// (wyrms, shades) rather than natural predators.
+    pub arcane_magic_threshold: f32,
+    /// Most beasts that may stalk the world at once.
+    pub max_active: usize,
+    /// Ferocity a beast gains each tick it goes unopposed — an unchallenged beast
+    /// grows into a terror.
+    pub ferocity_growth: f32,
+    /// Ferocity a beast loses per tick per level of the resident Warriors and
+    /// Rangers hunting it.
+    pub slay_per_might: f32,
+    /// A beast worn below this ferocity has been slain or driven off.
+    pub min_ferocity: f32,
+    /// Renown the mightiest resident hunter earns for felling a beast (GDD 5.2
+    /// <-> 5.4): a slain terror is a deed that makes a legend.
+    pub slay_renown: f32,
+}

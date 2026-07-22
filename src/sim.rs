@@ -11,6 +11,7 @@ mod genesis;
 mod hero;
 mod landmark;
 mod magic;
+mod monster;
 mod myth;
 mod pantheon;
 mod plague;
@@ -169,6 +170,21 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.plague_seq,
         &data.plague_names,
         &data.balance.plague,
+        &data.balance.region,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    monster::tick_monster(
+        &mut world.monsters,
+        &mut world.regions,
+        &mut world.settlements,
+        &mut world.heroes,
+        &data.monster_types,
+        &mut world.monster_seq,
+        &data.balance.monster,
         &data.balance.region,
         &mut world.rng,
         &mut world.chronicle,

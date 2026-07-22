@@ -16,6 +16,7 @@ mod era;
 mod hero;
 mod landmark;
 mod magic;
+mod monster;
 mod myth;
 mod pantheon;
 mod region;
@@ -30,9 +31,9 @@ pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
     ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance,
     ConquestBalance, CultureBalance, EraBalance, FrontierBalance, GenesisBalance, HeroBalance,
-    HeroMightWeights, MagicBalance, MigrationBalance, MythBalance, PantheonBalance, PlagueBalance,
-    PlayerBalance, RegionBalance, ResourceBalance, ResourceOutputs, SettlementBalance,
-    TradeBalance, WeatherBalance,
+    HeroMightWeights, MagicBalance, MigrationBalance, MonsterBalance, MythBalance, PantheonBalance,
+    PlagueBalance, PlayerBalance, RegionBalance, ResourceBalance, ResourceOutputs,
+    SettlementBalance, TradeBalance, WeatherBalance,
 };
 pub use bet::{BetPredicate, BetType, ConfidenceLevel, TargetKind, TimeframeModifier};
 pub use building::{BuildingSeed, BuildingType};
@@ -43,6 +44,7 @@ pub use era::{EraNameBank, EraTrigger};
 pub use hero::{HeroNameBank, HeroRole, HeroSeed};
 pub use landmark::{LandmarkNameBank, LandmarkSeed};
 pub use magic::{MagicPathSeed, MagicStat};
+pub use monster::MonsterType;
 pub use myth::{MythStat, MythTheme};
 pub use pantheon::{DeitySeed, PantheonStat};
 pub use region::{ClimateType, Culture, RegionSeed};
@@ -74,6 +76,7 @@ const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
 const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
 const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
 const MAGIC_PATHS_JSON: &str = include_str!("../assets/data/magic_paths.json");
+const MONSTER_TYPES_JSON: &str = include_str!("../assets/data/monster_types.json");
 const MYTH_THEMES_JSON: &str = include_str!("../assets/data/myth_themes.json");
 const AGENDAS_JSON: &str = include_str!("../assets/data/agendas.json");
 const PANTHEON_JSON: &str = include_str!("../assets/data/pantheon.json");
@@ -108,6 +111,8 @@ pub struct GameData {
     pub weather_patterns: Vec<WeatherPattern>,
     pub weather_intensities: Vec<WeatherIntensity>,
     pub magic_paths: Vec<MagicPathSeed>,
+    /// Bestiary — the kinds of beast that can emerge in wild regions (GDD 5.2).
+    pub monster_types: Vec<MonsterType>,
     pub myth_themes: Vec<MythTheme>,
     pub agendas: Vec<Agenda>,
     pub pantheon: Vec<DeitySeed>,
@@ -144,6 +149,7 @@ impl GameData {
         let weather_intensities: Vec<WeatherIntensity> =
             load_embedded_json(WEATHER_INTENSITIES_JSON)?;
         let magic_paths: Vec<MagicPathSeed> = load_embedded_json(MAGIC_PATHS_JSON)?;
+        let monster_types: Vec<MonsterType> = load_embedded_json(MONSTER_TYPES_JSON)?;
         let myth_themes: Vec<MythTheme> = load_embedded_json(MYTH_THEMES_JSON)?;
         let agendas: Vec<Agenda> = load_embedded_json(AGENDAS_JSON)?;
         let pantheon: Vec<DeitySeed> = load_embedded_json(PANTHEON_JSON)?;
@@ -185,6 +191,7 @@ impl GameData {
             weather_patterns,
             weather_intensities,
             magic_paths,
+            monster_types,
             myth_themes,
             agendas,
             pantheon,

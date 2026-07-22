@@ -468,6 +468,14 @@ pub struct ChronicleText {
     pub plague_fades: String,
     /// Name pattern for an outbreak; slots `{pestilence}`, `{region}`.
     pub plague_name: String,
+    /// A beast's course (GDD 5.2): it emerges from the wild to prey on the land,
+    /// then is slain by a named hunter, or driven off unsung. Slots `{monster}`,
+    /// `{hero}`.
+    pub monster_emergence: String,
+    pub monster_slain: String,
+    pub monster_driven_off: String,
+    /// Name pattern for an emerging beast; slots `{beast}`, `{region}`.
+    pub monster_name: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_sack: String,

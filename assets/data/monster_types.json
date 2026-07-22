@@ -1,0 +1,9 @@
+[
+  { "id": "dire_pack", "name": "Dire Pack", "start_ferocity": 1.5, "danger_per_tick": 0.4, "raid_population": 0.006, "arcane": false },
+  { "id": "hill_troll", "name": "Hill Troll", "start_ferocity": 2.5, "danger_per_tick": 0.5, "raid_population": 0.010, "arcane": false },
+  { "id": "fen_serpent", "name": "Fen Serpent", "start_ferocity": 2.0, "danger_per_tick": 0.45, "raid_population": 0.008, "arcane": false },
+  { "id": "griffon_scourge", "name": "Griffon Scourge", "start_ferocity": 1.8, "danger_per_tick": 0.42, "raid_population": 0.007, "arcane": false },
+  { "id": "shadow_wyrm", "name": "Shadow Wyrm", "start_ferocity": 3.5, "danger_per_tick": 0.6, "raid_population": 0.012, "arcane": true },
+  { "id": "arcane_horror", "name": "Arcane Horror", "start_ferocity": 3.0, "danger_per_tick": 0.55, "raid_population": 0.009, "arcane": true },
+  { "id": "gravewight", "name": "Gravewight Host", "start_ferocity": 2.2, "danger_per_tick": 0.5, "raid_population": 0.007, "arcane": true }
+]
