@@ -15,6 +15,7 @@ mod monster;
 mod myth;
 mod pantheon;
 mod plague;
+mod refugee;
 mod region;
 mod resource;
 mod settlement;
@@ -211,6 +212,19 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             data,
         );
     }
+
+    // The masses flee the perils just tallied — danger, plague, and beast — for
+    // the safest haven, reshaping where the world's people live (GDD 5.3).
+    refugee::tick_refugees(
+        &mut world.settlements,
+        &world.regions,
+        &world.plagues,
+        &world.monsters,
+        &data.balance.refugee,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
 
     culture::tick_culture(
         &mut world.regions,

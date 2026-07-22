@@ -52,6 +52,30 @@ pub struct PlagueBalance {
     pub min_severity: f32,
 }
 
+/// Refugee tuning (GDD 5.3): when a land grows too perilous to bear — wracked by
+/// danger, gripped by plague, or stalked by a beast — its people don't only die
+/// in place, they flee. The masses flow toward the safest, most prosperous haven,
+/// so the threats reshape the map's population, not merely thin it. The
+/// population-flow counterpart to trade's wealth-flow.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefugeeBalance {
+    /// Region peril at or above which its settlements begin to shed refugees.
+    /// Peril is `danger + plague_peril (if plagued) + monster_peril (if stalked)`.
+    pub flee_threshold: f32,
+    /// Peril a present plague adds to a region.
+    pub plague_peril: f32,
+    /// Peril a stalking beast adds to a region.
+    pub monster_peril: f32,
+    /// Fraction of a fleeing settlement's people who leave each tick, per unit of
+    /// the region's peril as a fraction of 100.
+    pub flee_rate: f32,
+    /// A region must sit below this peril to be a haven refugees will flee to.
+    pub haven_max_peril: f32,
+    /// A single tick's flight from one settlement this large or larger is worth a
+    /// line in the chronicle; smaller trickles pass unremarked.
+    pub notable_flight: f32,
+}
+
 /// Resource-node tuning.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceBalance {

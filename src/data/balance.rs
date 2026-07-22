@@ -47,6 +47,7 @@ pub struct Balance {
     pub settlement: SettlementBalance,
     pub plague: PlagueBalance,
     pub monster: MonsterBalance,
+    pub refugee: RefugeeBalance,
     pub resource: ResourceBalance,
     pub culture: CultureBalance,
     pub trade: TradeBalance,

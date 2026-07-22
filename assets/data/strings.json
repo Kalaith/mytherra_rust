@@ -351,6 +351,7 @@
     "monster_slain": "{hero} hunts down and slays {monster}, and the land breathes easier.",
     "monster_driven_off": "{monster} is at last driven back into the wilds.",
     "monster_name": "The {beast} of {region}",
+    "refugee_flight": "Refugees abandon {source} in droves, fleeing for the safety of {haven}.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",
     "region_sack": "The great city of {settlement} is sacked as {region} falls.",

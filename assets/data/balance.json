@@ -574,6 +574,14 @@
     "min_ferocity": 0.2,
     "slay_renown": 15.0
   },
+  "refugee": {
+    "flee_threshold": 55.0,
+    "plague_peril": 25.0,
+    "monster_peril": 20.0,
+    "flee_rate": 0.02,
+    "haven_max_peril": 40.0,
+    "notable_flight": 400.0
+  },
   "resource": {
     "stress_chaos": 0.4,
     "stress_danger": 0.3,

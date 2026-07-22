@@ -487,6 +487,9 @@ pub struct ChronicleText {
     pub monster_driven_off: String,
     /// Name pattern for an emerging beast; slots `{beast}`, `{region}`.
     pub monster_name: String,
+    /// A notable flight of refugees from a perilous settlement to a safe haven
+    /// (GDD 5.3); slots `{source}`, `{haven}`.
+    pub refugee_flight: String,
     pub region_fracture: String,
     pub region_conquest: String,
     pub region_sack: String,
