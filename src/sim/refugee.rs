@@ -7,16 +7,17 @@
 //! read straight from world state).
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, RefugeeBalance};
+use crate::data::{fill, RefugeeBalance, RegionBalance};
 use crate::world::{Chronicle, EventKind, Monster, Plague, Region, Settlement};
 
 #[allow(clippy::too_many_arguments)]
 pub fn tick_refugees(
     settlements: &mut [Settlement],
-    regions: &[Region],
+    regions: &mut [Region],
     plagues: &[Plague],
     monsters: &[Monster],
     balance: &RefugeeBalance,
+    region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
@@ -48,7 +49,8 @@ pub fn tick_refugees(
     else {
         return;
     };
-    let Some(dest) = largest_settlement_index(settlements, &haven_region.id) else {
+    let haven_id = haven_region.id.clone();
+    let Some(dest) = largest_settlement_index(settlements, &haven_id) else {
         return; // the haven has no town to take them in
     };
 
@@ -89,6 +91,22 @@ pub fn tick_refugees(
     }
 
     settlements[dest].population += arrivals;
+
+    // Taking in the masses strains the haven's economy — more mouths than the
+    // land was feeding — and, since havens are chosen by prosperity, that strain
+    // is what eventually spreads the flow to somewhere less crowded rather than
+    // piling every refugee into one city forever.
+    if arrivals > 0.0 {
+        if let Some(haven) = regions.iter_mut().find(|r| r.id == haven_id) {
+            haven.apply_deltas(
+                -balance.haven_strain * arrivals,
+                0.0,
+                0.0,
+                0.0,
+                region_balance,
+            );
+        }
+    }
 }
 
 /// Index of the region's most populous settlement, if any.
@@ -110,10 +128,11 @@ mod tests {
     fn run(world: &mut WorldState, data: &GameData) {
         tick_refugees(
             &mut world.settlements,
-            &world.regions,
+            &mut world.regions,
             &world.plagues,
             &world.monsters,
             &data.balance.refugee,
+            &data.balance.region,
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
@@ -172,6 +191,28 @@ mod tests {
         assert!(
             (total_after - total_before).abs() < 1.0,
             "refugees move, they don't vanish: {total_before} -> {total_after}"
+        );
+    }
+
+    #[test]
+    fn a_swollen_haven_pays_the_strain_of_the_influx() {
+        // Taking in refugees strains the haven region's prosperity — the brake
+        // that keeps one city from swallowing every refugee forever (GDD 5.3).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        for (i, r) in world.regions.iter_mut().enumerate() {
+            r.danger = if i == 0 { 90.0 } else { 5.0 };
+            r.prosperity = if i == 1 { 90.0 } else { 40.0 };
+        }
+        let haven_id = world.regions[1].id.clone();
+        let prosperity_before = world.regions[1].prosperity;
+
+        run(&mut world, &data);
+
+        let haven = world.regions.iter().find(|r| r.id == haven_id).unwrap();
+        assert!(
+            haven.prosperity < prosperity_before,
+            "taking in refugees should strain the haven's prosperity"
         );
     }
 

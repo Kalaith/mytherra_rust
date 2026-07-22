@@ -580,7 +580,8 @@
     "monster_peril": 20.0,
     "flee_rate": 0.02,
     "haven_max_peril": 40.0,
-    "notable_flight": 400.0
+    "notable_flight": 400.0,
+    "haven_strain": 0.0015
   },
   "resource": {
     "stress_chaos": 0.4,

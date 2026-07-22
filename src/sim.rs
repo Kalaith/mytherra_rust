@@ -217,10 +217,11 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     // the safest haven, reshaping where the world's people live (GDD 5.3).
     refugee::tick_refugees(
         &mut world.settlements,
-        &world.regions,
+        &mut world.regions,
         &world.plagues,
         &world.monsters,
         &data.balance.refugee,
+        &data.balance.region,
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,

@@ -74,6 +74,13 @@ pub struct RefugeeBalance {
     /// A single tick's flight from one settlement this large or larger is worth a
     /// line in the chronicle; smaller trickles pass unremarked.
     pub notable_flight: f32,
+    /// Prosperity the haven region loses per refugee it takes in each tick (GDD
+    /// 5.3): a mass influx strains the local economy — more mouths than the land
+    /// was feeding. Because the haven is chosen by prosperity, this strain is also
+    /// the brake on runaway concentration: a swollen haven's falling prosperity
+    /// eventually cedes haven status to somewhere less crowded, spreading the
+    /// flow rather than piling every refugee into one city forever.
+    pub haven_strain: f32,
 }
 
 /// Resource-node tuning.
