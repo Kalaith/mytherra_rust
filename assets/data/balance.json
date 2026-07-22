@@ -409,6 +409,7 @@
     "cataclysm_crisis": 25.0,
     "collapse_prosperity": 0.38,
     "collapse_struggling": 20.0,
+    "collapse_plague": 22.0,
     "collapse_momentum_weight": 0.6,
     "collapse_momentum_decay": 1.5,
     "conquest_danger": 0.3,

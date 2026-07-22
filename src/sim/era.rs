@@ -20,6 +20,12 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         .map(|b| b.stake)
         .sum();
     let wrath = crate::world::pantheon_wrath(&world.pantheon, data.balance.pantheon.drift_target);
+    // What share of the world lies under plague — one plague per region, so the
+    // afflicted count is the distinct region count (GDD 5.7 <-> 5.3).
+    let mut afflicted: Vec<&str> = world.plagues.iter().map(|p| p.region_id.as_str()).collect();
+    afflicted.sort_unstable();
+    afflicted.dedup();
+    let plague_ratio = afflicted.len() as f32 / world.regions.len().max(1) as f32;
     let scores = compute_scores(
         &world.regions,
         &world.heroes,
@@ -29,6 +35,7 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         pending_stake,
         world.conquest_momentum,
         world.secession_momentum,
+        plague_ratio,
         wrath,
         balance,
     );
@@ -476,6 +483,7 @@ mod tests {
             0.0,
             0.0,
             0.0,
+            0.0,
             balance,
         );
         let warlike = compute_scores(
@@ -486,6 +494,7 @@ mod tests {
             data.config.max_favor,
             0,
             50.0,
+            0.0,
             0.0,
             0.0,
             balance,
@@ -523,6 +532,7 @@ mod tests {
                 100,
                 data.config.max_favor,
                 0,
+                0.0,
                 0.0,
                 0.0,
                 0.0,
@@ -579,6 +589,7 @@ mod tests {
                 0,
                 0.0,
                 0.0,
+                0.0,
                 wrath,
                 balance,
             )
@@ -623,6 +634,7 @@ mod tests {
             0.0,
             0.0,
             0.0,
+            0.0,
             balance,
         );
         let fracturing = compute_scores(
@@ -634,6 +646,7 @@ mod tests {
             0,
             0.0,
             50.0,
+            0.0,
             0.0,
             balance,
         );
@@ -649,6 +662,43 @@ mod tests {
         let mut player = PlayerState::new(&data.config);
         tick_era(&mut world, &mut player, &data);
         assert!(world.secession_momentum < 40.0);
+    }
+
+    #[test]
+    fn a_world_gripped_by_plague_builds_toward_collapse() {
+        // A pandemic raises Collapse pressure directly, apart from the prosperity
+        // the pestilence drains (GDD 5.7 <-> 5.3). Full affliction adds exactly
+        // the plague weight.
+        use crate::world::compute_scores;
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.era;
+        let world = WorldState::new(&data);
+
+        let collapse = |plague_ratio: f32| {
+            compute_scores(
+                &world.regions,
+                &world.heroes,
+                &world.magic_paths,
+                100,
+                data.config.max_favor,
+                0,
+                0.0,
+                0.0,
+                plague_ratio,
+                0.0,
+                balance,
+            )
+            .collapse
+        };
+
+        assert!(
+            collapse(1.0) > collapse(0.0),
+            "a plague-gripped world should trend toward a Collapse age"
+        );
+        assert!(
+            (collapse(1.0) - collapse(0.0) - balance.collapse_plague).abs() < 0.01,
+            "a wholly plagued world adds exactly the plague weight to Collapse"
+        );
     }
 
     #[test]

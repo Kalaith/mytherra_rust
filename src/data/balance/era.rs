@@ -13,6 +13,10 @@ pub struct EraBalance {
     pub cataclysm_crisis: f32,
     pub collapse_prosperity: f32,
     pub collapse_struggling: f32,
+    /// Weight on the fraction of regions gripped by plague (GDD 5.7 <-> 5.3), so
+    /// a pandemic sweeping the world drives it toward a Collapse age directly,
+    /// not only through the prosperity the pestilence drains.
+    pub collapse_plague: f32,
     /// Weight on the world's decaying secession-momentum tally, so regions
     /// fracturing from within (not just low prosperity) drive Collapse pressure.
     pub collapse_momentum_weight: f32,

@@ -94,6 +94,15 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
         .sum();
     let wrath =
         crate::world::pantheon_wrath(&ctx.world.pantheon, ctx.data.balance.pantheon.drift_target);
+    let mut afflicted: Vec<&str> = ctx
+        .world
+        .plagues
+        .iter()
+        .map(|p| p.region_id.as_str())
+        .collect();
+    afflicted.sort_unstable();
+    afflicted.dedup();
+    let plague_ratio = afflicted.len() as f32 / ctx.world.regions.len().max(1) as f32;
     let scores = compute_scores(
         &ctx.world.regions,
         &ctx.world.heroes,
@@ -103,6 +112,7 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
         pending_stake,
         ctx.world.conquest_momentum,
         ctx.world.secession_momentum,
+        plague_ratio,
         wrath,
         balance,
     );
