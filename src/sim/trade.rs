@@ -3,14 +3,15 @@
 //! so wealth and ideas both spread along the network. Deterministic: no RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, HeroRole, RegionBalance, TradeBalance};
-use crate::world::{Chronicle, EventKind, Hero, Region, TradeRoute};
+use crate::data::{fill, HeroRole, RegionBalance, ResourceStatus, TradeBalance};
+use crate::world::{Chronicle, EventKind, Hero, Region, ResourceNode, TradeRoute};
 use macroquad_toolkit::rng::SeededRng;
 
 pub fn tick_trade(
     routes: &[TradeRoute],
     regions: &mut [Region],
     heroes: &[Hero],
+    resource_nodes: &[ResourceNode],
     balance: &TradeBalance,
     region_balance: &RegionBalance,
 ) {
@@ -38,7 +39,20 @@ pub fn tick_trade(
                     && (h.region_id == route.region_a || h.region_id == route.region_b)
             })
             .count();
-        let volume = route.volume + merchants as f32 * balance.merchant_volume_bonus;
+        // Trade thrives where there is something to trade: every producing
+        // resource node at either endpoint fills the caravans further, so a road
+        // between resource-rich lands carries more than one between barren ones
+        // (GDD 5.2 <-> 5.3). A node run dry lends nothing.
+        let goods = resource_nodes
+            .iter()
+            .filter(|n| {
+                n.status != ResourceStatus::Depleted
+                    && (n.region_id == route.region_a || n.region_id == route.region_b)
+            })
+            .count();
+        let volume = route.volume
+            + merchants as f32 * balance.merchant_volume_bonus
+            + goods as f32 * balance.resource_volume_bonus;
 
         // Wealth: a flat bonus plus drift toward the pair's average prosperity.
         // The bonus is throttled by the more perilous endpoint's danger — trade
@@ -194,6 +208,7 @@ mod tests {
             &world.trade_routes,
             &mut world.regions,
             &world.heroes,
+            &world.resource_nodes,
             &data.balance.trade,
             &data.balance.region,
         );
@@ -228,6 +243,7 @@ mod tests {
                 &world.trade_routes,
                 &mut world.regions,
                 &world.heroes,
+                &world.resource_nodes,
                 &data.balance.trade,
                 &data.balance.region,
             );
@@ -266,6 +282,7 @@ mod tests {
             &world.trade_routes,
             &mut world.regions,
             &world.heroes,
+            &world.resource_nodes,
             &data.balance.trade,
             &data.balance.region,
         );
@@ -301,6 +318,7 @@ mod tests {
             &world.trade_routes,
             &mut world.regions,
             &world.heroes,
+            &world.resource_nodes,
             &data.balance.trade,
             &data.balance.region,
         );
@@ -350,6 +368,7 @@ mod tests {
                 &world.trade_routes,
                 &mut world.regions,
                 &world.heroes,
+                &world.resource_nodes,
                 &data.balance.trade,
                 &data.balance.region,
             );
@@ -359,6 +378,64 @@ mod tests {
         assert!(
             gain(HeroRole::Merchant) > gain(HeroRole::Warrior),
             "a merchant should carry more wealth down the road than a warrior does"
+        );
+    }
+
+    #[test]
+    fn producing_resources_swell_the_wealth_a_route_carries() {
+        // A route from a resource-rich land carries more than one from barren
+        // ground, and a run-dry node lends nothing (GDD 5.2 <-> 5.3). Endpoints
+        // start equal, so the equalize term is zero and only the volume bonus moves
+        // prosperity.
+        let data = GameData::load().unwrap();
+        let gain = |nodes: Vec<ResourceNode>| {
+            let mut world = WorldState::new(&data);
+            let ai = world
+                .regions
+                .iter()
+                .position(|r| r.id == "aldermoor")
+                .unwrap();
+            let ki = world
+                .regions
+                .iter()
+                .position(|r| r.id == "kharzul")
+                .unwrap();
+            world.regions[ai].prosperity = 50.0;
+            world.regions[ki].prosperity = 50.0;
+            world.regions[ai].danger = 0.0;
+            world.regions[ki].danger = 0.0;
+            world.heroes.clear(); // no merchants
+            world.resource_nodes = nodes;
+            let before = world.regions[ai].prosperity;
+            tick_trade(
+                &world.trade_routes,
+                &mut world.regions,
+                &world.heroes,
+                &world.resource_nodes,
+                &data.balance.trade,
+                &data.balance.region,
+            );
+            world.regions[ai].prosperity - before
+        };
+
+        let node = |status: ResourceStatus| ResourceNode {
+            id: "n".to_owned(),
+            name: "The Vein".to_owned(),
+            region_id: "aldermoor".to_owned(),
+            resource_type: crate::data::ResourceType::Mine,
+            status,
+        };
+
+        let with_ore = gain(vec![node(ResourceStatus::Active)]);
+        let barren = gain(vec![]);
+        let run_dry = gain(vec![node(ResourceStatus::Depleted)]);
+        assert!(
+            with_ore > barren,
+            "a route from a resource-rich land should carry more ({with_ore} vs {barren})"
+        );
+        assert!(
+            (run_dry - barren).abs() < 1e-4,
+            "a depleted node lends nothing to trade"
         );
     }
 

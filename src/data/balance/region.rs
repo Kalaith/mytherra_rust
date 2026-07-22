@@ -182,6 +182,13 @@ pub struct TradeBalance {
     /// role real economic weight — the counterpart to how a Warrior lends conquest
     /// might — so hero role now shapes the trade network, not only culture.
     pub merchant_volume_bonus: f32,
+    /// Effective route volume each producing resource node at either endpoint adds
+    /// (GDD 5.2 <-> 5.3): trade thrives where there is something to trade, so a
+    /// road running between resource-rich lands carries fuller caravans than one
+    /// between barren ones. A node run dry (Depleted) lends nothing, so the route's
+    /// wealth rises and falls with the fortunes of the mines, farms, and forests
+    /// that feed it — and a resource-rich region becomes a natural trade hub.
+    pub resource_volume_bonus: f32,
     /// Per-tick chance a prospering region forges a new trade route (GDD 5.2):
     /// the trade network was the last part of the world to stay fixed while the
     /// map itself grows — a fractured, conquered, or frontier region was born
