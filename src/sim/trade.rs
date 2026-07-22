@@ -77,6 +77,17 @@ pub fn tick_trade(
         regions[a].apply_deltas(delta_a, 0.0, 0.0, magic_a, region_balance);
         regions[b].apply_deltas(delta_b, 0.0, 0.0, magic_b, region_balance);
 
+        // Grain travels the roads too: each granary drifts toward the pair's
+        // average harvest, so a land with full stores feeds a hungrier partner —
+        // the grain trade that is a starving region's lifeline (GDD 5.2 <-> 5.3).
+        // Throttled by the same peril that throttles wealth, so a war that severs
+        // a road severs the food it carried: a besieged land is left to starve
+        // alone. Trade only shares food, never conjures it — no flat bonus.
+        let (ha, hb) = (regions[a].harvest, regions[b].harvest);
+        let havg = (ha + hb) * 0.5;
+        regions[a].add_harvest((havg - ha) * balance.harvest_equalize * safety);
+        regions[b].add_harvest((havg - hb) * balance.harvest_equalize * safety);
+
         // Ideas: the same shape carries cultural influence along the route, so
         // connected lands grow to resemble one another.
         let culture = balance.culture_bonus * route.volume;
@@ -326,6 +337,84 @@ mod tests {
         assert!(
             gap_after < gap_before,
             "arcana should travel the road, narrowing the magic gap"
+        );
+    }
+
+    #[test]
+    fn trade_narrows_the_harvest_gap() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        // A wide granary gap on the Iron Road (aldermoor <-> kharzul), roads calm;
+        // grain should flow from the full stores toward the hungry land.
+        let ai = world
+            .regions
+            .iter()
+            .position(|r| r.id == "aldermoor")
+            .unwrap();
+        let ki = world
+            .regions
+            .iter()
+            .position(|r| r.id == "kharzul")
+            .unwrap();
+        world.regions[ai].harvest = 80.0;
+        world.regions[ki].harvest = 20.0;
+        world.regions[ai].danger = 10.0;
+        world.regions[ki].danger = 10.0;
+        let gap_before = (world.regions[ai].harvest - world.regions[ki].harvest).abs();
+        tick_trade(
+            &world.trade_routes,
+            &mut world.regions,
+            &world.heroes,
+            &world.resource_nodes,
+            &data.balance.trade,
+            &data.balance.region,
+        );
+        let gap_after = (world.regions[ai].harvest - world.regions[ki].harvest).abs();
+        assert!(
+            gap_after < gap_before,
+            "grain should travel the road, narrowing the harvest gap"
+        );
+        assert!(
+            world.regions[ki].harvest > 20.0,
+            "the hungry endpoint should be fed by its full-storehoused partner"
+        );
+    }
+
+    #[test]
+    fn war_on_a_route_severs_the_food_it_carried() {
+        // The same hungry endpoint is fed far less when war makes the road
+        // perilous than when it runs safe (GDD 5.2 <-> 5.3): peril throttles the
+        // grain trade just as it throttles wealth, so a besieged land starves alone.
+        let data = GameData::load().unwrap();
+        let fed_gain = |peril: f32| {
+            let mut world = WorldState::new(&data);
+            let ai = world
+                .regions
+                .iter()
+                .position(|r| r.id == "aldermoor")
+                .unwrap();
+            let ki = world
+                .regions
+                .iter()
+                .position(|r| r.id == "kharzul")
+                .unwrap();
+            world.regions[ai].harvest = 90.0;
+            world.regions[ki].harvest = 10.0;
+            world.regions[ai].danger = peril;
+            world.regions[ki].danger = peril;
+            tick_trade(
+                &world.trade_routes,
+                &mut world.regions,
+                &world.heroes,
+                &world.resource_nodes,
+                &data.balance.trade,
+                &data.balance.region,
+            );
+            world.regions[ki].harvest - 10.0
+        };
+        assert!(
+            fed_gain(0.0) > fed_gain(100.0) * 2.0,
+            "a safe road feeds the hungry far more than a war-torn one"
         );
     }
 

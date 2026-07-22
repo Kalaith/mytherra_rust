@@ -170,6 +170,14 @@ pub struct TradeBalance {
     /// arcane current with its partners (GDD 5.2 <-> 5.6). Trade only spreads
     /// magic between regions, never creates it — no flat bonus.
     pub magic_equalize: f32,
+    /// Fraction each endpoint's granary drifts toward the pair's average harvest,
+    /// throttled by route safety (GDD 5.2 <-> 5.3): grain travels the roads too,
+    /// so a land with full stores feeds a hungrier trade partner — the grain trade
+    /// that is a starving region's lifeline. Because it is throttled by the same
+    /// peril that throttles wealth, war severing a road also severs the food that
+    /// road carried, leaving a besieged land to starve alone. Trade only shares
+    /// food between regions, never conjures it — no flat bonus.
+    pub harvest_equalize: f32,
     /// How much the more perilous endpoint's danger throttles trade income:
     /// a route is only as safe as its worst leg, so caravans falter where the
     /// road runs through peril (GDD 5.2). Route safety is

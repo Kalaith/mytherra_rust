@@ -197,6 +197,13 @@ impl Region {
         self.cultural_influence = clamp_stat(self.cultural_influence + amount);
     }
 
+    /// Raise (or lower) the granary, clamped 0-100. Grain shipped along a trade
+    /// road feeds a hungrier partner (GDD 5.3 <-> 5.2) — the trade sim's hand on
+    /// the harvest that `sim/famine.rs` otherwise owns.
+    pub fn add_harvest(&mut self, amount: f32) {
+        self.harvest = clamp_stat(self.harvest + amount);
+    }
+
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {
