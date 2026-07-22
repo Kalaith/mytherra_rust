@@ -15,6 +15,7 @@ mod landmark;
 mod magic;
 mod monster;
 mod myth;
+mod order;
 mod pact;
 mod pantheon;
 mod plague;
@@ -564,6 +565,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &world.heroes,
         &world.regions,
         &data.balance.house,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    order::tick_orders(
+        &mut world.orders,
+        &mut world.regions,
+        &world.heroes,
+        &mut world.order_seq,
+        &data.balance.order,
+        &data.strings.orders,
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,

@@ -206,6 +206,14 @@
     "fade_floor": 5.0,
     "inherit_fraction": 0.3
   },
+  "order": {
+    "found_min_members": 4,
+    "dissolve_min_members": 2,
+    "prestige_per_member": 10.0,
+    "prestige_rate": 0.08,
+    "prestige_cap": 100.0,
+    "influence_per_prestige": 0.004
+  },
   "champion": {
     "max_roster": 3,
     "designate_cost": 20,

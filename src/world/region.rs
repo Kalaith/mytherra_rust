@@ -190,6 +190,13 @@ impl Region {
         self.divine_resonance = clamp_stat(self.divine_resonance + amount);
     }
 
+    /// Raise (or lower) cultural influence, clamped 0-100. A great Order that
+    /// keeps a chapter here lends the land its prestige (GDD 5.4 <-> 5.2) — the
+    /// institutional counterpart to the culture sim's own drift.
+    pub fn add_cultural_influence(&mut self, amount: f32) {
+        self.cultural_influence = clamp_stat(self.cultural_influence + amount);
+    }
+
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {

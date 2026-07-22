@@ -15,6 +15,7 @@ mod landmark;
 mod magic;
 mod monster;
 mod myth;
+mod order;
 mod pact;
 mod pantheon;
 mod plague;
@@ -41,6 +42,7 @@ pub use landmark::Landmark;
 pub use magic::{MagicPath, MagicState};
 pub use monster::Monster;
 pub use myth::{Myth, MythCandidate};
+pub use order::Order;
 pub use pact::Pact;
 pub use pantheon::{adjust_pressure, PantheonDeity};
 pub use plague::Plague;
@@ -139,6 +141,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of houses founded mid-run.
     #[serde(default)]
     pub house_seq: u64,
+    /// The great Orders the world's callings have raised (GDD 5.4); arise
+    /// dynamically, so this starts empty on a fresh world.
+    #[serde(default)]
+    pub orders: Vec<Order>,
+    /// Monotonic counter for unique ids of Orders founded mid-run.
+    #[serde(default)]
+    pub order_seq: u64,
     pub artifacts: Vec<Artifact>,
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
@@ -254,6 +263,8 @@ impl WorldState {
             hero_seq: 0,
             houses: Vec::new(),
             house_seq: 0,
+            orders: Vec::new(),
+            order_seq: 0,
             artifacts,
             artifact_seq: 0,
             pending_consequences: Vec::new(),

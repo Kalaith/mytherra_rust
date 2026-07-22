@@ -23,6 +23,33 @@ pub struct Strings {
     pub chronicle: ChronicleText,
     pub genesis: GenesisText,
     pub title: TitleText,
+    pub orders: OrderNames,
+}
+
+/// The name each of the six great Orders takes, one per hero calling (GDD 5.4).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrderNames {
+    pub warrior: String,
+    pub mage: String,
+    pub scholar: String,
+    pub ranger: String,
+    pub merchant: String,
+    pub cleric: String,
+}
+
+impl OrderNames {
+    /// The name of the Order bound to a given calling.
+    pub fn for_role(&self, role: crate::data::HeroRole) -> &str {
+        use crate::data::HeroRole;
+        match role {
+            HeroRole::Warrior => &self.warrior,
+            HeroRole::Mage => &self.mage,
+            HeroRole::Scholar => &self.scholar,
+            HeroRole::Ranger => &self.ranger,
+            HeroRole::Merchant => &self.merchant,
+            HeroRole::Cleric => &self.cleric,
+        }
+    }
 }
 
 /// Copy for the title / main menu screen (GDD 10).
@@ -436,6 +463,10 @@ pub struct ChronicleText {
     pub house_reseated: String,
     /// Name pattern for a founded house; slot `{founder}`.
     pub house_name: String,
+    /// A great Order is founded as its calling reaches critical mass, or
+    /// dissolved as its ranks thin (GDD 5.4); slot `{order}`.
+    pub order_founded: String,
+    pub order_dissolved: String,
     /// A pantheon deity cresting into the height of its wrath.
     pub deity_ascendant: String,
     pub champion_resolved: String,

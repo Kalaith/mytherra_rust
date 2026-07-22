@@ -180,3 +180,32 @@ pub struct HouseBalance {
     /// — the blood of legends is a head start toward legend of one's own.
     pub inherit_fraction: f32,
 }
+
+/// Great-Order tuning (GDD 5.4): the world's professional fellowships, the
+/// institutional counterpart to the hereditary House. Where a House is a
+/// bloodline in one region, an Order is a calling spanning every region its kind
+/// dwell in — arising when a role reaches a critical mass of the living, drawing
+/// its standing from the fellowship's numbers, and lending cultural weight to
+/// each region that hosts a chapter.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrderBalance {
+    /// Living heroes of a calling the world must hold before that Order is
+    /// founded — a fellowship needs numbers to become an institution.
+    pub found_min_members: usize,
+    /// An Order whose living membership falls to this many is dissolved, its
+    /// ranks too thin to endure.
+    pub dissolve_min_members: usize,
+    /// Prestige the Order's standing drifts toward per living member each tick.
+    pub prestige_per_member: f32,
+    /// How fast prestige drifts toward that target — it swells as the calling
+    /// spreads and ebbs as its ranks thin.
+    pub prestige_rate: f32,
+    /// Ceiling on an Order's prestige, so a populous calling cannot lend
+    /// unbounded weight.
+    pub prestige_cap: f32,
+    /// Cultural influence an Order lends each of its chapter regions per tick per
+    /// point of prestige (GDD 5.4 <-> 5.2): an institution is a cultural force,
+    /// making the regions it reaches more prominent — drawing heroes and raising
+    /// the chance of wonders — without touching the crisis stats.
+    pub influence_per_prestige: f32,
+}

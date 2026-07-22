@@ -314,6 +314,8 @@
     "house_founded": "{house} rises to greatness, a noble line seated in {region}.",
     "house_heir": "An heir of {house} is born to carry on its storied blood.",
     "house_fades": "The last of {house} passes, and the great line is forgotten.",
+    "order_founded": "{order} is founded, its fellowship grown great enough to span the realms.",
+    "order_dissolved": "{order} dwindles and disbands, its ranks worn too thin to endure.",
     "house_reseated": "Its seat lost, {house} reestablishes itself in {region}, following its blood.",
     "house_name": "The House of {founder}",
     "hero_legend_death": "{hero} of {region} has fallen — but the legend endures.",
@@ -412,5 +414,13 @@
     "exit": "Exit Game",
     "main_menu": "Main Menu",
     "no_save": "No saved world yet"
+  },
+  "orders": {
+    "warrior": "the Warriors' Order",
+    "mage": "the Arcane Circle",
+    "scholar": "the Scholars' Athenaeum",
+    "ranger": "the Wardens of the Wild",
+    "merchant": "the Merchant League",
+    "cleric": "the Sacred Communion"
   }
 }
