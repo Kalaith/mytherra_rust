@@ -302,6 +302,12 @@ pub struct WarBalance {
     /// lends its land strength in war as it already does in conquest — the player's
     /// lever over who prevails when regions come to blows.
     pub artifact_might: f32,
+    /// Fraction of a sworn ally's own war might that it lends to a region fighting
+    /// a war (GDD 5.2 <-> 5.2): an alliance is not only a promise not to fight but a
+    /// pledge to fight beside — allies march to each other's defence, so a region
+    /// with strong friends prevails in wars it would have lost alone. A region
+    /// stands the more secure the more, and the mightier, its allies.
+    pub ally_aid: f32,
 }
 
 /// Alliance tuning (GDD 5.2): the pacts that form between like-cultured,

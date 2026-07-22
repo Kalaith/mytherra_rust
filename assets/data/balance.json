@@ -642,7 +642,8 @@
     "stalemate_margin": 15.0,
     "loser_scar_prosperity": 8.0,
     "loser_scar_danger": 10.0,
-    "artifact_might": 8.0
+    "artifact_might": 8.0,
+    "ally_aid": 0.5
   },
   "pact": {
     "form_chance": 0.01,

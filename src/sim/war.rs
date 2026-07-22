@@ -37,8 +37,8 @@ pub fn tick_wars(
     // opponent's war might, and the war wanes toward its end.
     for war in wars.iter_mut() {
         war.age += 1;
-        let aggressor_might = war_might(heroes, artifacts, &war.aggressor_id, balance);
-        let defender_might = war_might(heroes, artifacts, &war.defender_id, balance);
+        let aggressor_might = war_might(heroes, artifacts, pacts, &war.aggressor_id, balance);
+        let defender_might = war_might(heroes, artifacts, pacts, &war.defender_id, balance);
         apply_toll(
             regions,
             settlements,
@@ -73,6 +73,7 @@ pub fn tick_wars(
             regions,
             heroes,
             artifacts,
+            pacts,
             balance,
             region_balance,
             chronicle,
@@ -82,10 +83,10 @@ pub fn tick_wars(
     }
 }
 
-/// A region's war might: the combined levels of its living Warriors and Rangers,
-/// plus the power of any War-focus artifacts bound to it — the martial strength,
-/// mortal and divine, it can bring to a war (GDD 5.2 <-> 5.6).
-fn war_might(
+/// A region's own war might: the combined levels of its living Warriors and
+/// Rangers, plus the power of any War-focus artifacts bound to it — the martial
+/// strength, mortal and divine, the land itself brings to a war (GDD 5.2 <-> 5.6).
+fn base_might(
     heroes: &[Hero],
     artifacts: &[Artifact],
     region_id: &str,
@@ -106,6 +107,33 @@ fn war_might(
         .map(|a| a.power as f32 * balance.artifact_might)
         .sum();
     martial + relic
+}
+
+/// The full might a region can bring to a war: its own, plus the aid its sworn
+/// allies send to its defence (GDD 5.2) — an alliance is a pledge to fight beside,
+/// so a region with strong friends prevails where it would have fallen alone.
+fn war_might(
+    heroes: &[Hero],
+    artifacts: &[Artifact],
+    pacts: &[Pact],
+    region_id: &str,
+    balance: &WarBalance,
+) -> f32 {
+    let own = base_might(heroes, artifacts, region_id, balance);
+    let aid: f32 = pacts
+        .iter()
+        .filter_map(|p| {
+            if p.region_a == region_id {
+                Some(p.region_b.as_str())
+            } else if p.region_b == region_id {
+                Some(p.region_a.as_str())
+            } else {
+                None
+            }
+        })
+        .map(|ally| base_might(heroes, artifacts, ally, balance) * balance.ally_aid)
+        .sum();
+    own + aid
 }
 
 /// Declare fresh wars: a belligerent region falls upon the realm's richest other
@@ -221,14 +249,15 @@ fn resolve(
     regions: &mut [Region],
     heroes: &[Hero],
     artifacts: &[Artifact],
+    pacts: &[Pact],
     balance: &WarBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
 ) {
-    let aggressor_might = war_might(heroes, artifacts, &war.aggressor_id, balance);
-    let defender_might = war_might(heroes, artifacts, &war.defender_id, balance);
+    let aggressor_might = war_might(heroes, artifacts, pacts, &war.aggressor_id, balance);
+    let defender_might = war_might(heroes, artifacts, pacts, &war.defender_id, balance);
     let name_of = |id: &str| {
         regions
             .iter()
@@ -540,6 +569,61 @@ mod tests {
         assert!(
             !outcome(true),
             "a War relic should carry the weak region to victory, sparing it the scar"
+        );
+    }
+
+    #[test]
+    fn a_strong_ally_turns_a_war_a_land_would_have_lost() {
+        // A weak region loses its war alone, but a sworn ally sending its own host
+        // to the defence carries it to victory instead (GDD 5.2).
+        use crate::world::Pact;
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.war.clone();
+        balance.ignite_chance = 0.0;
+        balance.intensity_decay = 1.0; // resolve this tick
+
+        // Region A (weak) is attacked by region B (strong). Region C is A's ally.
+        let scarred = |with_ally: bool| {
+            let mut world = WorldState::new(&data);
+            let a = world.regions[0].id.clone();
+            let b = world.regions[1].id.clone();
+            let c = world.regions[2].id.clone();
+            world
+                .heroes
+                .retain(|h| h.region_id != a && h.region_id != b && h.region_id != c);
+            world.heroes.push(warrior("scout", &a, 3)); // A weak
+            world.heroes.push(warrior("host", &b, 30)); // B strong
+            world.heroes.push(warrior("kin", &c, 40)); // C mighty
+            world.artifacts.clear(); // no seeded war relics to skew the mights
+            world.pacts.clear();
+            if with_ally {
+                world.pacts.push(Pact {
+                    id: "p".to_owned(),
+                    region_a: a.clone(),
+                    region_b: c.clone(),
+                    age: 3,
+                });
+            }
+            world.regions[0].prosperity = 60.0;
+            let before = world.regions[0].prosperity;
+            world.wars.push(War {
+                id: "w".to_owned(),
+                aggressor_id: b,
+                defender_id: a,
+                intensity: balance.min_intensity,
+                age: 5,
+            });
+            run(&mut world, &data, &balance);
+            world.regions[0].prosperity < before - 1.0 // A was scarred (lost)
+        };
+
+        assert!(
+            scarred(false),
+            "alone, the weak region loses and is scarred"
+        );
+        assert!(
+            !scarred(true),
+            "a mighty ally's aid should carry the weak region to victory"
         );
     }
 }
