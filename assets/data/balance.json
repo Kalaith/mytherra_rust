@@ -529,7 +529,9 @@
     "landmark_found_prosperity": 70.0,
     "landmark_found_influence_min": 60.0,
     "landmark_max_per_region": 6,
-    "landmark_found_influence": 1.5
+    "landmark_found_influence": 1.5,
+    "landmark_stature_growth": 0.006,
+    "landmark_stature_cap": 3.0
   },
   "trade": {
     "prosperity_bonus": 0.3,

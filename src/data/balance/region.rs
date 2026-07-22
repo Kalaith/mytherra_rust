@@ -134,6 +134,17 @@ pub struct CultureBalance {
     pub landmark_found_influence_min: f32,
     pub landmark_max_per_region: usize,
     pub landmark_found_influence: f32,
+    /// Fractional per-tick growth of a standing wonder's cultural stature (GDD
+    /// 5.2): a landmark grows more storied the longer it endures, so an ancient
+    /// wonder anchors its region's *identity* far more than a freshly-raised one.
+    /// Stature starts at 1.0 and multiplies only a wonder's pull on the culture
+    /// its theme embodies — its physical aura (the stat radiance of the structure
+    /// itself) is unchanged, so a storied wonder shapes who a people are, not the
+    /// weather over their heads.
+    pub landmark_stature_growth: f32,
+    /// The cultural stature a wonder tops out at, as a multiple of its founding
+    /// pull.
+    pub landmark_stature_cap: f32,
 }
 
 /// Trade-route tuning (GDD 5.2).

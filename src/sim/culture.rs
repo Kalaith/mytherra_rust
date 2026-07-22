@@ -42,7 +42,11 @@ pub fn tick_culture(
         let mut landmark_count = 0;
         let mut aura = (0.0, 0.0, 0.0, 0.0);
         for landmark in landmarks.iter().filter(|l| l.region_id == region.id) {
-            scores[landmark.culture.index()] += balance.landmark_weight * landmark.influence;
+            // A storied wonder pulls harder on its region's culture the longer it
+            // has stood (its stature), but radiates the same physical aura as the
+            // structure it is (GDD 5.2).
+            scores[landmark.culture.index()] +=
+                balance.landmark_weight * landmark.influence * landmark.stature;
             landmark_count += 1;
             let (dp, dc, dd, dm) =
                 landmark_aura(landmark.culture, landmark.influence * balance.landmark_aura);

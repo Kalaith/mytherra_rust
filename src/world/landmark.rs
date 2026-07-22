@@ -11,6 +11,16 @@ pub struct Landmark {
     pub region_id: String,
     pub culture: Culture,
     pub influence: f32,
+    /// How storied the wonder has grown — a multiplier (>= 1.0) on its pull toward
+    /// its region's culture, swelling as it stands through the ages (GDD 5.2). It
+    /// touches only cultural identity, never the physical aura the structure
+    /// radiates. `serde(default)` keeps older saves loadable at full stature.
+    #[serde(default = "unit_stature")]
+    pub stature: f32,
+}
+
+fn unit_stature() -> f32 {
+    1.0
 }
 
 impl Landmark {
@@ -21,6 +31,7 @@ impl Landmark {
             region_id: seed.region_id.clone(),
             culture: seed.culture,
             influence: seed.influence,
+            stature: 1.0,
         }
     }
 }

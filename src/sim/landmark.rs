@@ -1,8 +1,9 @@
-//! Landmark founding (GDD 5.2): a flourishing, culturally-vibrant region raises
-//! a wonder over time. Landmarks were the last of the world's entities to stay
-//! fixed; now the map's cultural anchors grow with its fortunes, the way its
-//! towns already do. A raised wonder pulls its region's culture, lifts its
-//! cultural influence, and radiates the landmark aura like any other.
+//! Landmark founding and ageing (GDD 5.2): a flourishing, culturally-vibrant
+//! region raises a wonder over time, and every standing wonder grows more
+//! storied the longer it endures. Landmarks were the last of the world's
+//! entities to stay fixed; now the map's cultural anchors grow with its fortunes,
+//! the way its towns already do. A raised wonder pulls its region's culture,
+//! lifts its cultural influence, and radiates the landmark aura like any other.
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, CultureBalance, LandmarkNameBank, LandmarkSeed};
@@ -21,6 +22,16 @@ pub fn tick_landmark_founding(
     text: &ChronicleText,
     year: u32,
 ) {
+    // Wonders grow more storied the longer they stand (GDD 5.2): each standing
+    // landmark's cultural stature swells multiplicatively toward the cap, so an
+    // ancient wonder anchors its region's identity far more than one raised this
+    // age — while its physical aura stays that of the structure itself. Done
+    // before founding, so a wonder raised this tick doesn't age before it exists.
+    for landmark in landmarks.iter_mut() {
+        landmark.stature = (landmark.stature * (1.0 + balance.landmark_stature_growth))
+            .min(balance.landmark_stature_cap);
+    }
+
     for region in regions {
         if region.prosperity < balance.landmark_found_prosperity
             || region.cultural_influence < balance.landmark_found_influence_min
@@ -152,6 +163,63 @@ mod tests {
         names.sort_unstable();
         names.dedup();
         assert_eq!(total, names.len(), "no two landmarks share a name");
+    }
+
+    #[test]
+    fn a_standing_wonder_grows_more_storied_with_the_ages() {
+        // A wonder's cultural stature swells toward the cap the longer it stands,
+        // strengthening its pull on culture — while its physical aura, tied to the
+        // structure's fixed influence, never changes (GDD 5.2).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let balance = &data.balance.culture;
+        // A struggling region so no new wonder is founded during the run.
+        for region in &mut world.regions {
+            region.prosperity = 0.0;
+            region.cultural_influence = 0.0;
+        }
+        world.landmarks.clear();
+        world.landmarks.push(Landmark::from_seed(&LandmarkSeed {
+            id: "wonder".to_owned(),
+            name: "The Ancient Wonder".to_owned(),
+            region_id: world.regions[0].id.clone(),
+            culture: world.regions[0].culture,
+            influence: 2.5,
+        }));
+        let mut seq = 0;
+
+        let tick = |world: &mut WorldState, seq: &mut u64| {
+            tick_landmark_founding(
+                &mut world.landmarks,
+                &world.regions,
+                seq,
+                &data.landmark_names,
+                balance,
+                &mut world.rng,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        };
+
+        tick(&mut world, &mut seq);
+        let w = world.landmarks.iter().find(|l| l.id == "wonder").unwrap();
+        assert!(
+            w.stature > 1.0,
+            "a standing wonder grows in cultural stature"
+        );
+        assert_eq!(w.influence, 2.5, "its physical influence is unchanged");
+
+        // Over many ages the stature climbs to — but never past — the cap.
+        for _ in 0..2000 {
+            tick(&mut world, &mut seq);
+        }
+        let w = world.landmarks.iter().find(|l| l.id == "wonder").unwrap();
+        assert!(
+            (w.stature - balance.landmark_stature_cap).abs() < 1e-3,
+            "an ancient wonder's stature tops out at the cap"
+        );
+        assert_eq!(w.influence, 2.5, "and its physical influence still holds");
     }
 
     #[test]
