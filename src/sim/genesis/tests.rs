@@ -351,6 +351,78 @@ fn conquest_sacks_the_losers_greatest_city() {
 }
 
 #[test]
+fn conquest_sacks_the_losers_greatest_wonder() {
+    use crate::data::LandmarkSeed;
+    use crate::world::Landmark;
+    let data = GameData::load().unwrap();
+    let mut world = WorldState::new(&data);
+
+    let loser_id = world.regions[0].id.clone();
+    let winner_id = world.regions[1].id.clone();
+    let winner = &mut world.regions[1];
+    winner.prosperity = 90.0;
+    winner.population = 40000.0;
+    winner.chaos = 20.0;
+    winner.danger = 20.0;
+    winner.refresh_status(&data.balance.region);
+    let loser = &mut world.regions[0];
+    loser.prosperity = 8.0;
+    loser.chaos = 90.0;
+    loser.danger = 90.0;
+    loser.population = 3000.0;
+    loser.refresh_status(&data.balance.region);
+    for hero in &mut world.heroes {
+        if hero.region_id == loser_id {
+            hero.level = 1;
+        }
+    }
+    world.artifacts.retain(|a| a.region_id != loser_id);
+
+    // The doomed realm holds two wonders: a grand one and a lesser one.
+    world.landmarks.clear();
+    let wonder = |id: &str, name: &str, stature: f32| {
+        let mut l = Landmark::from_seed(&LandmarkSeed {
+            id: id.to_owned(),
+            name: name.to_owned(),
+            region_id: loser_id.clone(),
+            culture: Culture::Mystical,
+            influence: 4.0,
+        });
+        l.stature = stature;
+        l
+    };
+    world
+        .landmarks
+        .push(wonder("grand", "The Grand Spire", 90.0));
+    world
+        .landmarks
+        .push(wonder("lesser", "The Old Marker", 10.0));
+
+    tick_genesis(&mut world, &data);
+
+    assert!(
+        !world.landmarks.iter().any(|l| l.id == "grand"),
+        "the sack should throw down the loser's grandest wonder"
+    );
+    let survivor = world
+        .landmarks
+        .iter()
+        .find(|l| l.id == "lesser")
+        .expect("the lesser wonder survives the sack");
+    assert_eq!(
+        survivor.region_id, winner_id,
+        "the surviving wonder passes intact to the conqueror"
+    );
+    assert!(
+        world
+            .chronicle
+            .iter_newest()
+            .any(|e| e.message.contains("throw down")),
+        "the razing of the wonder should be chronicled"
+    );
+}
+
+#[test]
 fn a_defended_region_resists_conquest() {
     let data = GameData::load().unwrap();
     let mut world = WorldState::new(&data);

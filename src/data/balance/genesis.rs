@@ -166,6 +166,14 @@ pub struct ConquestBalance {
     /// can drop a size tier — the fall of a great city, written into the map.
     pub sack_population_loss: f32,
     pub sack_prosperity_loss: f32,
+    /// Whether the sack that ends a region throws down its proudest wonder (GDD
+    /// 5.2 <-> 5.7): the conqueror razes the greatest monument of the fallen realm
+    /// — a burned library, a toppled temple — the symbol of the old order pulled
+    /// down with the last of its defenders. The loser's other, lesser wonders pass
+    /// to the victor intact; only the grandest is made an example of. Gives war a
+    /// hand on the wonders it never had (era-ends alone razed them before), and a
+    /// real cost to the map's cultural memory each time a realm is swallowed.
+    pub sack_razes_wonder: bool,
     /// The world will never be conquered below this many regions.
     pub min_regions: usize,
     /// Conquest momentum each annexation adds to the world (feeds Conquest-era

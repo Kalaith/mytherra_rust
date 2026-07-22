@@ -347,6 +347,7 @@
     "settlement_declines": "{settlement} dwindles to a {tier} as {region} empties around it.",
     "landmark_raised": "{landmark} is raised in {region}, a wonder of the age.",
     "landmark_razed": "{landmark} is thrown down as the age ends, a wonder lost to the ages.",
+    "landmark_sacked": "As {region} falls, its conquerors throw down {landmark} — the proudest wonder of the vanquished, made an example of.",
     "resource_flourishes": "{node} flourishes, its bounty overflowing across {region}.",
     "resource_corrupts": "{node} festers into corruption, poisoning the land of {region}.",
     "resource_depletes": "{node} is worked to exhaustion and runs dry in {region}.",

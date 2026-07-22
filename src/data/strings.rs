@@ -524,6 +524,9 @@ pub struct ChronicleText {
     pub settlement_declines: String,
     pub landmark_raised: String,
     pub landmark_razed: String,
+    /// The greatest wonder of a conquered region, thrown down in the sack (GDD
+    /// 5.2 <-> 5.7); slots `{landmark}`, `{region}`.
+    pub landmark_sacked: String,
     /// A resource node crossing into one of its dramatic states (GDD 5.3):
     /// flourishing to its peak, falling to corruption, or run dry.
     pub resource_flourishes: String,

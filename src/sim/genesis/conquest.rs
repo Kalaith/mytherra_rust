@@ -175,7 +175,7 @@ pub(super) fn run(
     regions: &mut Vec<Region>,
     settlements: &mut [Settlement],
     resource_nodes: &mut [ResourceNode],
-    landmarks: &mut [Landmark],
+    landmarks: &mut Vec<Landmark>,
     artifacts: &mut [Artifact],
     weather: &mut [WeatherEvent],
     heroes: &mut [Hero],
@@ -224,6 +224,34 @@ pub(super) fn run(
             s.prosperity = (s.prosperity - balance.sack_prosperity_loss).max(0.0);
             s.name.clone()
         });
+
+    // The sack throws down the fallen realm's proudest wonder (GDD 5.2 <-> 5.7):
+    // its grandest monument is razed as an example, with the last of its
+    // defenders. Done before reassignment, while the loser still owns its wonders,
+    // so only the greatest falls — the rest pass to the victor below.
+    if balance.sack_razes_wonder {
+        if let Some(idx) = landmarks
+            .iter()
+            .enumerate()
+            .filter(|(_, l)| l.region_id == loser_id)
+            .max_by(|(_, a), (_, b)| {
+                a.stature
+                    .total_cmp(&b.stature)
+                    .then_with(|| a.id.cmp(&b.id))
+            })
+            .map(|(i, _)| i)
+        {
+            let razed = landmarks.remove(idx);
+            chronicle.push(
+                year,
+                EventKind::Region,
+                fill(
+                    &text.landmark_sacked,
+                    &[("landmark", razed.name), ("region", loser_name.clone())],
+                ),
+            );
+        }
+    }
 
     // Reassign everything the loser owned to its conqueror.
     for s in settlements.iter_mut() {
