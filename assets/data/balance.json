@@ -582,6 +582,7 @@
     "magic_equalize": 0.02,
     "harvest_equalize": 0.04,
     "peril_penalty": 0.008,
+    "storm_penalty": 0.08,
     "min_safety": 0.2,
     "merchant_volume_bonus": 0.15,
     "resource_volume_bonus": 0.1,

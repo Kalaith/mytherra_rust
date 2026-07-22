@@ -181,8 +181,14 @@ pub struct TradeBalance {
     /// How much the more perilous endpoint's danger throttles trade income:
     /// a route is only as safe as its worst leg, so caravans falter where the
     /// road runs through peril (GDD 5.2). Route safety is
-    /// `clamp(1 - peril * peril_penalty, min_safety, 1)`.
+    /// `clamp(1 - peril * peril_penalty - storm * storm_penalty, min_safety, 1)`.
     pub peril_penalty: f32,
+    /// How much a foul weather front over either endpoint throttles trade, per
+    /// unit of its magnitude (GDD 5.2 <-> 5.6): a storm blocks the roads and mires
+    /// the caravans, so a tempest sitting over a trade partner cuts the wealth and
+    /// the grain a route carries until it passes. War severs a road for good; a
+    /// storm only closes it for a season.
+    pub storm_penalty: f32,
     pub min_safety: f32,
     /// Effective route volume each living Merchant hero at either endpoint adds
     /// (GDD 5.2 <-> 5.4): a merchant plies the road, so a land's caravans carry

@@ -4,14 +4,16 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, HeroRole, RegionBalance, ResourceStatus, TradeBalance};
-use crate::world::{Chronicle, EventKind, Hero, Region, ResourceNode, TradeRoute};
+use crate::world::{Chronicle, EventKind, Hero, Region, ResourceNode, TradeRoute, WeatherEvent};
 use macroquad_toolkit::rng::SeededRng;
 
+#[allow(clippy::too_many_arguments)]
 pub fn tick_trade(
     routes: &[TradeRoute],
     regions: &mut [Region],
     heroes: &[Hero],
     resource_nodes: &[ResourceNode],
+    weather: &[WeatherEvent],
     balance: &TradeBalance,
     region_balance: &RegionBalance,
 ) {
@@ -56,9 +58,21 @@ pub fn tick_trade(
 
         // Wealth: a flat bonus plus drift toward the pair's average prosperity.
         // The bonus is throttled by the more perilous endpoint's danger — trade
-        // falters where the road runs through a war zone (GDD 5.2).
+        // falters where the road runs through a war zone (GDD 5.2) — and by any
+        // foul weather sitting over an endpoint: a storm mires the caravans and
+        // closes the road for a season (GDD 5.2 <-> 5.6). Peril and storm both bite
+        // the same safety, so they throttle the wealth and the grain a route
+        // carries alike.
         let peril = regions[a].danger.max(regions[b].danger);
-        let safety = (1.0 - peril * balance.peril_penalty).clamp(balance.min_safety, 1.0);
+        let storm: f32 = weather
+            .iter()
+            .filter(|w| {
+                !w.is_fair() && (w.region_id == route.region_a || w.region_id == route.region_b)
+            })
+            .map(|w| w.magnitude)
+            .sum();
+        let safety = (1.0 - peril * balance.peril_penalty - storm * balance.storm_penalty)
+            .clamp(balance.min_safety, 1.0);
         let bonus = balance.prosperity_bonus * volume * safety;
         let (pa, pb) = (regions[a].prosperity, regions[b].prosperity);
         let avg = (pa + pb) * 0.5;
@@ -220,6 +234,7 @@ mod tests {
             &mut world.regions,
             &world.heroes,
             &world.resource_nodes,
+            &[],
             &data.balance.trade,
             &data.balance.region,
         );
@@ -255,6 +270,7 @@ mod tests {
                 &mut world.regions,
                 &world.heroes,
                 &world.resource_nodes,
+                &[],
                 &data.balance.trade,
                 &data.balance.region,
             );
@@ -268,6 +284,63 @@ mod tests {
         assert!(
             gain(100.0) > 0.0,
             "even a perilous route still carries some trade (the min_safety floor)"
+        );
+    }
+
+    #[test]
+    fn a_storm_over_an_endpoint_mires_the_caravans() {
+        let data = GameData::load().unwrap();
+        // Prosperity a calm endpoint gains from the Iron Road, with and without a
+        // foul front sitting over its partner. Both endpoints start equal and safe,
+        // so only the weather changes what the road carries.
+        let gain = |storm: bool| {
+            let mut world = WorldState::new(&data);
+            let ai = world
+                .regions
+                .iter()
+                .position(|r| r.id == "aldermoor")
+                .unwrap();
+            let ki = world
+                .regions
+                .iter()
+                .position(|r| r.id == "kharzul")
+                .unwrap();
+            world.regions[ai].prosperity = 50.0;
+            world.regions[ki].prosperity = 50.0;
+            world.regions[ai].danger = 0.0;
+            world.regions[ki].danger = 0.0;
+            let weather = if storm {
+                vec![WeatherEvent {
+                    region_id: "kharzul".to_owned(),
+                    pattern_id: "tempest".to_owned(),
+                    pattern_name: "Tempest".to_owned(),
+                    intensity_name: "Strong".to_owned(),
+                    magnitude: 2.0,
+                    // Net-foul: chaos and danger outweigh prosperity and magic.
+                    prosperity: -1.0,
+                    chaos: 2.0,
+                    danger: 2.0,
+                    magic: 0.0,
+                }]
+            } else {
+                Vec::new()
+            };
+            let before = world.regions[ai].prosperity;
+            tick_trade(
+                &world.trade_routes,
+                &mut world.regions,
+                &world.heroes,
+                &world.resource_nodes,
+                &weather,
+                &data.balance.trade,
+                &data.balance.region,
+            );
+            world.regions[ai].prosperity - before
+        };
+
+        assert!(
+            gain(false) > gain(true),
+            "a storm over a trade partner should cut what the road carries"
         );
     }
 
@@ -294,6 +367,7 @@ mod tests {
             &mut world.regions,
             &world.heroes,
             &world.resource_nodes,
+            &[],
             &data.balance.trade,
             &data.balance.region,
         );
@@ -330,6 +404,7 @@ mod tests {
             &mut world.regions,
             &world.heroes,
             &world.resource_nodes,
+            &[],
             &data.balance.trade,
             &data.balance.region,
         );
@@ -366,6 +441,7 @@ mod tests {
             &mut world.regions,
             &world.heroes,
             &world.resource_nodes,
+            &[],
             &data.balance.trade,
             &data.balance.region,
         );
@@ -407,6 +483,7 @@ mod tests {
                 &mut world.regions,
                 &world.heroes,
                 &world.resource_nodes,
+                &[],
                 &data.balance.trade,
                 &data.balance.region,
             );
@@ -458,6 +535,7 @@ mod tests {
                 &mut world.regions,
                 &world.heroes,
                 &world.resource_nodes,
+                &[],
                 &data.balance.trade,
                 &data.balance.region,
             );
@@ -501,6 +579,7 @@ mod tests {
                 &mut world.regions,
                 &world.heroes,
                 &world.resource_nodes,
+                &[],
                 &data.balance.trade,
                 &data.balance.region,
             );

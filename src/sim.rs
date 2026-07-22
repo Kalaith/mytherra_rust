@@ -155,6 +155,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.regions,
         &world.heroes,
         &world.resource_nodes,
+        &world.weather,
         &data.balance.trade,
         &data.balance.region,
     );
