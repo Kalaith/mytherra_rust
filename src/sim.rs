@@ -501,6 +501,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     house::tick_houses(
         &mut world.houses,
         &world.heroes,
+        &world.regions,
         &data.balance.house,
         &mut world.chronicle,
         &data.strings.chronicle,

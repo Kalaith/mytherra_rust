@@ -313,6 +313,7 @@
     "house_founded": "{house} rises to greatness, a noble line seated in {region}.",
     "house_heir": "An heir of {house} is born to carry on its storied blood.",
     "house_fades": "The last of {house} passes, and the great line is forgotten.",
+    "house_reseated": "Its seat lost, {house} reestablishes itself in {region}, following its blood.",
     "house_name": "The House of {founder}",
     "hero_legend_death": "{hero} of {region} has fallen — but the legend endures.",
     "deity_ascendant": "{deity} rises to the height of wrath, and the world feels the gaze.",

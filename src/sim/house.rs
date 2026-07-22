@@ -8,7 +8,7 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, HouseBalance};
-use crate::world::{Chronicle, EventKind, Hero, House};
+use crate::world::{Chronicle, EventKind, Hero, House, Region};
 
 /// Advance every house by one tick: prestige drifts toward the summed renown of
 /// its living line, and a house with no blood left and too little standing is
@@ -16,12 +16,38 @@ use crate::world::{Chronicle, EventKind, Hero, House};
 pub fn tick_houses(
     houses: &mut Vec<House>,
     heroes: &[Hero],
+    regions: &[Region],
     balance: &HouseBalance,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
 ) {
     for house in houses.iter_mut() {
+        // A house whose seat has been lost — its region conquered away or sundered
+        // by a fracture — follows its blood, reestablishing where its greatest
+        // living scion now dwells (GDD 5.4 <-> 5.2). A house with no living blood
+        // keeps its lost seat and passes into memory below.
+        if !regions.iter().any(|r| r.id == house.seat_region_id) {
+            if let Some(new_seat) = greatest_member_home(house, heroes) {
+                if new_seat != house.seat_region_id {
+                    let region_name = regions
+                        .iter()
+                        .find(|r| r.id == new_seat)
+                        .map(|r| r.name.clone())
+                        .unwrap_or_else(|| new_seat.clone());
+                    house.seat_region_id = new_seat;
+                    chronicle.push(
+                        year,
+                        EventKind::Hero,
+                        fill(
+                            &text.house_reseated,
+                            &[("house", house.name.clone()), ("region", region_name)],
+                        ),
+                    );
+                }
+            }
+        }
+
         let (_, renown) = house_vitality(house, heroes);
         house.prestige += (renown - house.prestige) * balance.prestige_rate;
     }
@@ -38,6 +64,18 @@ pub fn tick_houses(
             true
         }
     });
+}
+
+/// The region where the house's most renowned living member dwells — the ground
+/// a displaced house reestablishes itself upon. Ties break by id.
+fn greatest_member_home(house: &House, heroes: &[Hero]) -> Option<String> {
+    house
+        .member_ids
+        .iter()
+        .filter_map(|id| heroes.iter().find(|h| &h.id == id))
+        .filter(|h| h.is_alive)
+        .max_by(|a, b| a.renown.total_cmp(&b.renown).then_with(|| a.id.cmp(&b.id)))
+        .map(|h| h.region_id.clone())
 }
 
 /// Living-member count and their summed renown for a house.
@@ -232,6 +270,7 @@ mod tests {
             tick_houses(
                 &mut world.houses,
                 &world.heroes,
+                &world.regions,
                 &balance,
                 &mut world.chronicle,
                 &data.strings.chronicle,
@@ -256,6 +295,50 @@ mod tests {
         assert!(
             world.houses.is_empty(),
             "a house with no living blood and no standing is forgotten"
+        );
+    }
+
+    #[test]
+    fn a_house_whose_seat_is_lost_follows_its_blood() {
+        // When a house's seat region vanishes (conquered away), the house
+        // reestablishes itself where its greatest living scion dwells (GDD 5.4
+        // <-> 5.2). A house with no living blood keeps its lost seat and fades.
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let refuge = world.regions[1].id.clone();
+
+        // A scion of a house whose seat, "lost-realm", is not on the map. The
+        // scion has fled to a surviving region.
+        world.heroes = vec![legend("scion", &refuge, 120.0)];
+        world.houses = vec![House {
+            id: "h".to_owned(),
+            name: "The House of Exile".to_owned(),
+            seat_region_id: "lost-realm".to_owned(),
+            founder_name: "Exile".to_owned(),
+            member_ids: vec!["scion".to_owned()],
+            prestige: 120.0,
+        }];
+
+        tick_houses(
+            &mut world.houses,
+            &world.heroes,
+            &world.regions,
+            &data.balance.house,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+
+        assert_eq!(
+            world.houses[0].seat_region_id, refuge,
+            "a displaced house reseats where its blood dwells"
+        );
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains("reestablishes")),
+            "the reseating is chronicled"
         );
     }
 

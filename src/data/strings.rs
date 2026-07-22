@@ -430,6 +430,9 @@ pub struct ChronicleText {
     pub house_heir: String,
     /// A house whose blood has run out is forgotten; slot `{house}`.
     pub house_fades: String,
+    /// A house whose seat was lost reestablishes where its blood dwells (GDD 5.4
+    /// <-> 5.2); slots `{house}`, `{region}`.
+    pub house_reseated: String,
     /// Name pattern for a founded house; slot `{founder}`.
     pub house_name: String,
     /// A pantheon deity cresting into the height of its wrath.
