@@ -22,6 +22,12 @@ pub fn tick_heroes(
     text: &ChronicleText,
     year: u32,
 ) {
+    // Each region's fame — the renown of its most famed living hero — snapshotted
+    // before the roster moves, so a land home to a legend or champion draws the
+    // ambitious this tick (GDD 5.4). Read now, since the loop below both mutates
+    // heroes and reads their homes.
+    let region_fame = region_fame(heroes, regions);
+
     for hero in heroes.iter_mut() {
         if !hero.is_alive {
             continue;
@@ -85,6 +91,7 @@ pub fn tick_heroes(
                 landmarks,
                 settlements,
                 tier_thresholds,
+                &region_fame,
                 &hero.region_id,
                 hero.role,
                 rng,
@@ -94,6 +101,22 @@ pub fn tick_heroes(
             }
         }
     }
+}
+
+/// Each region's fame — the greatest renown among its living resident heroes —
+/// aligned to `regions` by index (GDD 5.4). A region with a champion or a living
+/// legend has high fame; one of unknowns has none.
+fn region_fame(heroes: &[Hero], regions: &[Region]) -> Vec<f32> {
+    regions
+        .iter()
+        .map(|r| {
+            heroes
+                .iter()
+                .filter(|h| h.is_alive && h.region_id == r.id)
+                .map(|h| h.renown)
+                .fold(0.0_f32, f32::max)
+        })
+        .collect()
 }
 
 /// A land's resident Clerics tend its faith: each living Cleric raises their home
@@ -254,6 +277,7 @@ fn pick_destination(
     landmarks: &[Landmark],
     settlements: &[Settlement],
     tier_thresholds: &[f32],
+    region_fame: &[f32],
     current: &str,
     role: HeroRole,
     rng: &mut SeededRng,
@@ -261,13 +285,15 @@ fn pick_destination(
 ) -> Option<String> {
     let candidates: Vec<(&str, f32)> = regions
         .iter()
-        .filter(|r| r.id != current)
-        .map(|r| {
+        .enumerate()
+        .filter(|(_, r)| r.id != current)
+        .map(|(i, r)| {
             let city_tier = greatest_city_tier(&r.id, settlements, tier_thresholds);
-            (
-                r.id.as_str(),
-                attractiveness(r, landmarks, city_tier, role, mig),
-            )
+            // The pull of the land's own state and works, plus the beacon of its
+            // most famed resident — heroes flock to where legends dwell (GDD 5.4).
+            let fame = region_fame.get(i).copied().unwrap_or(0.0);
+            let weight = attractiveness(r, landmarks, city_tier, role, mig) + mig.fame_pull * fame;
+            (r.id.as_str(), weight)
         })
         .collect();
     if candidates.is_empty() {
@@ -363,6 +389,44 @@ mod tests {
         assert_eq!(
             regions[1].danger, 40.0,
             "an ungarrisoned land keeps its peril"
+        );
+    }
+
+    #[test]
+    fn heroes_flock_to_where_legends_dwell() {
+        // Two identical regions; the one home to a famed hero draws migrating
+        // heroes more often than the fameless one (GDD 5.4).
+        let data = GameData::load().unwrap();
+        let mig = &data.balance.hero.migration;
+        let regions = vec![
+            region("plain", 50.0, 20.0, 20.0, 20.0),
+            region("storied", 50.0, 20.0, 20.0, 20.0),
+        ];
+        // The storied land is home to a living legend; the plain land to unknowns.
+        let fame = [0.0, 300.0];
+        let mut rng = SeededRng::new(11);
+        let mut to_storied = 0;
+        for _ in 0..1000 {
+            // The mover hails from a third region, so both are candidates.
+            if let Some(dest) = pick_destination(
+                &regions,
+                &[],
+                &[],
+                &[],
+                &fame,
+                "elsewhere",
+                HeroRole::Warrior,
+                &mut rng,
+                mig,
+            ) {
+                if dest == "storied" {
+                    to_storied += 1;
+                }
+            }
+        }
+        assert!(
+            to_storied > 550,
+            "heroes should favour the storied land ({to_storied}/1000)"
         );
     }
 

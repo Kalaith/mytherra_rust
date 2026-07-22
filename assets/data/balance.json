@@ -143,6 +143,7 @@
       "min_weight": 0.5,
       "wonder_pull": 8.0,
       "city_pull": 6.0,
+      "fame_pull": 0.05,
       "roles": {
         "warrior": {
           "prosperity": 0.2,

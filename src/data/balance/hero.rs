@@ -67,6 +67,14 @@ pub struct MigrationBalance {
     /// a metropolis is a beacon a scattering of villages is not, and a region that
     /// nurtures a city draws the heroes who then defend and enrich it.
     pub city_pull: f32,
+    /// Extra pull, per point of the renown of a region's most famed living hero
+    /// (GDD 5.4): heroes flock to where legends dwell — a land home to a champion
+    /// or a living legend draws the ambitious, who come to serve, to learn, and to
+    /// share in the glory. So greatness gathers where greatness already is: a
+    /// famed hero, a cultivated champion, or the storied scion of a noble house
+    /// makes their region a beacon, concentrating the talent that raises the next
+    /// legend there in turn.
+    pub fame_pull: f32,
     pub roles: RoleMigrationWeights,
 }
 
