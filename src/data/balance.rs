@@ -45,6 +45,7 @@ pub struct Balance {
     pub myth: MythBalance,
     pub civilization: CivilizationBalance,
     pub pantheon: PantheonBalance,
+    pub prophecy: ProphecyBalance,
     pub era: EraBalance,
     pub settlement: SettlementBalance,
     pub plague: PlagueBalance,

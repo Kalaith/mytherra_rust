@@ -310,3 +310,39 @@ pub struct MagicBalance {
     /// research. A spring run dry (Depleted) offers nothing.
     pub evidence_per_manaspring: f32,
 }
+
+/// Prophecy tuning (GDD 5.6): the world's foretold turnings, spoken from its
+/// aggregate state and fulfilled or averted as that state holds or turns. Set so
+/// a prophecy is a rare thing of extremity — the realms as a whole tipping far
+/// toward darkness or plenty — that builds slowly enough to be turned aside, and
+/// whose coming-to-pass nudges the world further along the road it was already on.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProphecyBalance {
+    /// World-average chaos at or above which a doom is foretold.
+    pub doom_threshold: f32,
+    /// World-average chaos a doom needs to keep building; below it, it recedes.
+    pub doom_sustain: f32,
+    /// World "weal" — the mean of average prosperity and average divine resonance
+    /// — at or above which a golden age is foretold.
+    pub golden_threshold: f32,
+    /// The weal a golden age needs to keep building; below it, it recedes.
+    pub golden_sustain: f32,
+    /// Progress toward fulfillment gained each tick the premise holds.
+    pub advance_rate: f32,
+    /// Progress lost each tick the premise fails — turnings ebb faster than they
+    /// build, so a doom is easier to avert than to bring to pass.
+    pub recede_rate: f32,
+    /// A fulfilled doom's one-time toll on every region: prosperity lost, and
+    /// chaos and danger gained, deepening the darkness that was foretold.
+    pub doom_prosperity: f32,
+    pub doom_chaos: f32,
+    pub doom_danger: f32,
+    /// A fulfilled golden age's one-time gift to every region: a flowering of
+    /// cultural influence and divine resonance, the plenty that was foretold made
+    /// real. Deliberately not prosperity — a golden age is spoken only when the
+    /// world is already rich, so heaping on more wealth would merely feed a runaway;
+    /// its mark is instead a blossoming of art and faith, stats that lift a land's
+    /// prominence and devotion without ever tugging the crisis levers.
+    pub golden_culture: f32,
+    pub golden_resonance: f32,
+}

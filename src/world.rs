@@ -20,6 +20,7 @@ mod pact;
 mod pantheon;
 mod plague;
 mod player;
+mod prophecy;
 mod region;
 mod resource;
 mod settlement;
@@ -47,6 +48,7 @@ pub use pact::Pact;
 pub use pantheon::{adjust_pressure, PantheonDeity};
 pub use plague::Plague;
 pub use player::PlayerState;
+pub use prophecy::{Prophecy, ProphecyKind};
 pub use region::{resident_might, Region, RegionStatus};
 pub use resource::ResourceNode;
 pub use settlement::Settlement;
@@ -178,6 +180,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of wars that break out mid-run.
     #[serde(default)]
     pub war_seq: u64,
+    /// The foretold turnings the world's drift has spoken (GDD 5.6); arise
+    /// dynamically, so this starts empty on a fresh world.
+    #[serde(default)]
+    pub prophecies: Vec<Prophecy>,
+    /// Monotonic counter for unique ids of prophecies foretold mid-run.
+    #[serde(default)]
+    pub prophecy_seq: u64,
     /// Standing alliances between regions (GDD 5.2); form dynamically, so this
     /// starts empty on a fresh world.
     #[serde(default)]
@@ -277,6 +286,8 @@ impl WorldState {
             monster_seq: 0,
             wars: Vec::new(),
             war_seq: 0,
+            prophecies: Vec::new(),
+            prophecy_seq: 0,
             pacts: Vec::new(),
             pact_seq: 0,
             magic_paths,

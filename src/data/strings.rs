@@ -24,6 +24,24 @@ pub struct Strings {
     pub genesis: GenesisText,
     pub title: TitleText,
     pub orders: OrderNames,
+    pub prophecies: ProphecyNames,
+}
+
+/// The name each pole of prophecy takes when spoken (GDD 5.6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProphecyNames {
+    pub doom: String,
+    pub golden_age: String,
+}
+
+impl ProphecyNames {
+    pub fn for_kind(&self, kind: crate::world::ProphecyKind) -> &str {
+        use crate::world::ProphecyKind;
+        match kind {
+            ProphecyKind::Doom => &self.doom,
+            ProphecyKind::GoldenAge => &self.golden_age,
+        }
+    }
 }
 
 /// The name each of the six great Orders takes, one per hero calling (GDD 5.4).
@@ -467,6 +485,12 @@ pub struct ChronicleText {
     /// dissolved as its ranks thin (GDD 5.4); slot `{order}`.
     pub order_founded: String,
     pub order_dissolved: String,
+    /// A prophecy of doom or plenty is spoken from the world's drift, then comes
+    /// to pass as that drift holds or passes unfulfilled as it turns (GDD 5.6);
+    /// slot `{prophecy}`.
+    pub prophecy_foretold: String,
+    pub prophecy_fulfilled: String,
+    pub prophecy_averted: String,
     /// A pantheon deity cresting into the height of its wrath.
     pub deity_ascendant: String,
     pub champion_resolved: String,

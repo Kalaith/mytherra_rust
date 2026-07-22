@@ -316,6 +316,9 @@
     "house_fades": "The last of {house} passes, and the great line is forgotten.",
     "order_founded": "{order} is founded, its fellowship grown great enough to span the realms.",
     "order_dissolved": "{order} dwindles and disbands, its ranks worn too thin to endure.",
+    "prophecy_foretold": "A prophecy is spoken across the realms: {prophecy} is foretold.",
+    "prophecy_fulfilled": "The prophecy comes to pass — {prophecy} is upon the world, and none could turn it aside.",
+    "prophecy_averted": "The world turns from the path that was foretold, and {prophecy} passes unfulfilled into rumour.",
     "house_reseated": "Its seat lost, {house} reestablishes itself in {region}, following its blood.",
     "house_name": "The House of {founder}",
     "hero_legend_death": "{hero} of {region} has fallen — but the legend endures.",
@@ -433,5 +436,9 @@
     "ranger": "the Wardens of the Wild",
     "merchant": "the Merchant League",
     "cleric": "the Sacred Communion"
+  },
+  "prophecies": {
+    "doom": "the Coming of the Long Dark",
+    "golden_age": "the Dawn of a Golden Age"
   }
 }

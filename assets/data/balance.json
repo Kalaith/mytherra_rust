@@ -425,6 +425,19 @@
     "domain_response": 0.6,
     "faith_response": 0.2
   },
+  "prophecy": {
+    "doom_threshold": 55.0,
+    "doom_sustain": 50.0,
+    "golden_threshold": 85.0,
+    "golden_sustain": 80.0,
+    "advance_rate": 0.02,
+    "recede_rate": 0.04,
+    "doom_prosperity": 4.0,
+    "doom_chaos": 6.0,
+    "doom_danger": 4.0,
+    "golden_culture": 6.0,
+    "golden_resonance": 5.0
+  },
   "era": {
     "era_length": 100,
     "breaking_threshold": 85.0,

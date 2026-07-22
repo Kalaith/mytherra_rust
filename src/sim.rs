@@ -19,6 +19,7 @@ mod order;
 mod pact;
 mod pantheon;
 mod plague;
+mod prophecy;
 mod refugee;
 mod region;
 mod resource;
@@ -446,6 +447,18 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.regions,
         &data.balance.pantheon,
         &data.balance.region,
+    );
+
+    prophecy::tick_prophecies(
+        &mut world.prophecies,
+        &mut world.regions,
+        &mut world.prophecy_seq,
+        &data.balance.prophecy,
+        &data.balance.region,
+        &data.strings.prophecies,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
     );
     for name in pantheon::deities_cresting(&deity_tiers, &world.pantheon, &data.balance.pantheon) {
         world.chronicle.push(
