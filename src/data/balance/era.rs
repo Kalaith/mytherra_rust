@@ -17,6 +17,11 @@ pub struct EraBalance {
     /// a pandemic sweeping the world drives it toward a Collapse age directly,
     /// not only through the prosperity the pestilence drains.
     pub collapse_plague: f32,
+    /// Weight on the fraction of regions gripped by famine (GDD 5.7 <-> 5.3), the
+    /// twin of `collapse_plague`: a world where the granaries have failed across
+    /// the realms drives toward a Collapse age as surely as one swept by plague,
+    /// the starving ages ending in ruin the same way the pestilent ones do.
+    pub collapse_famine: f32,
     /// Weight on the world's decaying secession-momentum tally, so regions
     /// fracturing from within (not just low prosperity) drive Collapse pressure.
     pub collapse_momentum_weight: f32,

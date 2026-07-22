@@ -26,6 +26,10 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
     afflicted.sort_unstable();
     afflicted.dedup();
     let plague_ratio = afflicted.len() as f32 / world.regions.len().max(1) as f32;
+    // What share of the world's granaries have failed — famine is a per-region
+    // flag, so this is the fraction of regions gripped by dearth (GDD 5.7 <-> 5.3).
+    let famine_ratio = world.regions.iter().filter(|r| r.famine).count() as f32
+        / world.regions.len().max(1) as f32;
     let scores = compute_scores(
         &world.regions,
         &world.heroes,
@@ -36,6 +40,7 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         world.conquest_momentum,
         world.secession_momentum,
         plague_ratio,
+        famine_ratio,
         wrath,
         balance,
     );
@@ -565,6 +570,7 @@ mod tests {
             0.0,
             0.0,
             0.0,
+            0.0,
             balance,
         );
         let warlike = compute_scores(
@@ -575,6 +581,7 @@ mod tests {
             data.config.max_favor,
             0,
             50.0,
+            0.0,
             0.0,
             0.0,
             0.0,
@@ -613,6 +620,7 @@ mod tests {
                 100,
                 data.config.max_favor,
                 0,
+                0.0,
                 0.0,
                 0.0,
                 0.0,
@@ -671,6 +679,7 @@ mod tests {
                 0.0,
                 0.0,
                 0.0,
+                0.0,
                 wrath,
                 balance,
             )
@@ -716,6 +725,7 @@ mod tests {
             0.0,
             0.0,
             0.0,
+            0.0,
             balance,
         );
         let fracturing = compute_scores(
@@ -727,6 +737,7 @@ mod tests {
             0,
             0.0,
             50.0,
+            0.0,
             0.0,
             0.0,
             balance,
@@ -755,7 +766,7 @@ mod tests {
         let balance = &data.balance.era;
         let world = WorldState::new(&data);
 
-        let collapse = |plague_ratio: f32| {
+        let collapse = |plague_ratio: f32, famine_ratio: f32| {
             compute_scores(
                 &world.regions,
                 &world.heroes,
@@ -766,6 +777,7 @@ mod tests {
                 0.0,
                 0.0,
                 plague_ratio,
+                famine_ratio,
                 0.0,
                 balance,
             )
@@ -773,12 +785,22 @@ mod tests {
         };
 
         assert!(
-            collapse(1.0) > collapse(0.0),
+            collapse(1.0, 0.0) > collapse(0.0, 0.0),
             "a plague-gripped world should trend toward a Collapse age"
         );
         assert!(
-            (collapse(1.0) - collapse(0.0) - balance.collapse_plague).abs() < 0.01,
+            (collapse(1.0, 0.0) - collapse(0.0, 0.0) - balance.collapse_plague).abs() < 0.01,
             "a wholly plagued world adds exactly the plague weight to Collapse"
+        );
+        // Famine is the twin of plague: a world of failed granaries drives toward
+        // Collapse the same way, adding exactly its own weight (GDD 5.7 <-> 5.3).
+        assert!(
+            collapse(0.0, 1.0) > collapse(0.0, 0.0),
+            "a famine-gripped world should trend toward a Collapse age"
+        );
+        assert!(
+            (collapse(0.0, 1.0) - collapse(0.0, 0.0) - balance.collapse_famine).abs() < 0.01,
+            "a wholly starving world adds exactly the famine weight to Collapse"
         );
     }
 

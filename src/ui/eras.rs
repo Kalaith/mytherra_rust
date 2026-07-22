@@ -103,6 +103,8 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
     afflicted.sort_unstable();
     afflicted.dedup();
     let plague_ratio = afflicted.len() as f32 / ctx.world.regions.len().max(1) as f32;
+    let famine_ratio = ctx.world.regions.iter().filter(|r| r.famine).count() as f32
+        / ctx.world.regions.len().max(1) as f32;
     let scores = compute_scores(
         &ctx.world.regions,
         &ctx.world.heroes,
@@ -113,6 +115,7 @@ fn draw_present(ctx: &UiContext<'_>, rect: Rect) {
         ctx.world.conquest_momentum,
         ctx.world.secession_momentum,
         plague_ratio,
+        famine_ratio,
         wrath,
         balance,
     );

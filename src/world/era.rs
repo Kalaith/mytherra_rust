@@ -96,6 +96,7 @@ pub fn compute_scores(
     conquest_momentum: f32,
     secession_momentum: f32,
     plague_ratio: f32,
+    famine_ratio: f32,
     pantheon_wrath: f32,
     balance: &EraBalance,
 ) -> EraScores {
@@ -158,6 +159,7 @@ pub fn compute_scores(
         collapse: (100.0 - avg_prosperity) * balance.collapse_prosperity
             + struggling * balance.collapse_struggling
             + plague_ratio.clamp(0.0, 1.0) * balance.collapse_plague
+            + famine_ratio.clamp(0.0, 1.0) * balance.collapse_famine
             + secession_momentum * balance.collapse_momentum_weight,
         conquest: avg_danger * balance.conquest_danger
             + wartorn * balance.conquest_wartorn
