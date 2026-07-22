@@ -326,6 +326,7 @@
     "myth_echo": "{title} echoes across {region}.",
     "myth_faded": "{title} fades from the memory of {region}.",
     "era_transition": "A new age dawns: {era}, born of {trigger}. {lost} fell, {risen} rose to meet it.",
+    "age_sweeps_afflictions": "The turning of the age sweeps away the plagues and beasts of the old world.",
     "culture_shift": "{region} takes on a {culture} character.",
     "agenda_shift": "{region} sets its course toward {agenda}.",
     "settlement_built": "{settlement} raises a {building}.",

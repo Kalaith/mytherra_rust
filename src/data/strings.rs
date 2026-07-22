@@ -445,6 +445,9 @@ pub struct ChronicleText {
     pub myth_echo: String,
     pub myth_faded: String,
     pub era_transition: String,
+    /// The turning of an age sweeps away the plagues and beasts of the old world
+    /// (GDD 5.7 <-> 5.3/5.2). Pushed only when there were afflictions to sweep.
+    pub age_sweeps_afflictions: String,
     pub culture_shift: String,
     pub agenda_shift: String,
     pub settlement_built: String,

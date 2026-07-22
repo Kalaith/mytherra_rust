@@ -245,7 +245,24 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
         }
     }
 
+    // A new age wipes the transient overlays of the old (GDD 5.7 <-> 5.6/5.3/5.2):
+    // the skies clear, and the pestilence and beasts that stalked the closing age
+    // pass with it. The persistent world — its regions, heroes, and towns —
+    // carries over transformed, but these per-region afflictions reset, as the
+    // weather always has, so a plague or beast never outlives the age it was born
+    // in unremarked. The sweep is chronicled only when there was something to
+    // sweep.
+    let afflictions_swept = !world.plagues.is_empty() || !world.monsters.is_empty();
     world.weather.clear();
+    world.plagues.clear();
+    world.monsters.clear();
+    if afflictions_swept {
+        world.chronicle.push(
+            world.year,
+            EventKind::System,
+            data.strings.chronicle.age_sweeps_afflictions.clone(),
+        );
+    }
 
     // A new era dawns, named after the trigger that ended the last — its cause
     // written into its name (GDD 5.7). `dominant_trigger` still holds the closing
@@ -353,6 +370,55 @@ mod tests {
         assert!(
             record.heroes_lost <= world.heroes.len() as u32,
             "the fallen can't exceed the roster"
+        );
+    }
+
+    #[test]
+    fn the_turning_of_an_age_sweeps_away_plague_and_beast() {
+        // A plague and a beast that stalked the closing age do not outlive it: the
+        // transition wipes them as it wipes the skies, and marks the sweep in the
+        // chronicle (GDD 5.7 <-> 5.3/5.2).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut player = PlayerState::new(&data.config);
+
+        world.plagues.push(crate::world::Plague {
+            id: "p".to_owned(),
+            name: "The Old Fever".to_owned(),
+            region_id: world.regions[0].id.clone(),
+            severity: 1.0,
+            age: 5,
+        });
+        world.monsters.push(crate::world::Monster {
+            id: "m".to_owned(),
+            name: "The Old Wyrm".to_owned(),
+            type_id: "shadow_wyrm".to_owned(),
+            region_id: world.regions[0].id.clone(),
+            ferocity: 2.0,
+            age: 5,
+        });
+
+        // Break the age.
+        for region in &mut world.regions {
+            region.danger = 100.0;
+            region.chaos = 100.0;
+            region.prosperity = 0.0;
+            region.refresh_status(&data.balance.region);
+        }
+        let era_before = world.era.number;
+        tick_era(&mut world, &mut player, &data);
+
+        assert!(world.era.number > era_before, "the age should have turned");
+        assert!(
+            world.plagues.is_empty() && world.monsters.is_empty(),
+            "the new age should sweep away the old plagues and beasts"
+        );
+        assert!(
+            world
+                .chronicle
+                .iter_newest()
+                .any(|e| e.message.contains("sweeps away")),
+            "the sweep should be chronicled"
         );
     }
 
