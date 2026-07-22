@@ -35,6 +35,13 @@ pub fn tick_plague(
     // sick.
     for plague in plagues.iter_mut() {
         plague.age += 1;
+        // Whether the afflicted land is also starving — read before the mutable
+        // borrow below, so the toll can fall the heavier for it.
+        let famished = regions
+            .iter()
+            .find(|r| r.id == plague.region_id)
+            .map(|r| r.famine)
+            .unwrap_or(false);
         if let Some(region) = regions.iter_mut().find(|r| r.id == plague.region_id) {
             region.apply_deltas(
                 -balance.toll_prosperity * plague.severity,
@@ -60,9 +67,16 @@ pub fn tick_plague(
             // plague gutter out.
             plague.severity -= balance.decay_base;
         }
-        // The demographic toll falls on the region's largest settlement.
+        // The demographic toll falls on the region's largest settlement, heavier
+        // where famine has already weakened the people (GDD 5.3 <-> 5.3).
         if let Some(settlement) = largest_settlement(settlements, &plague.region_id) {
-            let loss = settlement.population * balance.toll_population * plague.severity;
+            let famine_mult = if famished {
+                balance.famine_toll_mult
+            } else {
+                1.0
+            };
+            let loss =
+                settlement.population * balance.toll_population * plague.severity * famine_mult;
             settlement.population = (settlement.population - loss).max(0.0);
         }
     }
@@ -93,6 +107,20 @@ pub fn tick_plague(
     });
 }
 
+/// The per-tick chance a plague breaks out in a region (GDD 5.3). Squalor breeds
+/// pestilence — prosperity below the squalor line raises the chance, the deeper
+/// the destitution the more so — and a famine multiplies the peril, for the
+/// starving are weakened and packed together where bread remains.
+fn outbreak_chance(region: &Region, balance: &PlagueBalance) -> f32 {
+    let squalor = (balance.squalor_prosperity - region.prosperity).max(0.0);
+    let famine = if region.famine {
+        balance.famine_outbreak_chance
+    } else {
+        0.0
+    };
+    balance.outbreak_chance + squalor * balance.squalor_coeff + famine
+}
+
 /// Break out fresh plagues in crowded, squalid regions that have none (GDD 5.3).
 #[allow(clippy::too_many_arguments)]
 fn spawn_outbreaks(
@@ -115,11 +143,7 @@ fn spawn_outbreaks(
         {
             continue;
         }
-        // Squalor breeds pestilence: prosperity below the squalor line raises the
-        // chance, the more so the deeper the destitution.
-        let squalor = (balance.squalor_prosperity - region.prosperity).max(0.0);
-        let chance = balance.outbreak_chance + squalor * balance.squalor_coeff;
-        if !rng.chance(chance) {
+        if !rng.chance(outbreak_chance(region, balance)) {
             continue;
         }
 
@@ -443,6 +467,62 @@ mod tests {
         assert!(
             ticks_to_fade(3) < ticks_to_fade(0),
             "a land tended by Clerics should throw off a plague sooner"
+        );
+    }
+
+    #[test]
+    fn famine_leaves_a_land_ripe_for_plague() {
+        // At equal squalor, a starving region is far likelier to take a plague
+        // than a fed one (GDD 5.3 <-> 5.3).
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.plague;
+        let mut world = WorldState::new(&data);
+        world.regions[0].prosperity = 40.0;
+        world.regions[0].famine = false;
+        let fed = outbreak_chance(&world.regions[0], balance);
+        world.regions[0].famine = true;
+        let starving = outbreak_chance(&world.regions[0], balance);
+        assert!(
+            starving > fed,
+            "famine should raise the odds of pestilence ({starving} vs {fed})"
+        );
+    }
+
+    #[test]
+    fn a_plague_kills_harder_where_the_people_starve() {
+        // The same plague, in the same region, exacts a heavier toll when the
+        // land is also in famine (GDD 5.3 <-> 5.3).
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.plague.clone();
+        balance.outbreak_chance = 0.0; // no fresh outbreaks to muddy the toll
+        balance.spread_chance = 0.0;
+
+        let loss_with_famine = |famine: bool| {
+            let mut world = WorldState::new(&data);
+            world.regions.truncate(1);
+            let region_id = world.regions[0].id.clone();
+            world.regions[0].prosperity = 40.0;
+            world.regions[0].famine = famine;
+            let sidx = world
+                .settlements
+                .iter()
+                .position(|s| s.region_id == region_id)
+                .expect("seed region has a settlement");
+            world.settlements[sidx].population = 20_000.0;
+            world.plagues.push(Plague {
+                id: "p".to_owned(),
+                name: "The Test Fever".to_owned(),
+                region_id,
+                severity: 2.0,
+                age: 0,
+            });
+            let before = world.settlements[sidx].population;
+            run(&mut world, &data, &balance);
+            before - world.settlements[sidx].population
+        };
+        assert!(
+            loss_with_famine(true) > loss_with_famine(false),
+            "a starving people should die of plague faster than a fed one"
         );
     }
 }

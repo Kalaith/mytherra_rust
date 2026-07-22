@@ -566,6 +566,8 @@
     "outbreak_min_population": 4000.0,
     "squalor_prosperity": 45.0,
     "squalor_coeff": 0.0006,
+    "famine_outbreak_chance": 0.04,
+    "famine_toll_mult": 1.6,
     "start_severity": 1.0,
     "toll_population": 0.01,
     "toll_prosperity": 0.6,

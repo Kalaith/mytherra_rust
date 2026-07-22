@@ -21,6 +21,13 @@ pub struct PlagueBalance {
     /// How steeply the outbreak chance rises per point of prosperity below the
     /// squalor line — a destitute, crowded land is a tinderbox.
     pub squalor_coeff: f32,
+    /// Extra outbreak chance in a region gripped by famine (GDD 5.3 <-> 5.3):
+    /// the starving are weakened and packed into whatever haven still has bread,
+    /// so pestilence takes hold far more readily. Famine and plague ride together.
+    pub famine_outbreak_chance: f32,
+    /// Multiplier on the demographic toll a plague exacts in a famine-struck
+    /// region: a weakened, starving people dies of disease faster than a fed one.
+    pub famine_toll_mult: f32,
     /// Severity a fresh outbreak begins at.
     pub start_severity: f32,
     /// Population fraction the region's largest settlement loses per tick per
