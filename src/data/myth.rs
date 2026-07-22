@@ -26,8 +26,8 @@ impl From<PantheonStat> for MythStat {
     }
 }
 
-/// An authored myth theme: how strongly it spreads culture and its secondary
-/// stat effect when the myth echoes.
+/// An authored myth theme: how strongly it spreads culture, its secondary stat
+/// effect when the myth echoes, and the regional culture its tale embodies.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MythTheme {
     pub id: String,
@@ -35,4 +35,7 @@ pub struct MythTheme {
     pub cultural_effect: f32,
     pub stat: MythStat,
     pub stat_effect: f32,
+    /// The culture a living myth of this theme reinforces in its home region
+    /// (GDD 5.2 <-> 5.6): valor makes a martial people, wonder a mystical one.
+    pub culture: super::Culture,
 }

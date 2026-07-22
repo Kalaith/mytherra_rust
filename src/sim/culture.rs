@@ -7,7 +7,8 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Culture, CultureBalance, HeroRole, RegionBalance, ResourceType};
 use crate::world::{
-    Building, Chronicle, EventKind, Hero, Landmark, Region, ResourceNode, Settlement, TradeRoute,
+    Building, Chronicle, EventKind, Hero, Landmark, Myth, Region, ResourceNode, Settlement,
+    TradeRoute,
 };
 use macroquad_toolkit::math::approach;
 
@@ -20,6 +21,7 @@ pub fn tick_culture(
     settlements: &[Settlement],
     buildings: &[Building],
     trade_routes: &[TradeRoute],
+    myths: &[Myth],
     balance: &CultureBalance,
     region_balance: &RegionBalance,
     tier_thresholds: &[f32],
@@ -62,6 +64,13 @@ pub fn tick_culture(
         }
         for route in trade_routes.iter().filter(|t| t.touches(&region.id)) {
             scores[Culture::Mercantile.index()] += balance.trade_weight * route.volume;
+        }
+        // A land's living legends shape its character (GDD 5.2 <-> 5.6): each myth
+        // reinforces the culture its theme embodies — valor a martial people,
+        // wonder a mystical one — the more vividly the more it still echoes.
+        for myth in myths.iter().filter(|m| m.region_id == region.id) {
+            let vividness = (myth.resonance / 100.0).clamp(0.0, 1.0);
+            scores[myth.culture.index()] += balance.myth_weight * vividness;
         }
         // The works a people raise speak for their character: each building in the
         // region adds to the culture it embodies (a Forge to the martial, a Temple
@@ -194,6 +203,7 @@ mod tests {
                 &settlements,
                 &buildings,
                 &[],
+                &[],
                 &data.balance.culture,
                 &data.balance.region,
                 thresholds,
@@ -254,6 +264,7 @@ mod tests {
             &world.settlements,
             &world.buildings,
             &world.trade_routes,
+            &world.myths,
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -290,6 +301,7 @@ mod tests {
             &world.settlements,
             &world.buildings,
             &world.trade_routes,
+            &world.myths,
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -318,6 +330,7 @@ mod tests {
             &world.settlements,
             &world.buildings,
             &world.trade_routes,
+            &world.myths,
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -359,6 +372,7 @@ mod tests {
                     &settlements,
                     &[],
                     &[],
+                    &[],
                     &data.balance.culture,
                     &data.balance.region,
                     thresholds,
@@ -397,6 +411,7 @@ mod tests {
                 &world.settlements,
                 &world.buildings,
                 &world.trade_routes,
+                &world.myths,
                 &data.balance.culture,
                 &data.balance.region,
                 &data.balance.settlement.tier_thresholds,
@@ -407,5 +422,59 @@ mod tests {
         }
         let hearthmoor = world.regions.iter().find(|r| r.id == "hearthmoor").unwrap();
         assert_eq!(hearthmoor.culture, Culture::Pastoral);
+    }
+
+    #[test]
+    fn a_lands_living_legends_shape_its_culture() {
+        // A region whose only cultural force is a body of martial legend takes up
+        // a Martial character, wherever it started (GDD 5.2 <-> 5.6).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.regions.truncate(1);
+        let region_id = world.regions[0].id.clone();
+        let region_name = world.regions[0].name.clone();
+        world.regions[0].culture = Culture::Scholarly; // start off-martial
+
+        let myths: Vec<Myth> = (0..4)
+            .map(|i| Myth {
+                id: format!("m{i}"),
+                title: "A Tale of Valor".to_owned(),
+                theme_name: "Valor".to_owned(),
+                stat: crate::data::MythStat::Prosperity,
+                cultural_effect: 0.0,
+                stat_effect: 0.0,
+                culture: Culture::Martial,
+                region_id: region_id.clone(),
+                region_name: region_name.clone(),
+                resonance: 100.0,
+                echo_cooldown: 1_000_000, // hold them from echoing; test culture only
+            })
+            .collect();
+
+        // Nothing else speaks for the land — no heroes, resources, or trade.
+        for _ in 0..10 {
+            tick_culture(
+                &mut world.regions,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &myths,
+                &data.balance.culture,
+                &data.balance.region,
+                &data.balance.settlement.tier_thresholds,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        }
+
+        assert_eq!(
+            world.regions[0].culture,
+            Culture::Martial,
+            "a land remembered for valor should grow martial"
+        );
     }
 }

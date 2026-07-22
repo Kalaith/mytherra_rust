@@ -108,6 +108,11 @@ pub struct CultureBalance {
     pub settlement_tier_weight: f32,
     /// Mercantile score per trade route touching a region (weighted by volume).
     pub trade_weight: f32,
+    /// Culture score a living myth lends its home region, per myth, scaled by its
+    /// resonance (GDD 5.2 <-> 5.6): a land's legends shape its character, so tales
+    /// of valor make a martial people and tales of wonder a mystical one. The
+    /// myth reinforces the culture its theme embodies.
+    pub myth_weight: f32,
     /// Cultural-influence baseline and per-landmark bonus (the reversion target).
     pub influence_base: f32,
     pub influence_per_landmark: f32,

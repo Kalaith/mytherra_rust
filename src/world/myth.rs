@@ -2,7 +2,7 @@
 //! player can promote into living myths, which periodically echo across their
 //! region.
 
-use crate::data::MythStat;
+use crate::data::{Culture, MythStat};
 use serde::{Deserialize, Serialize};
 
 /// A tale stirring in a region, awaiting promotion into a living myth.
@@ -14,6 +14,9 @@ pub struct MythCandidate {
     pub stat: MythStat,
     pub cultural_effect: f32,
     pub stat_effect: f32,
+    /// The regional culture this tale embodies (GDD 5.2 <-> 5.6), denormalized
+    /// from its theme.
+    pub culture: Culture,
     pub region_id: String,
     pub region_name: String,
     pub resonance: f32,
@@ -28,6 +31,8 @@ pub struct Myth {
     pub stat: MythStat,
     pub cultural_effect: f32,
     pub stat_effect: f32,
+    /// The regional culture this myth reinforces as it endures (GDD 5.2 <-> 5.6).
+    pub culture: Culture,
     pub region_id: String,
     pub region_name: String,
     pub resonance: f32,
@@ -44,6 +49,7 @@ impl Myth {
             stat: candidate.stat,
             cultural_effect: candidate.cultural_effect,
             stat_effect: candidate.stat_effect,
+            culture: candidate.culture,
             region_id: candidate.region_id.clone(),
             region_name: candidate.region_name.clone(),
             resonance: candidate.resonance,
