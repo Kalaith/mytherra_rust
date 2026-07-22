@@ -14,6 +14,7 @@ mod landmark;
 mod magic;
 mod monster;
 mod myth;
+mod pact;
 mod pantheon;
 mod plague;
 mod refugee;
@@ -217,14 +218,32 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         );
     }
 
+    // Like-cultured, trade-linked, peaceable regions swear alliances that cool
+    // their chaos and stay each other's hand from war (GDD 5.2).
+    pact::tick_pacts(
+        &mut world.pacts,
+        &mut world.regions,
+        &world.trade_routes,
+        &world.wars,
+        &mut world.pact_seq,
+        &data.balance.pact,
+        &data.balance.region,
+        &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
     // Belligerent regions fall to war, draining and scarring one another —
-    // wearing down the loser toward the conquest that may follow (GDD 5.2).
+    // wearing down the loser toward the conquest that may follow (GDD 5.2). Allies
+    // are spared each other's swords.
     war::tick_wars(
         &mut world.wars,
         &mut world.regions,
         &mut world.settlements,
         &world.heroes,
         &world.artifacts,
+        &world.pacts,
         &mut world.war_seq,
         &data.balance.war,
         &data.balance.region,

@@ -10,7 +10,7 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, ArtifactFocus, HeroRole, RegionBalance, WarBalance};
-use crate::world::{Artifact, Chronicle, EventKind, Hero, Region, Settlement, War};
+use crate::world::{Artifact, Chronicle, EventKind, Hero, Pact, Region, Settlement, War};
 use macroquad_toolkit::rng::SeededRng;
 
 #[allow(clippy::too_many_arguments)]
@@ -20,6 +20,7 @@ pub fn tick_wars(
     settlements: &mut [Settlement],
     heroes: &[Hero],
     artifacts: &[Artifact],
+    pacts: &[Pact],
     seq: &mut u64,
     balance: &WarBalance,
     region_balance: &RegionBalance,
@@ -28,7 +29,9 @@ pub fn tick_wars(
     text: &ChronicleText,
     year: u32,
 ) {
-    ignite_wars(wars, regions, seq, balance, rng, chronicle, text, year);
+    ignite_wars(
+        wars, regions, pacts, seq, balance, rng, chronicle, text, year,
+    );
 
     // Prosecute: each side suffers a base toll plus damage scaled by its
     // opponent's war might, and the war wanes toward its end.
@@ -111,6 +114,7 @@ fn war_might(
 fn ignite_wars(
     wars: &mut Vec<War>,
     regions: &[Region],
+    pacts: &[Pact],
     seq: &mut u64,
     balance: &WarBalance,
     rng: &mut SeededRng,
@@ -126,12 +130,17 @@ fn ignite_wars(
         if belligerence < balance.ignite_min_belligerence {
             continue;
         }
-        // The richest other region it isn't already at war with — the crown it
-        // envies. Ties break by id so the target is fixed.
+        // The richest other region it isn't already at war with, nor allied to —
+        // one does not fall upon a sworn friend. Ties break by id so the target is
+        // fixed.
         let Some(target) = regions
             .iter()
             .enumerate()
-            .filter(|(j, r)| *j != i && !already_at_war(wars, &regions[i].id, &r.id))
+            .filter(|(j, r)| {
+                *j != i
+                    && !already_at_war(wars, &regions[i].id, &r.id)
+                    && !pacts.iter().any(|p| p.binds(&regions[i].id, &r.id))
+            })
             .max_by(|(_, a), (_, b)| {
                 a.prosperity
                     .total_cmp(&b.prosperity)
@@ -307,6 +316,7 @@ mod tests {
             &mut world.settlements,
             &world.heroes,
             &world.artifacts,
+            &world.pacts,
             &mut world.war_seq,
             balance,
             &data.balance.region,
@@ -342,6 +352,46 @@ mod tests {
         assert_eq!(
             world.wars[0].defender_id, richest,
             "the belligerent should strike at the realm's richest"
+        );
+    }
+
+    #[test]
+    fn one_does_not_make_war_on_a_sworn_ally() {
+        // The belligerent would strike the richest region — but an alliance with it
+        // stays its hand, and it falls on the next-richest instead (GDD 5.2).
+        use crate::world::Pact;
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.war.clone();
+        balance.ignite_chance = 1.0;
+        let mut world = WorldState::new(&data);
+        world.wars.clear();
+        world.regions[0].chaos = 90.0;
+        world.regions[0].danger = 90.0;
+        // Region 2 richest, region 3 next-richest.
+        for (i, r) in world.regions.iter_mut().enumerate() {
+            r.prosperity = match i {
+                2 => 95.0,
+                3 => 80.0,
+                _ => 40.0,
+            };
+        }
+        let aggressor = world.regions[0].id.clone();
+        let richest = world.regions[2].id.clone();
+        let next_richest = world.regions[3].id.clone();
+        // The aggressor is sworn to the richest.
+        world.pacts.push(Pact {
+            id: "p".to_owned(),
+            region_a: aggressor.clone(),
+            region_b: richest.clone(),
+            age: 2,
+        });
+
+        run(&mut world, &data, &balance);
+
+        assert_eq!(world.wars.len(), 1, "a war should still be declared");
+        assert_eq!(
+            world.wars[0].defender_id, next_richest,
+            "war should fall on the next-richest, not the sworn ally"
         );
     }
 

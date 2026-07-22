@@ -360,6 +360,8 @@
     "war_declared": "{aggressor} declares war upon {defender}, and the border is set aflame.",
     "war_won": "The war ends: {victor} prevails over a broken {loser}.",
     "war_stalemate": "The war between {aggressor} and {defender} grinds to an exhausted, bloody stalemate.",
+    "pact_formed": "{region_a} and {region_b} swear an alliance, bound by kinship and commerce.",
+    "pact_dissolved": "The alliance between {region_a} and {region_b} lapses as their paths diverge.",
     "refugee_flight": "Refugees abandon {source} in droves, fleeing for the safety of {haven}.",
     "region_fracture": "Strife shatters {parent}: {founder} leads a revolt and founds {child}.",
     "region_conquest": "{winner} overruns crisis-stricken {loser} and absorbs it whole.",

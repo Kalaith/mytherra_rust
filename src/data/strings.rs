@@ -505,6 +505,10 @@ pub struct ChronicleText {
     pub war_declared: String,
     pub war_won: String,
     pub war_stalemate: String,
+    /// An alliance forms between two regions, or dissolves as they drift apart
+    /// (GDD 5.2); slots `{region_a}`, `{region_b}`.
+    pub pact_formed: String,
+    pub pact_dissolved: String,
     /// A notable flight of refugees from a perilous settlement to a safe haven
     /// (GDD 5.3); slots `{source}`, `{haven}`.
     pub refugee_flight: String,

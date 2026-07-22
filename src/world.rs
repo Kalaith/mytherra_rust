@@ -15,6 +15,7 @@ mod landmark;
 mod magic;
 mod monster;
 mod myth;
+mod pact;
 mod pantheon;
 mod plague;
 mod player;
@@ -40,6 +41,7 @@ pub use landmark::Landmark;
 pub use magic::{MagicPath, MagicState};
 pub use monster::Monster;
 pub use myth::{Myth, MythCandidate};
+pub use pact::Pact;
 pub use pantheon::{adjust_pressure, PantheonDeity};
 pub use plague::Plague;
 pub use player::PlayerState;
@@ -167,6 +169,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of wars that break out mid-run.
     #[serde(default)]
     pub war_seq: u64,
+    /// Standing alliances between regions (GDD 5.2); form dynamically, so this
+    /// starts empty on a fresh world.
+    #[serde(default)]
+    pub pacts: Vec<Pact>,
+    /// Monotonic counter for unique ids of pacts forged mid-run.
+    #[serde(default)]
+    pub pact_seq: u64,
     pub magic_paths: Vec<MagicPath>,
     pub myths: Vec<Myth>,
     pub myth_candidates: Vec<MythCandidate>,
@@ -257,6 +266,8 @@ impl WorldState {
             monster_seq: 0,
             wars: Vec::new(),
             war_seq: 0,
+            pacts: Vec::new(),
+            pact_seq: 0,
             magic_paths,
             myths: Vec::new(),
             myth_candidates: Vec::new(),

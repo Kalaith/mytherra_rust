@@ -53,6 +53,7 @@ pub struct Balance {
     pub culture: CultureBalance,
     pub trade: TradeBalance,
     pub war: WarBalance,
+    pub pact: PactBalance,
     pub player: PlayerBalance,
     pub settings: SettingsBalance,
     pub tenor: TenorBalance,

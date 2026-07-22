@@ -644,6 +644,12 @@
     "loser_scar_danger": 10.0,
     "artifact_might": 8.0
   },
+  "pact": {
+    "form_chance": 0.01,
+    "form_max_belligerence": 80.0,
+    "max_active": 4,
+    "chaos_relief": 0.15
+  },
   "player": {
     "level_base_cost": 100,
     "level_cost_step": 60,

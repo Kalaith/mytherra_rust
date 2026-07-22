@@ -303,3 +303,20 @@ pub struct WarBalance {
     /// lever over who prevails when regions come to blows.
     pub artifact_might: f32,
 }
+
+/// Alliance tuning (GDD 5.2): the pacts that form between like-cultured,
+/// trade-linked, peaceful regions. Amity to war's enmity — allies do not fall
+/// upon one another, and each stands the more secure for the alliance.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PactBalance {
+    /// Per-tick chance an eligible pair of regions forms an alliance.
+    pub form_chance: f32,
+    /// Both regions' chaos + danger must sit below this to be peaceable enough to
+    /// forge a pact — the belligerent make no friends.
+    pub form_max_belligerence: f32,
+    /// Most alliances that may stand at once.
+    pub max_active: usize,
+    /// Chaos an allied region sheds each tick — the security of standing together,
+    /// which also cools the belligerence that would drive it to war (GDD 5.2).
+    pub chaos_relief: f32,
+}
