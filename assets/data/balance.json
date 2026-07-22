@@ -318,6 +318,8 @@
     "instability_per_tick": 3.0,
     "instability_power_mult": 0.6,
     "instability_chaos_coeff": 0.05,
+    "keeper_stability": 1.5,
+    "min_instability_growth": 0.5,
     "backlash_threshold": 100.0,
     "backlash_chaos": 10.0,
     "backlash_danger": 8.0,

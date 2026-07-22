@@ -353,6 +353,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     artifact::tick_artifacts(
         &mut world.artifacts,
         &mut world.regions,
+        &world.heroes,
         &mut world.pending_consequences,
         &data.balance.artifact,
         &data.balance.region,

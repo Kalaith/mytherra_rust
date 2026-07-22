@@ -82,6 +82,16 @@ pub struct ArtifactBalance {
     /// unruly land shatters sooner than the same relic in a calm one — a reason
     /// to keep a relic's region ordered, and a doom-spiral risk as chaos climbs.
     pub instability_chaos_coeff: f32,
+    /// Instability growth a relic sheds each tick per resident Mage or Scholar who
+    /// keeps it (GDD 5.6 <-> 5.4): the learned understand a relic and tend its
+    /// wild power, so one kept by arcane keepers frays far slower than one
+    /// abandoned to an unlettered or empty land. The passive counterpart to the
+    /// player's stabilize action, and the arcane callings' domain over the relics.
+    pub keeper_stability: f32,
+    /// The least instability any relic accrues per tick, however many keepers tend
+    /// it: keepers slow a relic's slide toward backlash but never wholly halt it,
+    /// so even the best-kept relic drifts to its doom in the end — later, not never.
+    pub min_instability_growth: f32,
     pub backlash_threshold: f32,
     pub backlash_chaos: f32,
     pub backlash_danger: f32,

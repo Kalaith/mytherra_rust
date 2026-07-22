@@ -3,8 +3,10 @@
 //! shattering and scarring its region. Deterministic: no RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, ArtifactBalance, ArtifactFocus, RegionBalance};
-use crate::world::{Artifact, Chronicle, ConsequenceEffect, DelayedConsequence, EventKind, Region};
+use crate::data::{fill, ArtifactBalance, ArtifactFocus, HeroRole, RegionBalance};
+use crate::world::{
+    Artifact, Chronicle, ConsequenceEffect, DelayedConsequence, EventKind, Hero, Region,
+};
 
 /// Advance every artifact by one tick, resolving any backlashes. A backlash
 /// scars its region at once and schedules a two-step aftermath chain onto
@@ -13,6 +15,7 @@ use crate::world::{Artifact, Chronicle, ConsequenceEffect, DelayedConsequence, E
 pub fn tick_artifacts(
     artifacts: &mut Vec<Artifact>,
     regions: &mut [Region],
+    heroes: &[Hero],
     pending: &mut Vec<DelayedConsequence>,
     balance: &ArtifactBalance,
     region_balance: &RegionBalance,
@@ -31,7 +34,24 @@ pub fn tick_artifacts(
             .find(|r| r.id == artifact.region_id)
             .map(|r| r.chaos)
             .unwrap_or(0.0);
-        artifact.instability += artifact.instability_growth(region_chaos, balance);
+        // Arcane keepers tend the relic: every living Mage or Scholar dwelling in
+        // its region understands its wild power and slows its fraying (GDD 5.6 <->
+        // 5.4), so a relic in a learned land endures far longer than one abandoned
+        // to the unlettered. Keepers only delay the doom, never avert it — the
+        // growth is floored, so even the best-kept relic drifts to backlash in the
+        // end.
+        let keepers = heroes
+            .iter()
+            .filter(|h| {
+                h.is_alive
+                    && matches!(h.role, HeroRole::Mage | HeroRole::Scholar)
+                    && h.region_id == artifact.region_id
+            })
+            .count();
+        let growth = (artifact.instability_growth(region_chaos, balance)
+            - keepers as f32 * balance.keeper_stability)
+            .max(balance.min_instability_growth);
+        artifact.instability += growth;
 
         if artifact.instability >= balance.backlash_threshold {
             let region_id = artifact.region_id.clone();
@@ -139,6 +159,7 @@ mod tests {
             tick_artifacts(
                 &mut world.artifacts,
                 &mut world.regions,
+                &[],
                 &mut world.pending_consequences,
                 &data.balance.artifact,
                 &data.balance.region,
@@ -173,6 +194,7 @@ mod tests {
             tick_artifacts(
                 &mut world.artifacts,
                 &mut world.regions,
+                &[],
                 &mut world.pending_consequences,
                 &data.balance.artifact,
                 &data.balance.region,
@@ -212,6 +234,7 @@ mod tests {
             tick_artifacts(
                 &mut world.artifacts,
                 &mut world.regions,
+                &[],
                 &mut world.pending_consequences,
                 &data.balance.artifact,
                 &data.balance.region,
@@ -225,6 +248,66 @@ mod tests {
         assert!(
             gain(100.0) > gain(0.0),
             "a relic should reshape an attuned land more strongly than a barren one"
+        );
+    }
+
+    #[test]
+    fn arcane_keepers_slow_a_relics_fraying_but_never_halt_it() {
+        use crate::data::HeroRole;
+        use crate::world::Hero;
+        let data = GameData::load().unwrap();
+        let b = &data.balance.artifact;
+
+        // Instability a relic accrues in one tick, given the heroes keeping its
+        // region; the region and relic are otherwise identical.
+        let growth_with = |keepers: usize| {
+            let mut world = WorldState::new(&data);
+            world.artifacts.clear();
+            world.pending_consequences.clear();
+            world.regions.truncate(1);
+            world.regions[0].chaos = 30.0;
+            let region_id = world.regions[0].id.clone();
+            world.heroes = (0..keepers)
+                .map(|i| Hero {
+                    id: format!("m{i}"),
+                    name: format!("Keeper {i}"),
+                    role: HeroRole::Mage,
+                    region_id: region_id.clone(),
+                    level: 4,
+                    age: 30,
+                    is_alive: true,
+                    renown: 0.0,
+                })
+                .collect();
+            world.artifacts.push(Artifact {
+                id: "relic".to_owned(),
+                name: "Test Relic".to_owned(),
+                focus: ArtifactFocus::Protection,
+                power: 3,
+                instability: 0.0,
+                region_id,
+            });
+            tick_artifacts(
+                &mut world.artifacts,
+                &mut world.regions,
+                &world.heroes,
+                &mut world.pending_consequences,
+                &data.balance.artifact,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.artifacts[0].instability
+        };
+
+        assert!(
+            growth_with(2) < growth_with(0),
+            "arcane keepers should slow a relic's fraying"
+        );
+        assert!(
+            growth_with(20) >= b.min_instability_growth,
+            "however many keepers, a relic still drifts toward its doom"
         );
     }
 }
