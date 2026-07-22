@@ -149,6 +149,25 @@ impl Game {
                     delay: 42,
                     effect: crate::world::ConsequenceEffect::SettlementBlight(6.0),
                 });
+            // A present plague and a stalking beast so the forecast surfaces its
+            // afflictions line (GDD 5.6 <-> 5.3/5.2).
+            self.world.plagues.push(crate::world::Plague {
+                id: "capture-plague".to_owned(),
+                name: "The Grey Fever of the North".to_owned(),
+                region_id: self.world.regions[0].id.clone(),
+                severity: 1.5,
+                age: 3,
+            });
+            if self.world.regions.len() > 1 {
+                self.world.monsters.push(crate::world::Monster {
+                    id: "capture-monster".to_owned(),
+                    name: "The Shadow Wyrm".to_owned(),
+                    type_id: "shadow_wyrm".to_owned(),
+                    region_id: self.world.regions[1].id.clone(),
+                    ferocity: 2.5,
+                    age: 5,
+                });
+            }
         }
         if scene == "settings" {
             // Demonstrate the paused state (Resume control + "Paused" header).

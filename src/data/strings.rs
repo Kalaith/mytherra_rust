@@ -229,6 +229,11 @@ pub struct DivineText {
     pub omen_dire: String,
     pub omen_forces: String,
     pub omen_no_forces: String,
+    /// A present plague or beast afflicting a region — the most concrete omen of
+    /// all, shown in the forces slot in place of the divine-work tally when a
+    /// land is under threat (GDD 5.6 <-> 5.3/5.2).
+    pub omen_plague: String,
+    pub omen_beast: String,
     /// Generational-horizon forecast line and its three outlook words.
     pub omen_horizon: String,
     pub omen_deepening: String,

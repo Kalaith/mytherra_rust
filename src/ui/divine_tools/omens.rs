@@ -114,44 +114,63 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
             TextStyle::new(13.0, bad_stat_color(projected)).params(),
         );
 
-        // The divine works currently shaping this region — omens surface cause,
-        // never change it.
-        let relics = ctx
-            .world
-            .artifacts
-            .iter()
-            .filter(|a| a.region_id == region.id)
-            .count();
-        let storms = ctx
-            .world
-            .weather
-            .iter()
-            .filter(|w| w.region_id == region.id)
-            .count();
-        let myths = ctx
-            .world
-            .myths
-            .iter()
-            .filter(|m| m.region_id == region.id)
-            .count();
-        let forces = if relics + storms + myths == 0 {
-            strings.omen_no_forces.clone()
+        // A present plague or beast is the most concrete omen of all — it takes
+        // the forces slot in a warning hue, ahead of the divine-work tally, when
+        // a land is under threat (GDD 5.6 <-> 5.3/5.2).
+        let mut threats: Vec<&str> = Vec::new();
+        if ctx.world.plagues.iter().any(|p| p.region_id == region.id) {
+            threats.push(&strings.omen_plague);
+        }
+        if ctx.world.monsters.iter().any(|m| m.region_id == region.id) {
+            threats.push(&strings.omen_beast);
+        }
+        if threats.is_empty() {
+            // The divine works currently shaping this region — omens surface
+            // cause, never change it.
+            let relics = ctx
+                .world
+                .artifacts
+                .iter()
+                .filter(|a| a.region_id == region.id)
+                .count();
+            let storms = ctx
+                .world
+                .weather
+                .iter()
+                .filter(|w| w.region_id == region.id)
+                .count();
+            let myths = ctx
+                .world
+                .myths
+                .iter()
+                .filter(|m| m.region_id == region.id)
+                .count();
+            let forces = if relics + storms + myths == 0 {
+                strings.omen_no_forces.clone()
+            } else {
+                fill(
+                    &strings.omen_forces,
+                    &[
+                        ("relics", relics.to_string()),
+                        ("storms", storms.to_string()),
+                        ("myths", myths.to_string()),
+                    ],
+                )
+            };
+            draw_ui_text_ex(
+                &forces,
+                content.x,
+                y + 86.0,
+                TextStyle::new(14.0, dark::TEXT_DIM).params(),
+            );
         } else {
-            fill(
-                &strings.omen_forces,
-                &[
-                    ("relics", relics.to_string()),
-                    ("storms", storms.to_string()),
-                    ("myths", myths.to_string()),
-                ],
-            )
-        };
-        draw_ui_text_ex(
-            &forces,
-            content.x,
-            y + 86.0,
-            TextStyle::new(14.0, dark::TEXT_DIM).params(),
-        );
+            draw_ui_text_ex(
+                &threats.join("   ·   "),
+                content.x,
+                y + 86.0,
+                TextStyle::new(14.0, bad_stat_color(90.0)).params(),
+            );
+        }
         y += stride;
     }
 
