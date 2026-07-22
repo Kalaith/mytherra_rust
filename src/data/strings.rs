@@ -282,6 +282,9 @@ pub struct DivineText {
     /// Title of a myth born when a god crests to wrath (GDD 5.6 pantheon <->
     /// myths); slots `{deity}`, `{region}`.
     pub divine_myth_title: String,
+    /// Title of a myth born when a hero slays a beast (GDD 5.2 <-> 5.6); slots
+    /// `{hero}`, `{beast}`.
+    pub beast_myth_title: String,
     pub civ_panel: String,
     pub civ_region: String,
     pub civ_intro: String,

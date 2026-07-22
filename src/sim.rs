@@ -177,7 +177,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.year,
     );
 
-    monster::tick_monster(
+    let beasts_slain = monster::tick_monster(
         &mut world.monsters,
         &mut world.regions,
         &mut world.settlements,
@@ -191,6 +191,26 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.strings.chronicle,
         world.year,
     );
+    // A felled beast becomes a legend of the hunt: a Valor tale the player may
+    // promote, so the bestiary leaves its mark on the world's folklore and,
+    // through it, a land's martial character (GDD 5.2 <-> 5.6).
+    for (hero_name, beast_name, region_id) in beasts_slain {
+        let region_name = world
+            .regions
+            .iter()
+            .find(|r| r.id == region_id)
+            .map(|r| r.name.clone())
+            .unwrap_or_default();
+        myth::seed_beast_myth(
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            &hero_name,
+            &beast_name,
+            &region_id,
+            &region_name,
+            data,
+        );
+    }
 
     culture::tick_culture(
         &mut world.regions,

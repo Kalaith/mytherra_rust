@@ -11,6 +11,11 @@ use crate::data::{fill, HeroRole, MonsterBalance, MonsterType, RegionBalance};
 use crate::world::{Chronicle, EventKind, Hero, Monster, Region, Settlement};
 use macroquad_toolkit::rng::SeededRng;
 
+/// One beast felled by a named hunter this tick: `(hero_name, beast_name,
+/// region_id)`, returned so the caller can commemorate the deed in myth (GDD
+/// 5.2 <-> 5.6) — the bestiary's counterpart to a hero passing into legend.
+pub type BeastSlain = (String, String, String);
+
 #[allow(clippy::too_many_arguments)]
 pub fn tick_monster(
     monsters: &mut Vec<Monster>,
@@ -25,7 +30,7 @@ pub fn tick_monster(
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
-) {
+) -> Vec<BeastSlain> {
     spawn_monsters(
         monsters, regions, types, seq, balance, rng, chronicle, text, year,
     );
@@ -72,6 +77,7 @@ pub fn tick_monster(
         .collect();
     monsters.retain(|m| m.ferocity >= balance.min_ferocity);
 
+    let mut felled: Vec<BeastSlain> = Vec::new();
     for (region_id, name) in slain {
         let slayer = heroes
             .iter_mut()
@@ -90,9 +96,10 @@ pub fn tick_monster(
                     EventKind::Region,
                     fill(
                         &text.monster_slain,
-                        &[("hero", hero_name), ("monster", name)],
+                        &[("hero", hero_name.clone()), ("monster", name.clone())],
                     ),
                 );
+                felled.push((hero_name, name, region_id));
             }
             None => chronicle.push(
                 year,
@@ -101,6 +108,7 @@ pub fn tick_monster(
             ),
         }
     }
+    felled
 }
 
 /// Raise fresh beasts in perilous, untamed regions that have none (GDD 5.2).
@@ -195,7 +203,7 @@ mod tests {
     use crate::data::GameData;
     use crate::world::WorldState;
 
-    fn run(world: &mut WorldState, data: &GameData, balance: &MonsterBalance) {
+    fn run(world: &mut WorldState, data: &GameData, balance: &MonsterBalance) -> Vec<BeastSlain> {
         tick_monster(
             &mut world.monsters,
             &mut world.regions,
@@ -209,7 +217,7 @@ mod tests {
             &mut world.chronicle,
             &data.strings.chronicle,
             world.year,
-        );
+        )
     }
 
     #[test]
@@ -358,7 +366,7 @@ mod tests {
             age: 0,
         });
 
-        run(&mut world, &data, &balance);
+        let felled = run(&mut world, &data, &balance);
 
         assert!(world.monsters.is_empty(), "the beast should be slain");
         let champ = world.heroes.iter().find(|h| h.id == "champ").unwrap();
@@ -368,6 +376,16 @@ mod tests {
             "the mightiest hunter should earn the renown of the kill"
         );
         assert_eq!(ranger.renown, 0.0, "the lesser hunter earns none");
+        // The kill is reported so the caller can commemorate it in myth.
+        assert_eq!(
+            felled,
+            vec![(
+                "Bramwell the Bold".to_owned(),
+                "The Doomed Beast".to_owned(),
+                world.regions[0].id.clone()
+            )],
+            "the felled beast and its slayer are reported"
+        );
     }
 
     #[test]

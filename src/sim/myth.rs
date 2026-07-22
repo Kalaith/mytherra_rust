@@ -203,6 +203,57 @@ pub fn seed_hero_legend(
     );
 }
 
+/// Seed a myth candidate commemorating a slain beast (GDD 5.2 <-> 5.6): a
+/// Valor-tale of the hunt, rooted in the region where the beast fell and named
+/// for both hero and beast, at full resonance. The same Valor theme a hero's
+/// legend carries, so a land that fells beasts grows martial in memory. The
+/// player still chooses whether to promote it; skipped once the board is
+/// saturated so a season of hunts can't flood it.
+pub fn seed_beast_myth(
+    candidates: &mut Vec<MythCandidate>,
+    seq: &mut u64,
+    hero_name: &str,
+    beast_name: &str,
+    region_id: &str,
+    region_name: &str,
+    data: &GameData,
+) {
+    let balance = &data.balance.myth;
+    if candidates.len() >= balance.candidate_count * 2 {
+        return;
+    }
+    let Some(theme) = data
+        .myth_themes
+        .iter()
+        .find(|t| t.id == balance.legend_theme_id)
+        .or_else(|| data.myth_themes.first())
+    else {
+        return;
+    };
+    *seq += 1;
+    candidates.insert(
+        0,
+        MythCandidate {
+            id: format!("myth-{seq}"),
+            title: fill(
+                &data.strings.divine.beast_myth_title,
+                &[
+                    ("hero", hero_name.to_owned()),
+                    ("beast", beast_name.to_owned()),
+                ],
+            ),
+            theme_name: theme.name.clone(),
+            stat: theme.stat,
+            cultural_effect: theme.cultural_effect,
+            stat_effect: theme.stat_effect,
+            culture: theme.culture,
+            region_id: region_id.to_owned(),
+            region_name: region_name.to_owned(),
+            resonance: balance.resonance_max,
+        },
+    );
+}
+
 /// Seed a myth candidate born of a god crested to the height of wrath (GDD 5.6
 /// pantheon <-> myths): the age remembers the divine gaze as a tale themed to
 /// the deity's domain, rooted in the region where that domain burns brightest,
@@ -420,6 +471,46 @@ mod tests {
             "divine myths overflowed the board ({} > {cap})",
             world.myth_candidates.len()
         );
+    }
+
+    #[test]
+    fn a_slain_beast_becomes_a_valor_legend_of_the_hunt() {
+        // Felling a beast seeds a Valor tale naming both hero and beast, rooted in
+        // the region where it fell, at full resonance (GDD 5.2 <-> 5.6).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        world.myth_candidates.clear();
+        let region_id = world.regions[0].id.clone();
+        let region_name = world.regions[0].name.clone();
+
+        seed_beast_myth(
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            "Bramwell the Bold",
+            "The Shadow Wyrm",
+            &region_id,
+            &region_name,
+            &data,
+        );
+
+        assert_eq!(world.myth_candidates.len(), 1);
+        let m = &world.myth_candidates[0];
+        assert!(
+            m.title.contains("Bramwell") && m.title.contains("Shadow Wyrm"),
+            "the tale should name both hero and beast: {}",
+            m.title
+        );
+        let legend_theme = data
+            .myth_themes
+            .iter()
+            .find(|t| t.id == data.balance.myth.legend_theme_id)
+            .unwrap();
+        assert_eq!(
+            m.culture, legend_theme.culture,
+            "a tale of the hunt carries the Valor theme's culture"
+        );
+        assert_eq!(m.region_id, region_id);
+        assert_eq!(m.resonance, data.balance.myth.resonance_max);
     }
 
     #[test]
