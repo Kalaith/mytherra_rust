@@ -24,7 +24,7 @@ fn living_members(heroes: &[Hero], role: HeroRole) -> usize {
 pub fn tick_orders(
     orders: &mut Vec<Order>,
     regions: &mut [Region],
-    heroes: &[Hero],
+    heroes: &mut [Hero],
     seq: &mut u64,
     balance: &OrderBalance,
     names: &OrderNames,
@@ -89,6 +89,23 @@ pub fn tick_orders(
             }
         }
     }
+
+    // Belonging to a great Order is itself a distinction: every living member
+    // gains renown scaled by the Order's standing, wherever they dwell, so a
+    // storied fellowship speeds its own toward legend (GDD 5.4). This threads the
+    // institutional layer into the renown web the level-up, era, magic, and myth
+    // systems all feed — a young Order lends little, a famed one much.
+    for order in orders.iter() {
+        let honor = order.prestige * balance.renown_per_prestige;
+        if honor <= 0.0 {
+            continue;
+        }
+        for hero in heroes.iter_mut() {
+            if hero.is_alive && hero.role == order.role {
+                hero.renown += honor;
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -117,7 +134,7 @@ mod tests {
         tick_orders(
             &mut world.orders,
             &mut world.regions,
-            &world.heroes,
+            &mut world.heroes,
             &mut world.order_seq,
             &data.balance.order,
             &data.strings.orders,
@@ -197,6 +214,40 @@ mod tests {
         assert_eq!(
             world.regions[1].cultural_influence, 50.0,
             "a region with no member of the calling gains nothing"
+        );
+    }
+
+    #[test]
+    fn a_storied_order_lends_its_members_renown() {
+        let data = GameData::load().unwrap();
+        let b = &data.balance.order;
+        let mut world = WorldState::new(&data);
+        let region = world.regions[0].id.clone();
+        // A Mages' Circle and a lone Warrior who belongs to no Order.
+        world.heroes = roster(b.found_min_members + 3, HeroRole::Mage, &region);
+        world.heroes.push(Hero {
+            id: "outsider".to_owned(),
+            name: "Unaffiliated".to_owned(),
+            role: HeroRole::Warrior,
+            region_id: region.clone(),
+            level: 3,
+            age: 30,
+            is_alive: true,
+            renown: 0.0,
+        });
+
+        for _ in 0..40 {
+            run(&mut world, &data);
+        }
+        let member = world.heroes.iter().find(|h| h.id == "h0").unwrap();
+        let outsider = world.heroes.iter().find(|h| h.id == "outsider").unwrap();
+        assert!(
+            member.renown > 0.0,
+            "a member of a storied Order gains renown from the fellowship"
+        );
+        assert_eq!(
+            outsider.renown, 0.0,
+            "a hero of a calling with no Order gains no such honor"
         );
     }
 }

@@ -212,7 +212,8 @@
     "prestige_per_member": 10.0,
     "prestige_rate": 0.08,
     "prestige_cap": 100.0,
-    "influence_per_prestige": 0.004
+    "influence_per_prestige": 0.004,
+    "renown_per_prestige": 0.003
   },
   "champion": {
     "max_roster": 3,

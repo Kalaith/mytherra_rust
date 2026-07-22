@@ -573,7 +573,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     order::tick_orders(
         &mut world.orders,
         &mut world.regions,
-        &world.heroes,
+        &mut world.heroes,
         &mut world.order_seq,
         &data.balance.order,
         &data.strings.orders,

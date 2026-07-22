@@ -208,4 +208,9 @@ pub struct OrderBalance {
     /// making the regions it reaches more prominent — drawing heroes and raising
     /// the chance of wonders — without touching the crisis stats.
     pub influence_per_prestige: f32,
+    /// Renown each living member gains per tick per point of the Order's prestige
+    /// (GDD 5.4): belonging to a great fellowship is itself a distinction, so a
+    /// storied Order lends its fame to its own and speeds them toward legend. A
+    /// young Order confers little; the effect ramps with the Order's standing.
+    pub renown_per_prestige: f32,
 }
