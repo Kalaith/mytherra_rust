@@ -159,6 +159,11 @@ pub struct SettlementBalance {
     pub region_chaos_div: f32,
     pub growth_min: f32,
     pub growth_max: f32,
+    /// Extra prosperity a building lends its settlement when its region holds a
+    /// producing node of the resource it draws on (GDD 6 <-> 5.3): a Forge over
+    /// ore, a Harbor over a fishery. Industry pays off most where its raw material
+    /// lies at hand, so resource-rich regions reward building to match.
+    pub building_synergy_bonus: f32,
     /// Carrying capacity per point of the settlement's supporting prosperity
     /// (region prosperity + its buildings): the land feeds only so many, so
     /// growth eases to nothing as population nears capacity (GDD 5.3).

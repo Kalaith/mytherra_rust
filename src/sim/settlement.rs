@@ -7,10 +7,10 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{
-    fill, BuildingType, Culture, RegionBalance, SettlementBalance, SettlementNameBank,
-    SettlementSeed,
+    fill, BuildingType, Culture, RegionBalance, ResourceStatus, SettlementBalance,
+    SettlementNameBank, SettlementSeed,
 };
-use crate::world::{Building, Chronicle, EventKind, Region, Settlement};
+use crate::world::{Building, Chronicle, EventKind, Region, ResourceNode, Settlement};
 use macroquad_toolkit::data_loader::DataRegistry;
 use macroquad_toolkit::math::approach;
 use macroquad_toolkit::rng::SeededRng;
@@ -20,6 +20,7 @@ pub fn tick_settlements(
     settlements: &mut [Settlement],
     buildings: &[Building],
     regions: &mut [Region],
+    resource_nodes: &[ResourceNode],
     balance: &SettlementBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -34,11 +35,24 @@ pub fn tick_settlements(
         let region_prosperity = regions[idx].prosperity;
         let region_chaos = regions[idx].chaos;
 
-        // Buildings raise the settlement's prosperity equilibrium.
+        // Buildings raise the settlement's prosperity equilibrium — and one whose
+        // trade draws on a resource its region actually produces earns an extra
+        // bonus, so a Forge over ore or a Harbor over a fishery pays off more than
+        // the same building raised over barren ground (GDD 6 <-> 5.3).
         let building_bonus: f32 = buildings
             .iter()
             .filter(|b| b.settlement_id == settlement.id)
-            .map(|b| b.prosperity_bonus)
+            .map(|b| {
+                let synergy = b
+                    .synergy_resource
+                    .is_some_and(|res| region_produces(resource_nodes, &settlement.region_id, res));
+                b.prosperity_bonus
+                    + if synergy {
+                        balance.building_synergy_bonus
+                    } else {
+                        0.0
+                    }
+            })
             .sum();
         let supporting = (region_prosperity + building_bonus).clamp(0.0, 100.0);
 
@@ -289,6 +303,7 @@ pub fn tick_construction(
             prosperity_bonus: chosen.prosperity_bonus,
             culture: chosen.culture,
             resonance_bonus: chosen.resonance_bonus,
+            synergy_resource: chosen.synergy_resource,
         });
         chronicle.push(
             year,
@@ -302,6 +317,21 @@ pub fn tick_construction(
             ),
         );
     }
+}
+
+/// Whether a region holds a node of the given resource kind that is still
+/// producing (not run dry), so a building drawing on that trade has raw material
+/// at hand (GDD 6 <-> 5.3).
+fn region_produces(
+    nodes: &[ResourceNode],
+    region_id: &str,
+    resource: crate::data::ResourceType,
+) -> bool {
+    nodes.iter().any(|n| {
+        n.region_id == region_id
+            && n.resource_type == resource
+            && n.status != ResourceStatus::Depleted
+    })
 }
 
 /// Selection weight for a building type given the region's dominant culture: a
@@ -353,6 +383,7 @@ mod tests {
             &mut world.settlements,
             &world.buildings,
             &mut world.regions,
+            &world.resource_nodes,
             &data.balance.settlement,
             &data.balance.region,
             &mut world.chronicle,
@@ -390,6 +421,7 @@ mod tests {
             prosperity_bonus: 3.0,
             culture: None,
             resonance_bonus: resonance,
+            synergy_resource: None,
         };
         world.buildings.push(building("temple", 0.5));
         world.buildings.push(building("market", 0.0));
@@ -398,6 +430,7 @@ mod tests {
             &mut world.settlements,
             &world.buildings,
             &mut world.regions,
+            &world.resource_nodes,
             &data.balance.settlement,
             &data.balance.region,
             &mut world.chronicle,
@@ -410,6 +443,83 @@ mod tests {
         assert!(
             (world.regions[ridx].divine_resonance - (before + 0.5)).abs() < 1e-4,
             "a temple should raise its region's resonance by exactly its bonus"
+        );
+    }
+
+    #[test]
+    fn a_building_over_its_resource_earns_the_synergy_bonus() {
+        // A Forge in a region with a producing Mine lifts its settlement more than
+        // the same Forge over ore-less ground, and a depleted mine grants nothing
+        // (GDD 6 <-> 5.3).
+        use crate::data::{ResourceStatus, ResourceType};
+        let data = GameData::load().unwrap();
+
+        let equilibrium = |mine: Option<ResourceStatus>| {
+            let mut world = WorldState::new(&data);
+            world.settlements.truncate(1);
+            let settlement_id = world.settlements[0].id.clone();
+            let region_id = world.settlements[0].region_id.clone();
+            world.settlements[0].prosperity = 0.0;
+            // Hold the region steady so only the building bonus moves prosperity.
+            if let Some(r) = world.regions.iter_mut().find(|r| r.id == region_id) {
+                r.prosperity = 50.0;
+                r.chaos = 0.0;
+            }
+            // One Forge, drawing on Mine ore.
+            world.buildings.clear();
+            world.buildings.push(Building {
+                id: "forge".to_owned(),
+                name: "Forge".to_owned(),
+                settlement_id,
+                type_id: "forge".to_owned(),
+                prosperity_bonus: 5.0,
+                culture: None,
+                resonance_bonus: 0.0,
+                synergy_resource: Some(ResourceType::Mine),
+            });
+            // The region's only node, if any, is the given mine.
+            world.resource_nodes.retain(|n| n.region_id != region_id);
+            if let Some(status) = mine {
+                world.resource_nodes.push(ResourceNode {
+                    id: "m".to_owned(),
+                    name: "The Vein".to_owned(),
+                    region_id: region_id.clone(),
+                    resource_type: ResourceType::Mine,
+                    status,
+                });
+            }
+
+            // Settle prosperity toward its supported equilibrium.
+            for _ in 0..400 {
+                if let Some(r) = world.regions.iter_mut().find(|r| r.id == region_id) {
+                    r.prosperity = 50.0;
+                }
+                tick_settlements(
+                    &mut world.settlements,
+                    &world.buildings,
+                    &mut world.regions,
+                    &world.resource_nodes,
+                    &data.balance.settlement,
+                    &data.balance.region,
+                    &mut world.chronicle,
+                    &data.strings.chronicle,
+                    &data.strings.ui.settlement_tiers,
+                    world.year,
+                );
+            }
+            world.settlements[0].prosperity
+        };
+
+        let over_ore = equilibrium(Some(ResourceStatus::Active));
+        let barren = equilibrium(None);
+        let over_dry = equilibrium(Some(ResourceStatus::Depleted));
+        assert!(
+            over_ore > barren,
+            "a Forge over a working mine should out-produce one over none ({over_ore} vs {barren})"
+        );
+        assert!(
+            (over_dry - barren).abs() < 1e-3,
+            "a Forge over a run-dry mine earns no synergy ({over_dry} vs {barren})"
         );
     }
 
@@ -431,6 +541,7 @@ mod tests {
                 &mut world.settlements,
                 &world.buildings,
                 &mut world.regions,
+                &world.resource_nodes,
                 &data.balance.settlement,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -578,6 +689,7 @@ mod tests {
                 &mut world.settlements,
                 &world.buildings,
                 &mut world.regions,
+                &world.resource_nodes,
                 &data.balance.settlement,
                 &data.balance.region,
                 &mut world.chronicle,

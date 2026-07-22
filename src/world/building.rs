@@ -1,7 +1,7 @@
 //! Runtime building state (GDD 6): a building standing in a settlement, its
 //! prosperity bonus resolved from its type at world creation.
 
-use crate::data::{BuildingSeed, BuildingType, Culture};
+use crate::data::{BuildingSeed, BuildingType, Culture, ResourceType};
 use macroquad_toolkit::data_loader::DataRegistry;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +26,12 @@ pub struct Building {
     /// it. `serde(default)` keeps older saves loadable.
     #[serde(default)]
     pub resonance_bonus: f32,
+    /// The resource kind this building draws on, resolved from its type (GDD 6
+    /// <-> 5.3): when its region holds a producing node of this kind, the building
+    /// earns an extra prosperity bonus. `serde(default)` keeps older saves
+    /// loadable; `None` draws on the region at large.
+    #[serde(default)]
+    pub synergy_resource: Option<ResourceType>,
 }
 
 impl Building {
@@ -39,6 +45,7 @@ impl Building {
             prosperity_bonus: ty.map(|t| t.prosperity_bonus).unwrap_or(0.0),
             culture: ty.and_then(|t| t.culture),
             resonance_bonus: ty.map(|t| t.resonance_bonus).unwrap_or(0.0),
+            synergy_resource: ty.and_then(|t| t.synergy_resource),
         }
     }
 }

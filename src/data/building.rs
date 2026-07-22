@@ -1,7 +1,7 @@
 //! Building content types: the building types and the seeded buildings that
 //! stand in settlements (GDD 6).
 
-use crate::data::Culture;
+use crate::data::{Culture, ResourceType};
 use serde::{Deserialize, Serialize};
 
 /// An authored building type (`building_types.json`); its bonus raises the
@@ -22,6 +22,14 @@ pub struct BuildingType {
     /// tithes. `serde(default)` leaves the secular building types at zero.
     #[serde(default)]
     pub resonance_bonus: f32,
+    /// The resource kind this building draws on for its trade (GDD 6 <-> 5.3): a
+    /// Forge works a Mine's ore, a Harbor a Fishery's catch, a Granary a
+    /// Farmland's grain, a Temple a Manaspring's flow. When its region holds a
+    /// producing node of this kind, the building earns an extra prosperity bonus —
+    /// so industry pays off most where its raw material lies at hand. `None`
+    /// leaves a building (a Market, a Guildhall) drawing on the region at large.
+    #[serde(default)]
+    pub synergy_resource: Option<ResourceType>,
 }
 
 /// A seeded building (`buildings.json`) placed in a settlement.
