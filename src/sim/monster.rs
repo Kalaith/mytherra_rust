@@ -43,19 +43,26 @@ pub fn tick_monster(
             monster.ferocity -= balance.ferocity_growth;
             continue;
         };
+        // A legendary terror ravages far beyond an ordinary beast: both its
+        // per-tick menace and its raids on the towns are amplified.
+        let menace = if monster.apex {
+            balance.apex_menace_mult
+        } else {
+            1.0
+        };
         // The beast makes the land perilous...
         if let Some(region) = regions.iter_mut().find(|r| r.id == monster.region_id) {
             region.apply_deltas(
                 0.0,
                 0.0,
-                ty.danger_per_tick * monster.ferocity,
+                ty.danger_per_tick * monster.ferocity * menace,
                 0.0,
                 region_balance,
             );
         }
         // ...and raids the largest settlement for its people.
         if let Some(settlement) = largest_settlement(settlements, &monster.region_id) {
-            let loss = settlement.population * ty.raid_population * monster.ferocity;
+            let loss = settlement.population * ty.raid_population * monster.ferocity * menace;
             settlement.population = (settlement.population - loss).max(0.0);
         }
         // The hunt: resident hunters grind the beast down — but who can fight it
@@ -68,11 +75,35 @@ pub fn tick_monster(
         } else {
             monster.ferocity += balance.ferocity_growth;
         }
+
+        // A beast grown fierce beyond all bound, unchallenged for an age, swells
+        // into a named legendary terror — the mark of a land abandoned to the
+        // wild. It happens once, when the threshold is first crossed.
+        if !monster.apex
+            && monster.ferocity >= balance.apex_ferocity
+            && !text.monster_epithets.is_empty()
+        {
+            monster.apex = true;
+            let epithet =
+                text.monster_epithets[monster.age as usize % text.monster_epithets.len()].clone();
+            monster.name = fill(
+                &text.monster_ascends_name,
+                &[
+                    ("monster", monster.name.clone()),
+                    ("epithet", epithet.clone()),
+                ],
+            );
+            chronicle.push(
+                year,
+                EventKind::Region,
+                fill(&text.monster_ascends, &[("monster", monster.name.clone())]),
+            );
+        }
     }
 
     // Beasts worn below the floor are slain (or, where no hunter remains, driven
     // off); the mightiest resident hunter claims the kill and its renown.
-    let slain: Vec<(String, String, bool)> = monsters
+    let slain: Vec<(String, String, bool, bool)> = monsters
         .iter()
         .filter(|m| m.ferocity < balance.min_ferocity)
         .map(|m| {
@@ -80,26 +111,33 @@ pub fn tick_monster(
                 .iter()
                 .find(|t| t.id == m.type_id)
                 .is_some_and(|t| t.arcane);
-            (m.region_id.clone(), m.name.clone(), arcane)
+            (m.region_id.clone(), m.name.clone(), arcane, m.apex)
         })
         .collect();
     monsters.retain(|m| m.ferocity >= balance.min_ferocity);
 
     let mut felled: Vec<BeastSlain> = Vec::new();
-    for (region_id, name, arcane) in slain {
+    for (region_id, name, arcane, apex) in slain {
         let slayer = heroes
             .iter_mut()
             .filter(|h| h.is_alive && h.region_id == region_id && hunts(h.role, arcane))
             .max_by_key(|h| h.level);
         match slayer {
             Some(hero) => {
-                hero.renown += balance.slay_renown;
+                // Felling a legendary terror is the deed of a lifetime, worth far
+                // more renown — and a chronicle line to match — than an ordinary kill.
+                let (renown, line) = if apex {
+                    (balance.apex_slay_renown, &text.monster_apex_slain)
+                } else {
+                    (balance.slay_renown, &text.monster_slain)
+                };
+                hero.renown += renown;
                 let hero_name = hero.name.clone();
                 chronicle.push(
                     year,
                     EventKind::Region,
                     fill(
-                        &text.monster_slain,
+                        line,
                         &[("hero", hero_name.clone()), ("monster", name.clone())],
                     ),
                 );
@@ -172,6 +210,7 @@ fn spawn_monsters(
             region_id: region.id.clone(),
             ferocity: ty.start_ferocity,
             age: 0,
+            apex: false,
         });
         chronicle.push(
             year,
@@ -390,6 +429,7 @@ mod tests {
             region_id,
             ferocity: 2.0,
             age: 0,
+            apex: false,
         });
 
         run(&mut world, &data, &balance);
@@ -442,6 +482,7 @@ mod tests {
             region_id,
             ferocity: 1.5,
             age: 0,
+            apex: false,
         });
 
         let felled = run(&mut world, &data, &balance);
@@ -497,6 +538,7 @@ mod tests {
                 region_id,
                 ferocity: 5.0,
                 age: 0,
+                apex: false,
             });
             run(&mut world, &data, &b);
             5.0 - world.monsters.first().map(|m| m.ferocity).unwrap_or(0.0)
@@ -540,6 +582,7 @@ mod tests {
             region_id,
             ferocity: 1.0,
             age: 0,
+            apex: false,
         });
 
         run(&mut world, &data, &balance);
@@ -565,12 +608,89 @@ mod tests {
             region_id,
             ferocity: 1.0,
             age: 0,
+            apex: false,
         });
 
         run(&mut world, &data, &balance);
         assert!(
             world.monsters[0].ferocity > 1.0,
             "an unopposed beast should grow fiercer"
+        );
+    }
+
+    #[test]
+    fn an_unopposed_beast_ascends_into_a_named_legendary_terror() {
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.monster.clone();
+        balance.emergence_chance = 0.0;
+        let mut world = WorldState::new(&data);
+        let region_id = world.regions[0].id.clone();
+        // No hunters, and a beast already at the brink of the apex threshold.
+        world.heroes.retain(|h| h.region_id != region_id);
+        world.monsters.push(Monster {
+            id: "monster-7".to_owned(),
+            name: "The Dire Pack of Aldermoor".to_owned(),
+            type_id: "dire_pack".to_owned(),
+            region_id,
+            ferocity: balance.apex_ferocity - balance.ferocity_growth * 0.5,
+            age: 80,
+            apex: false,
+        });
+
+        run(&mut world, &data, &balance);
+        let beast = &world.monsters[0];
+        assert!(beast.apex, "a beast past the threshold should ascend");
+        assert!(
+            beast.name.contains("The Dire Pack of Aldermoor")
+                && beast.name.len() > "The Dire Pack of Aldermoor".len(),
+            "an ascended beast takes a legendary epithet: {}",
+            beast.name
+        );
+    }
+
+    #[test]
+    fn felling_a_legendary_terror_makes_a_legend() {
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.monster.clone();
+        balance.emergence_chance = 0.0;
+
+        // The renown a lone hunter earns for the same kill, apex versus ordinary.
+        let renown_for = |apex: bool| {
+            let mut world = WorldState::new(&data);
+            let region_id = world.regions[0].id.clone();
+            // Exactly one high-level Warrior in the region to claim the kill.
+            world.heroes.retain(|h| h.region_id != region_id);
+            world.heroes.push(Hero {
+                id: "hunter".to_owned(),
+                name: "The Hunter".to_owned(),
+                role: HeroRole::Warrior,
+                region_id: region_id.clone(),
+                level: 9,
+                age: 30,
+                is_alive: true,
+                renown: 0.0,
+            });
+            // A beast already worn to the brink of death, so this tick fells it.
+            world.monsters.push(Monster {
+                id: "m".to_owned(),
+                name: "The Doomed Beast".to_owned(),
+                type_id: "dire_pack".to_owned(),
+                region_id,
+                ferocity: balance.min_ferocity + 0.001,
+                age: 10,
+                apex,
+            });
+            run(&mut world, &data, &balance);
+            world
+                .heroes
+                .iter()
+                .find(|h| h.id == "hunter")
+                .unwrap()
+                .renown
+        };
+        assert!(
+            renown_for(true) > renown_for(false),
+            "slaying an ascended terror should be worth far more renown than an ordinary kill"
         );
     }
 }

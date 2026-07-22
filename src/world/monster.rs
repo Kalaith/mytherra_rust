@@ -20,4 +20,10 @@ pub struct Monster {
     pub ferocity: f32,
     /// Ticks the beast has stalked, for the chronicle and UI.
     pub age: u32,
+    /// Whether the beast has ascended into a named legendary terror — grown so
+    /// fierce, unopposed for so long, that it ravages far beyond an ordinary
+    /// menace and slaying it makes a legend (GDD 5.2). Set once, on crossing the
+    /// apex threshold.
+    #[serde(default)]
+    pub apex: bool,
 }

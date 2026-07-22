@@ -359,6 +359,17 @@
     "monster_slain": "{hero} hunts down and slays {monster}, and the land breathes easier.",
     "monster_driven_off": "{monster} is at last driven back into the wilds.",
     "monster_name": "The {beast} of {region}",
+    "monster_ascends": "Left unchallenged for an age, {monster} has swollen into a legendary terror — the whole realm dreads its name.",
+    "monster_ascends_name": "{monster}, {epithet}",
+    "monster_apex_slain": "{hero} achieves the deed of a lifetime, felling the dread {monster} — a legend is made in an afternoon.",
+    "monster_epithets": [
+      "the Scourge of the Age",
+      "Devourer of the Realms",
+      "the Unslain",
+      "Bane of the Wilds",
+      "the Elder Terror",
+      "Shadow over the Land"
+    ],
     "war_declared": "{aggressor} declares war upon {defender}, and the border is set aflame.",
     "war_won": "The war ends: {victor} prevails over a broken {loser}.",
     "war_stalemate": "The war between {aggressor} and {defender} grinds to an exhausted, bloody stalemate.",

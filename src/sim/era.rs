@@ -410,6 +410,7 @@ mod tests {
             region_id: world.regions[0].id.clone(),
             ferocity: 2.0,
             age: 5,
+            apex: false,
         });
 
         // Break the age.

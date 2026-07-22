@@ -602,7 +602,10 @@
     "min_ferocity": 0.2,
     "slay_renown": 15.0,
     "arcane_martial_effectiveness": 0.4,
-    "mage_arcane_effectiveness": 1.2
+    "mage_arcane_effectiveness": 1.2,
+    "apex_ferocity": 6.0,
+    "apex_menace_mult": 2.0,
+    "apex_slay_renown": 60.0
   },
   "refugee": {
     "flee_threshold": 55.0,

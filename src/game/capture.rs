@@ -166,6 +166,7 @@ impl Game {
                     region_id: self.world.regions[1].id.clone(),
                     ferocity: 2.5,
                     age: 5,
+                    apex: false,
                 });
             }
             // A war between two further regions so the forecast surfaces it too.

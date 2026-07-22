@@ -261,6 +261,20 @@ pub struct MonsterBalance {
     /// answered in kind, so a Mage is the surest bane of a wyrm. Mages lend
     /// nothing against a natural predator (a spell is no substitute for a spear).
     pub mage_arcane_effectiveness: f32,
+    /// Ferocity at which a beast left unopposed too long ascends into a named
+    /// legendary terror (GDD 5.2). Pitched high above any beast's starting
+    /// ferocity, so it takes an age of unchecked growth in a land with no hunter
+    /// to reach — the mark of a region abandoned to the wild, not an ordinary
+    /// menace.
+    pub apex_ferocity: f32,
+    /// How much deadlier an ascended terror is: its per-tick danger and its raids
+    /// on the towns are both multiplied by this, so a legendary beast ravages far
+    /// beyond an ordinary one.
+    pub apex_menace_mult: f32,
+    /// Renown the hunter who fells an ascended terror earns instead of the
+    /// ordinary `slay_renown` — slaying a legendary beast is the deed of a
+    /// lifetime, worth a long stride toward legend on its own.
+    pub apex_slay_renown: f32,
 }
 
 /// Inter-region war tuning (GDD 5.2): the prolonged conflicts that break out

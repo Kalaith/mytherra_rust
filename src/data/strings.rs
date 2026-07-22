@@ -530,6 +530,16 @@ pub struct ChronicleText {
     pub monster_driven_off: String,
     /// Name pattern for an emerging beast; slots `{beast}`, `{region}`.
     pub monster_name: String,
+    /// A beast left unopposed so long it swells into a named legendary terror
+    /// (GDD 5.2): the portent of its ascension, the epithet-bearing name it takes,
+    /// and the greater renown of the hero who at last brings it down. Slots
+    /// `{monster}`, `{epithet}`, `{hero}`.
+    pub monster_ascends: String,
+    pub monster_ascends_name: String,
+    pub monster_apex_slain: String,
+    /// Legendary epithets a beast may take on ascending to a great terror, one
+    /// chosen deterministically per beast (GDD 5.2).
+    pub monster_epithets: Vec<String>,
     /// A war's course (GDD 5.2): it is declared, then ends in a victor or an
     /// exhausted stalemate. Slots `{aggressor}`, `{defender}`, `{victor}`,
     /// `{loser}`.
