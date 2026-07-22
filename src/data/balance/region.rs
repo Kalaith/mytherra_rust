@@ -290,4 +290,9 @@ pub struct WarBalance {
     /// against it — the scar of defeat that leaves it ripe for conquest.
     pub loser_scar_prosperity: f32,
     pub loser_scar_danger: f32,
+    /// War might a region gains per point of the power of the War-focus artifacts
+    /// bound to it (GDD 5.2 <-> 5.6): a war relic is a weapon of the divine, so it
+    /// lends its land strength in war as it already does in conquest — the player's
+    /// lever over who prevails when regions come to blows.
+    pub artifact_might: f32,
 }

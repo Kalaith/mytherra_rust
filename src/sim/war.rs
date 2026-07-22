@@ -9,8 +9,8 @@
 //! world RNG; the toll and resolution are deterministic.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, HeroRole, RegionBalance, WarBalance};
-use crate::world::{Chronicle, EventKind, Hero, Region, Settlement, War};
+use crate::data::{fill, ArtifactFocus, HeroRole, RegionBalance, WarBalance};
+use crate::world::{Artifact, Chronicle, EventKind, Hero, Region, Settlement, War};
 use macroquad_toolkit::rng::SeededRng;
 
 #[allow(clippy::too_many_arguments)]
@@ -19,6 +19,7 @@ pub fn tick_wars(
     regions: &mut [Region],
     settlements: &mut [Settlement],
     heroes: &[Hero],
+    artifacts: &[Artifact],
     seq: &mut u64,
     balance: &WarBalance,
     region_balance: &RegionBalance,
@@ -33,8 +34,8 @@ pub fn tick_wars(
     // opponent's war might, and the war wanes toward its end.
     for war in wars.iter_mut() {
         war.age += 1;
-        let aggressor_might = war_might(heroes, &war.aggressor_id);
-        let defender_might = war_might(heroes, &war.defender_id);
+        let aggressor_might = war_might(heroes, artifacts, &war.aggressor_id, balance);
+        let defender_might = war_might(heroes, artifacts, &war.defender_id, balance);
         apply_toll(
             regions,
             settlements,
@@ -68,6 +69,7 @@ pub fn tick_wars(
             &war,
             regions,
             heroes,
+            artifacts,
             balance,
             region_balance,
             chronicle,
@@ -77,10 +79,16 @@ pub fn tick_wars(
     }
 }
 
-/// A region's war might: the combined levels of its living Warriors and Rangers —
-/// the martial strength it can bring to a war.
-fn war_might(heroes: &[Hero], region_id: &str) -> f32 {
-    heroes
+/// A region's war might: the combined levels of its living Warriors and Rangers,
+/// plus the power of any War-focus artifacts bound to it — the martial strength,
+/// mortal and divine, it can bring to a war (GDD 5.2 <-> 5.6).
+fn war_might(
+    heroes: &[Hero],
+    artifacts: &[Artifact],
+    region_id: &str,
+    balance: &WarBalance,
+) -> f32 {
+    let martial: f32 = heroes
         .iter()
         .filter(|h| {
             h.is_alive
@@ -88,7 +96,13 @@ fn war_might(heroes: &[Hero], region_id: &str) -> f32 {
                 && matches!(h.role, HeroRole::Warrior | HeroRole::Ranger)
         })
         .map(|h| h.level as f32)
-        .sum()
+        .sum();
+    let relic: f32 = artifacts
+        .iter()
+        .filter(|a| a.focus == ArtifactFocus::War && a.region_id == region_id)
+        .map(|a| a.power as f32 * balance.artifact_might)
+        .sum();
+    martial + relic
 }
 
 /// Declare fresh wars: a belligerent region falls upon the realm's richest other
@@ -197,14 +211,15 @@ fn resolve(
     war: &War,
     regions: &mut [Region],
     heroes: &[Hero],
+    artifacts: &[Artifact],
     balance: &WarBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
 ) {
-    let aggressor_might = war_might(heroes, &war.aggressor_id);
-    let defender_might = war_might(heroes, &war.defender_id);
+    let aggressor_might = war_might(heroes, artifacts, &war.aggressor_id, balance);
+    let defender_might = war_might(heroes, artifacts, &war.defender_id, balance);
     let name_of = |id: &str| {
         regions
             .iter()
@@ -291,6 +306,7 @@ mod tests {
             &mut world.regions,
             &mut world.settlements,
             &world.heroes,
+            &world.artifacts,
             &mut world.war_seq,
             balance,
             &data.balance.region,
@@ -416,6 +432,64 @@ mod tests {
                 .iter_newest()
                 .any(|e| e.message.contains("prevails")),
             "a decisive victory should be chronicled"
+        );
+    }
+
+    #[test]
+    fn a_war_relic_wins_a_war_that_would_have_been_lost() {
+        // A region outmatched in the field is carried to victory by a mighty War
+        // relic bound to it, so the same war it would have lost, it wins (GDD 5.2
+        // <-> 5.6).
+        use crate::world::Artifact;
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.war.clone();
+        balance.ignite_chance = 0.0;
+        balance.intensity_decay = 1.0; // resolve this tick
+        let region_id = |w: &WorldState, i: usize| w.regions[i].id.clone();
+
+        // The setup: a strong host in region B, a lone weak defender in region A.
+        // Without a relic, A loses; with one, A wins.
+        let outcome = |with_relic: bool| {
+            let mut world = WorldState::new(&data);
+            let a = region_id(&world, 0);
+            let b = region_id(&world, 1);
+            world
+                .heroes
+                .retain(|h| h.region_id != a && h.region_id != b);
+            world.heroes.push(warrior("scout", &a, 3)); // A is weak
+            world.heroes.push(warrior("host", &b, 30)); // B is strong
+            world.artifacts.clear();
+            if with_relic {
+                world.artifacts.push(Artifact {
+                    id: "warblade".to_owned(),
+                    name: "The Warblade".to_owned(),
+                    focus: crate::data::ArtifactFocus::War,
+                    power: 9,
+                    instability: 0.0,
+                    region_id: a.clone(),
+                });
+            }
+            world.regions[0].prosperity = 60.0;
+            world.wars.push(War {
+                id: "w".to_owned(),
+                aggressor_id: a.clone(),
+                defender_id: b.clone(),
+                intensity: balance.min_intensity,
+                age: 5,
+            });
+            let before = world.regions[0].prosperity;
+            run(&mut world, &data, &balance);
+            // A was scarred (lost) if its prosperity dropped by the loser scar.
+            world.regions[0].prosperity < before - 1.0
+        };
+
+        assert!(
+            outcome(false),
+            "without a relic, the weak region should lose and be scarred"
+        );
+        assert!(
+            !outcome(true),
+            "a War relic should carry the weak region to victory, sparing it the scar"
         );
     }
 }

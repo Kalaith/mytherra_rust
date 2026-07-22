@@ -639,7 +639,8 @@
     "raid_population": 0.005,
     "stalemate_margin": 15.0,
     "loser_scar_prosperity": 8.0,
-    "loser_scar_danger": 10.0
+    "loser_scar_danger": 10.0,
+    "artifact_might": 8.0
   },
   "player": {
     "level_base_cost": 100,

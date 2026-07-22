@@ -224,6 +224,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.regions,
         &mut world.settlements,
         &world.heroes,
+        &world.artifacts,
         &mut world.war_seq,
         &data.balance.war,
         &data.balance.region,
