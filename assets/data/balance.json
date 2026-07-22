@@ -430,6 +430,8 @@
     "doom_sustain": 50.0,
     "golden_threshold": 85.0,
     "golden_sustain": 80.0,
+    "doom_dread_chaos": 0.2,
+    "golden_hope_resonance": 0.2,
     "advance_rate": 0.02,
     "recede_rate": 0.04,
     "doom_prosperity": 4.0,

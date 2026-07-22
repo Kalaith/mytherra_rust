@@ -98,6 +98,25 @@ pub fn tick_prophecies(
         }
     });
 
+    // A prophecy that still hangs over the world shapes it while it waits: a
+    // foretold doom spreads dread that deepens the very chaos it warns of, and a
+    // foretold golden age spreads hope that lifts the faith its weal is built on.
+    // So a prophecy leans toward its own fulfillment — a doom the harder to escape
+    // for the fear it sows, a golden age the surer to arrive for the hope it
+    // kindles — yet the nudge is gentle enough that a world firmly turning can
+    // slip it still. This is the whole point of a prophecy: the telling changes
+    // the told. (Only one stands at a time, so this touches at most one prophecy.)
+    for prophecy in prophecies.iter() {
+        for region in regions.iter_mut() {
+            match prophecy.kind {
+                ProphecyKind::Doom => {
+                    region.apply_deltas(0.0, balance.doom_dread_chaos, 0.0, 0.0, region_balance)
+                }
+                ProphecyKind::GoldenAge => region.add_resonance(balance.golden_hope_resonance),
+            }
+        }
+    }
+
     // A prophecy come to pass nudges every region further along the road it was
     // foretold on — the darkness deepens, or the plenty spreads.
     for (kind, _name) in fulfilled {
@@ -215,5 +234,45 @@ mod tests {
             "great weal should foretell a golden age"
         );
         assert_eq!(world.prophecies[0].kind, ProphecyKind::GoldenAge);
+    }
+
+    #[test]
+    fn a_standing_doom_sows_dread_that_deepens_the_chaos() {
+        let data = GameData::load().unwrap();
+        let b = &data.balance.prophecy;
+        let mut world = WorldState::new(&data);
+        // A doom is spoken over a chaos-gripped world.
+        steep(&mut world, 90.0, 20.0, 20.0);
+        run(&mut world, &data);
+        assert_eq!(world.prophecies[0].kind, ProphecyKind::Doom);
+
+        // With the doom now standing, the dread it sows raises chaos further, above
+        // where it was set — the telling deepening the darkness.
+        let chaos_before = world.regions[0].chaos;
+        run(&mut world, &data);
+        assert!(
+            world.regions[0].chaos > chaos_before,
+            "a standing doom's dread should deepen a region's chaos ({} vs {})",
+            world.regions[0].chaos,
+            chaos_before
+        );
+        assert!(b.doom_dread_chaos > 0.0);
+    }
+
+    #[test]
+    fn a_standing_golden_age_kindles_hope_that_lifts_the_faith() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        steep(&mut world, 15.0, 95.0, 90.0);
+        run(&mut world, &data);
+        assert_eq!(world.prophecies[0].kind, ProphecyKind::GoldenAge);
+
+        // The hope of a standing golden age lifts resonance above where it stood.
+        let resonance_before = world.regions[0].divine_resonance;
+        run(&mut world, &data);
+        assert!(
+            world.regions[0].divine_resonance > resonance_before,
+            "a standing golden age's hope should lift a region's faith"
+        );
     }
 }

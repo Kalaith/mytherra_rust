@@ -327,6 +327,16 @@ pub struct ProphecyBalance {
     pub golden_threshold: f32,
     /// The weal a golden age needs to keep building; below it, it recedes.
     pub golden_sustain: f32,
+    /// Chaos a foretold doom sows in every region each tick while it hangs over
+    /// the world — the dread of the telling deepening the very darkness it warns
+    /// of, so a doom leans toward fulfilling itself. Kept small, so a world firmly
+    /// turning from it can still shed the chaos faster than the dread piles it on.
+    pub doom_dread_chaos: f32,
+    /// Divine resonance a foretold golden age kindles in every region each tick
+    /// while it stands — the hope of the telling lifting the faith its weal is
+    /// half built on, so a golden age leans toward arriving. Resonance, not
+    /// prosperity: hope must not feed the wealth-runaway a golden age is spoken atop.
+    pub golden_hope_resonance: f32,
     /// Progress toward fulfillment gained each tick the premise holds.
     pub advance_rate: f32,
     /// Progress lost each tick the premise fails — turnings ebb faster than they
