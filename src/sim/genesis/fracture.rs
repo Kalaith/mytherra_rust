@@ -6,7 +6,7 @@
 use crate::data::strings::{ChronicleText, GenesisText};
 use crate::data::{fill, ArtifactFocus, Culture, GenesisBalance, RegionBalance, RegionSeed};
 use crate::world::{
-    Artifact, Chronicle, EventKind, Hero, Region, RegionAgendas, ResourceNode, Settlement,
+    Artifact, Chronicle, EventKind, Hero, House, Region, RegionAgendas, ResourceNode, Settlement,
     TradeRoute,
 };
 use macroquad_toolkit::rng::SeededRng;
@@ -15,7 +15,12 @@ use macroquad_toolkit::rng::SeededRng;
 /// A calm region sheds strife faster than a turbulent one builds it, so only a
 /// *sustained* crisis fractures. A Knowledge relic bound to the region bleeds
 /// strife on top of that — the player's lever to quell secession by reason.
-pub(super) fn accrue_strife(region: &mut Region, artifacts: &[Artifact], balance: &GenesisBalance) {
+pub(super) fn accrue_strife(
+    region: &mut Region,
+    artifacts: &[Artifact],
+    houses: &[House],
+    balance: &GenesisBalance,
+) {
     let pressure = region.pressure();
     if pressure > balance.strife_pressure_threshold {
         let over = pressure - balance.strife_pressure_threshold;
@@ -24,10 +29,24 @@ pub(super) fn accrue_strife(region: &mut Region, artifacts: &[Artifact], balance
     } else {
         region.strife = (region.strife - balance.strife_decay).max(0.0);
     }
-    let relief = knowledge_relief(&region.id, artifacts, balance);
+    // A Knowledge relic quells secession by reason, a seated great house by the
+    // loyalty its dynasty commands — both bleed strife from the land they hold.
+    let relief = knowledge_relief(&region.id, artifacts, balance)
+        + house_loyalty_relief(&region.id, houses, balance);
     if relief > 0.0 {
         region.strife = (region.strife - relief).max(0.0);
     }
+}
+
+/// Strife bled from a region by the great houses seated in it (GDD 5.4 ↔ 5.2): a
+/// storied dynasty holds its realm together, its prestige the measure of the
+/// loyalty it commands against secession.
+fn house_loyalty_relief(region_id: &str, houses: &[House], balance: &GenesisBalance) -> f32 {
+    houses
+        .iter()
+        .filter(|h| h.seat_region_id == region_id)
+        .map(|h| h.prestige * balance.house_loyalty_relief)
+        .sum()
 }
 
 /// Strife bled from a region by Knowledge artifacts bound to it (GDD 5.6 ↔ 5.2).

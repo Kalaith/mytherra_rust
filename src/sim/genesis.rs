@@ -35,6 +35,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
         artifacts,
         weather,
         heroes,
+        houses,
         trade_routes,
         civilization,
         pacts,
@@ -53,7 +54,7 @@ pub fn tick_genesis(world: &mut WorldState, data: &GameData) {
     let ctext = &data.strings.chronicle;
 
     for region in regions.iter_mut() {
-        fracture::accrue_strife(region, artifacts, &data.balance.genesis);
+        fracture::accrue_strife(region, artifacts, houses, &data.balance.genesis);
     }
 
     conquest::run(

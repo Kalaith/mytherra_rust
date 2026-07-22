@@ -148,6 +148,45 @@ fn a_knowledge_relic_quells_secession() {
 }
 
 #[test]
+fn a_great_house_bleeds_strife_from_the_realm_it_holds() {
+    use crate::world::House;
+    let data = GameData::load().unwrap();
+    let g = &data.balance.genesis;
+
+    // The strife a turbulent region carries after one tick, given the houses
+    // seated there; the region is otherwise identical and already restive.
+    let strife_after = |prestige: f32| {
+        let mut world = WorldState::new(&data);
+        let region_id = world.regions[0].id.clone();
+        let region = &mut world.regions[0];
+        region.chaos = 95.0;
+        region.danger = 95.0;
+        region.prosperity = 10.0;
+        region.strife = 50.0;
+        region.refresh_status(&data.balance.region);
+        let houses = if prestige > 0.0 {
+            vec![House {
+                id: "h".to_owned(),
+                name: "The Enduring Line".to_owned(),
+                seat_region_id: region_id,
+                founder_name: "Founder".to_owned(),
+                member_ids: Vec::new(),
+                prestige,
+            }]
+        } else {
+            Vec::new()
+        };
+        super::fracture::accrue_strife(&mut world.regions[0], &[], &houses, g);
+        world.regions[0].strife
+    };
+
+    assert!(
+        strife_after(180.0) < strife_after(0.0),
+        "a realm held by a storied house should carry less secession pressure"
+    );
+}
+
+#[test]
 fn calm_region_never_reshapes() {
     let data = GameData::load().unwrap();
     let mut world = WorldState::new(&data);

@@ -92,6 +92,14 @@ pub struct GenesisBalance {
     /// tick (GDD 5.6 ↔ 5.2) — the player's lever to quell secession by reason,
     /// the counterpart to a champion holding a region by devotion.
     pub artifact_knowledge_relief: f32,
+    /// Strife a great house seated in a region bleeds from it per tick, per point
+    /// of the house's prestige (GDD 5.4 ↔ 5.2): a strong dynasty commands the
+    /// loyalty of its seat and quells the secession that would tear it away, so a
+    /// realm held by a storied house is far harder to fracture than one with none.
+    /// The dynastic counterpart to the Knowledge relic's reasoned relief and a
+    /// champion's devoted hold — and, like them, it only slows a fracture, never
+    /// wholly prevents one under sustained crisis.
+    pub house_loyalty_relief: f32,
 }
 
 /// Region-conquest tuning: a strong region can annex a trade-linked neighbour
