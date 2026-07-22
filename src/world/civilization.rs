@@ -3,7 +3,7 @@
 //! than stored, so they always reflect the current world.
 
 use crate::data::{Agenda, SpilloverTarget};
-use crate::world::Region;
+use crate::world::{Pact, Region};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,14 +71,22 @@ pub fn dominant_agenda(
 }
 
 /// The peer region an outward-facing agenda presses upon, chosen by prosperity
-/// (GDD 5.6). Always excludes the acting region and is deterministic given a
-/// fixed region order, so the sim and the UI name the same target.
+/// (GDD 5.6). Always excludes the acting region and any region sworn to it in
+/// alliance — a people does not lean on or destabilize a friend (GDD 5.6 <->
+/// 5.2). Deterministic given a fixed region order, so the sim and the UI name the
+/// same target.
 pub fn spillover_target(
     regions: &[Region],
     self_idx: usize,
     rule: SpilloverTarget,
+    pacts: &[Pact],
 ) -> Option<usize> {
-    let others = regions.iter().enumerate().filter(|(i, _)| *i != self_idx);
+    let self_id = regions.get(self_idx).map(|r| r.id.as_str());
+    let allied = |r: &Region| self_id.is_some_and(|sid| pacts.iter().any(|p| p.binds(sid, &r.id)));
+    let others = regions
+        .iter()
+        .enumerate()
+        .filter(|(i, r)| *i != self_idx && !allied(r));
     match rule {
         SpilloverTarget::None => None,
         SpilloverTarget::MostProsperous => others

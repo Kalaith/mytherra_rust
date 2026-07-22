@@ -398,6 +398,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.civilization,
         &mut world.regions,
         &data.agendas,
+        &world.pacts,
         &data.balance.civilization,
         &data.balance.region,
         &mut world.chronicle,

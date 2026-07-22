@@ -5,7 +5,7 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Agenda, CivStat, CivilizationBalance, RegionBalance};
 use crate::world::{
-    dominant_agenda, spillover_target, Chronicle, EventKind, Region, RegionAgendas,
+    dominant_agenda, spillover_target, Chronicle, EventKind, Pact, Region, RegionAgendas,
 };
 
 /// Advance every region's agendas by one tick.
@@ -14,6 +14,7 @@ pub fn tick_civilization(
     civ: &mut [RegionAgendas],
     regions: &mut [Region],
     agendas: &[Agenda],
+    pacts: &[Pact],
     balance: &CivilizationBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -61,7 +62,8 @@ pub fn tick_civilization(
             // the neighbour it envies, an expansionist one leans on the weakest
             // (GDD 5.6).
             if agenda.spillover_amount != 0.0 {
-                if let Some(target) = spillover_target(regions, idx, agenda.spillover_target) {
+                if let Some(target) = spillover_target(regions, idx, agenda.spillover_target, pacts)
+                {
                     let (sp, sc, sd, sm) =
                         stat_deltas(agenda.spillover_stat, agenda.spillover_amount);
                     regions[target].apply_deltas(sp, sc, sd, sm, region_balance);
@@ -96,6 +98,7 @@ mod tests {
             &mut world.civilization,
             &mut world.regions,
             &data.agendas,
+            &[],
             &data.balance.civilization,
             &data.balance.region,
             &mut world.chronicle,
@@ -136,6 +139,7 @@ mod tests {
             &mut world.civilization,
             &mut world.regions,
             &data.agendas,
+            &[],
             &data.balance.civilization,
             &data.balance.region,
             &mut world.chronicle,
@@ -162,17 +166,31 @@ mod tests {
         world.regions[3].prosperity = 55.0;
 
         assert_eq!(
-            spillover_target(&world.regions, 0, SpilloverTarget::MostProsperous),
+            spillover_target(&world.regions, 0, SpilloverTarget::MostProsperous, &[]),
             Some(1),
             "envy should fall on the strongest *other* region, not the acting one"
         );
         assert_eq!(
-            spillover_target(&world.regions, 0, SpilloverTarget::LeastProsperous),
+            spillover_target(&world.regions, 0, SpilloverTarget::LeastProsperous, &[]),
             Some(2)
         );
         assert_eq!(
-            spillover_target(&world.regions, 0, SpilloverTarget::None),
+            spillover_target(&world.regions, 0, SpilloverTarget::None, &[]),
             None
+        );
+
+        // A sworn ally is spared: with region 1 (the richest) allied to the actor,
+        // envy falls on the next-richest instead (GDD 5.6 <-> 5.2).
+        let pacts = vec![crate::world::Pact {
+            id: "p".to_owned(),
+            region_a: world.regions[0].id.clone(),
+            region_b: world.regions[1].id.clone(),
+            age: 1,
+        }];
+        assert_eq!(
+            spillover_target(&world.regions, 0, SpilloverTarget::MostProsperous, &pacts),
+            Some(3),
+            "a rivalrous people does not destabilize its own ally"
         );
     }
 
@@ -191,6 +209,7 @@ mod tests {
                 &mut world.civilization,
                 &mut world.regions,
                 &data.agendas,
+                &[],
                 &data.balance.civilization,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -241,6 +260,7 @@ mod tests {
             &mut world.civilization,
             &mut world.regions,
             &data.agendas,
+            &[],
             &data.balance.civilization,
             &data.balance.region,
             &mut world.chronicle,

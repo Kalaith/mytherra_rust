@@ -68,7 +68,14 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
         // Name the peer this agenda would press upon if pursued, so the outward
         // cost of advancing it is visible before the player commits (GDD 5.6).
         let spillover = (agenda.spillover_amount != 0.0)
-            .then(|| spillover_target(&ctx.world.regions, region_index, agenda.spillover_target))
+            .then(|| {
+                spillover_target(
+                    &ctx.world.regions,
+                    region_index,
+                    agenda.spillover_target,
+                    &ctx.world.pacts,
+                )
+            })
             .flatten()
             .map(|t| {
                 fill(
