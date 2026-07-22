@@ -293,4 +293,10 @@ pub struct MagicBalance {
     /// magic sooner, and an ancient one more than a new-raised one. The built,
     /// enduring counterpart to a living scholar's study.
     pub evidence_per_learned_landmark: f32,
+    /// Evidence each producing Manaspring resource node contributes to every path
+    /// per tick (GDD 5.6 <-> 5.3): a wellspring of raw magic is a thing to study,
+    /// so a world with living manasprings masters the arcane sooner — the natural
+    /// counterpart to the built libraries, and the resource system's own feed into
+    /// research. A spring run dry (Depleted) offers nothing.
+    pub evidence_per_manaspring: f32,
 }

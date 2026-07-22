@@ -4,8 +4,13 @@
 //! legend grow in attuned lands. Deterministic: no RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, ArtifactFocus, Culture, HeroRole, MagicBalance, MagicStat, RegionBalance};
-use crate::world::{Artifact, Chronicle, EventKind, Hero, Landmark, MagicPath, MagicState, Region};
+use crate::data::{
+    fill, ArtifactFocus, Culture, HeroRole, MagicBalance, MagicStat, RegionBalance, ResourceStatus,
+    ResourceType,
+};
+use crate::world::{
+    Artifact, Chronicle, EventKind, Hero, Landmark, MagicPath, MagicState, Region, ResourceNode,
+};
 
 /// Advance every research path by one tick and apply mature paths' effects.
 #[allow(clippy::too_many_arguments)]
@@ -15,6 +20,7 @@ pub fn tick_magic(
     heroes: &mut [Hero],
     artifacts: &[Artifact],
     landmarks: &[Landmark],
+    resource_nodes: &[ResourceNode],
     balance: &MagicBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -54,6 +60,18 @@ pub fn tick_magic(
         .map(|l| l.influence * l.stature * balance.evidence_per_learned_landmark)
         .sum::<f32>();
 
+    // The world's own wellsprings of magic are raw material for study: every
+    // producing Manaspring hastens research, so the natural arcana of the land
+    // masters magic alongside its scholars and its towers (GDD 5.6 <-> 5.3). A
+    // spring run dry offers nothing.
+    let manaspring_evidence = resource_nodes
+        .iter()
+        .filter(|n| {
+            n.resource_type == ResourceType::Manaspring && n.status != ResourceStatus::Depleted
+        })
+        .count() as f32
+        * balance.evidence_per_manaspring;
+
     for path in paths.iter_mut() {
         path.progress =
             (path.progress + balance.progress_per_tick + avg_magic * balance.magic_affinity_coeff)
@@ -62,7 +80,8 @@ pub fn tick_magic(
             + balance.evidence_per_tick
             + scholar_evidence
             + relic_evidence
-            + landmark_evidence)
+            + landmark_evidence
+            + manaspring_evidence)
             .min(balance.stat_cap);
         path.recompute_state(balance);
 
@@ -161,6 +180,7 @@ mod tests {
             &mut world.heroes,
             &world.artifacts,
             &world.landmarks,
+            &world.resource_nodes,
             &data.balance.magic,
             &data.balance.region,
             &mut world.chronicle,
@@ -223,6 +243,7 @@ mod tests {
             &mut world.heroes,
             &world.artifacts,
             &world.landmarks,
+            &world.resource_nodes,
             &data.balance.magic,
             &data.balance.region,
             &mut world.chronicle,
@@ -282,6 +303,7 @@ mod tests {
                 &mut world.heroes,
                 &world.artifacts,
                 &world.landmarks,
+                &world.resource_nodes,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -327,6 +349,7 @@ mod tests {
                 &mut world.heroes,
                 &world.artifacts,
                 &world.landmarks,
+                &world.resource_nodes,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -387,6 +410,7 @@ mod tests {
                 &mut world.heroes,
                 &world.artifacts,
                 &world.landmarks,
+                &world.resource_nodes,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
@@ -419,6 +443,76 @@ mod tests {
     }
 
     #[test]
+    fn producing_manasprings_hasten_the_understanding_of_magic() {
+        use crate::data::{ResourceStatus, ResourceType};
+        use crate::world::ResourceNode;
+        let data = GameData::load().unwrap();
+        // Evidence a fresh Dormant path accrues in one tick, given the resource
+        // nodes present; heroes, relics, and wonders cleared so only the nodes vary.
+        let evidence_after = |nodes: Vec<ResourceNode>| {
+            let mut world = WorldState::new(&data);
+            world.heroes.clear();
+            world.artifacts.clear();
+            world.landmarks.clear();
+            world.resource_nodes = nodes;
+            world.magic_paths.clear();
+            world.magic_paths.push(MagicPath {
+                id: "p".to_owned(),
+                name: "Test Art".to_owned(),
+                description: String::new(),
+                effect_stat: MagicStat::Magic,
+                effect_per_tick: 0.0,
+                progress: 0.0,
+                evidence: 0.0,
+                state: MagicState::Dormant,
+                announced_known: false,
+            });
+            tick_magic(
+                &mut world.magic_paths,
+                &mut world.regions,
+                &mut world.heroes,
+                &world.artifacts,
+                &world.landmarks,
+                &world.resource_nodes,
+                &data.balance.magic,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.magic_paths[0].evidence
+        };
+
+        let node = |resource_type: ResourceType, status: ResourceStatus| ResourceNode {
+            id: "n".to_owned(),
+            name: "N".to_owned(),
+            region_id: "aldermoor".to_owned(),
+            resource_type,
+            status,
+        };
+        let with_spring =
+            evidence_after(vec![node(ResourceType::Manaspring, ResourceStatus::Active)]);
+        let without = evidence_after(vec![]);
+        let dry_spring = evidence_after(vec![node(
+            ResourceType::Manaspring,
+            ResourceStatus::Depleted,
+        )]);
+        let with_mine = evidence_after(vec![node(ResourceType::Mine, ResourceStatus::Active)]);
+        assert!(
+            with_spring > without,
+            "a producing manaspring should hasten research ({with_spring} vs {without})"
+        );
+        assert_eq!(
+            dry_spring, without,
+            "a manaspring run dry offers nothing to research"
+        );
+        assert_eq!(
+            with_mine, without,
+            "only manasprings feed research, not a mundane mine"
+        );
+    }
+
+    #[test]
     fn research_paths_mature_over_time() {
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
@@ -429,6 +523,7 @@ mod tests {
                 &mut world.heroes,
                 &world.artifacts,
                 &world.landmarks,
+                &world.resource_nodes,
                 &data.balance.magic,
                 &data.balance.region,
                 &mut world.chronicle,
