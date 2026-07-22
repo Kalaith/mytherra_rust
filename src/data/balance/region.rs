@@ -113,6 +113,12 @@ pub struct CultureBalance {
     /// of valor make a martial people and tales of wonder a mystical one. The
     /// myth reinforces the culture its theme embodies.
     pub myth_weight: f32,
+    /// Culture score a venerated saint lends its home region toward the Mystical,
+    /// scaled by the devotion still owed it (GDD 5.2 <-> 5.1): a land that keeps a
+    /// saint's shrine is a holy place, its people turned toward the mystical and
+    /// the devout, the more so the fresher the veneration. Fades with the saint's
+    /// memory, so a land's holiness is no more permanent than the shrines that mark it.
+    pub saint_weight: f32,
     /// Cultural-influence baseline and per-landmark bonus (the reversion target).
     pub influence_base: f32,
     pub influence_per_landmark: f32,

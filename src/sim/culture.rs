@@ -7,8 +7,8 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Culture, CultureBalance, HeroRole, RegionBalance, ResourceType};
 use crate::world::{
-    Building, Chronicle, EventKind, Hero, House, Landmark, Myth, Region, ResourceNode, Settlement,
-    TradeRoute,
+    Building, Chronicle, EventKind, Hero, House, Landmark, Myth, Region, ResourceNode, Saint,
+    Settlement, TradeRoute,
 };
 use macroquad_toolkit::math::approach;
 
@@ -23,6 +23,7 @@ pub fn tick_culture(
     trade_routes: &[TradeRoute],
     myths: &[Myth],
     houses: &[House],
+    saints: &[Saint],
     balance: &CultureBalance,
     region_balance: &RegionBalance,
     tier_thresholds: &[f32],
@@ -76,6 +77,14 @@ pub fn tick_culture(
         for myth in myths.iter().filter(|m| m.region_id == region.id) {
             let vividness = (myth.resonance / 100.0).clamp(0.0, 1.0);
             scores[myth.culture.index()] += balance.myth_weight * vividness;
+        }
+        // The venerated dead shape a land's character too (GDD 5.2 <-> 5.1): a
+        // region that keeps a saint's shrine is a holy place, its people turned
+        // toward the mystical, the more so the fresher the devotion still owed —
+        // and fading, with the saint's memory, back toward the mundane.
+        for saint in saints.iter().filter(|s| s.region_id == region.id) {
+            let devotion = (saint.veneration / 100.0).clamp(0.0, 1.0);
+            scores[Culture::Mystical.index()] += balance.saint_weight * devotion;
         }
         // The works a people raise speak for their character: each building in the
         // region adds to the culture it embodies (a Forge to the martial, a Temple
@@ -219,6 +228,7 @@ mod tests {
                 &[],
                 &[],
                 &[],
+                &[],
                 &data.balance.culture,
                 &data.balance.region,
                 thresholds,
@@ -231,6 +241,55 @@ mod tests {
             regions[0].culture,
             Culture::Martial,
             "a land of forges should harden martial"
+        );
+    }
+
+    #[test]
+    fn a_saints_shrine_turns_its_land_toward_the_mystical() {
+        use crate::world::Saint;
+        // A martial region whose only cultural signals are the shrines of its
+        // venerated dead should, given devotion enough to clear the inertia
+        // margin, turn mystical — its people drawn toward the holy (GDD 5.2 <-> 5.1).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut region = world.regions[0].clone();
+        region.culture = Culture::Martial;
+        let region_id = region.id.clone();
+        let mut regions = vec![region];
+        let saint = |id: &str| Saint {
+            id: id.to_owned(),
+            name: "Saint Test".to_owned(),
+            hero_id: id.to_owned(),
+            region_id: region_id.clone(),
+            veneration: 100.0,
+            canonized_year: 0,
+        };
+        let saints = vec![saint("s1"), saint("s2")];
+        let thresholds = &data.balance.settlement.tier_thresholds;
+        for _ in 0..30 {
+            tick_culture(
+                &mut regions,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &saints,
+                &data.balance.culture,
+                &data.balance.region,
+                thresholds,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+        }
+        assert_eq!(
+            regions[0].culture,
+            Culture::Mystical,
+            "a land that keeps a saint's shrine should turn to the mystical"
         );
     }
 
@@ -281,6 +340,7 @@ mod tests {
             &world.trade_routes,
             &world.myths,
             &world.houses,
+            &[],
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -319,6 +379,7 @@ mod tests {
             &world.trade_routes,
             &world.myths,
             &world.houses,
+            &[],
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -349,6 +410,7 @@ mod tests {
             &world.trade_routes,
             &world.myths,
             &world.houses,
+            &[],
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -388,6 +450,7 @@ mod tests {
                     &[],
                     &[],
                     &settlements,
+                    &[],
                     &[],
                     &[],
                     &[],
@@ -432,6 +495,7 @@ mod tests {
                 &world.trade_routes,
                 &world.myths,
                 &world.houses,
+                &[],
                 &data.balance.culture,
                 &data.balance.region,
                 &data.balance.settlement.tier_thresholds,
@@ -480,6 +544,7 @@ mod tests {
                     &[],
                     &[],
                     &world.houses,
+                    &[],
                     &data.balance.culture,
                     &data.balance.region,
                     &data.balance.settlement.tier_thresholds,
@@ -535,6 +600,7 @@ mod tests {
                 &[],
                 &[],
                 &myths,
+                &[],
                 &[],
                 &data.balance.culture,
                 &data.balance.region,
