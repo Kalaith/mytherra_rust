@@ -222,4 +222,15 @@ pub struct MonsterBalance {
     /// Renown the mightiest resident hunter earns for felling a beast (GDD 5.2
     /// <-> 5.4): a slain terror is a deed that makes a legend.
     pub slay_renown: f32,
+    /// How effective a martial hunter (Warrior or Ranger) is against an *arcane*
+    /// beast, as a fraction of their effect on a natural one (GDD 5.2 <-> 5.4):
+    /// a wyrm or shade is a creature of magic that steel bites only weakly, so a
+    /// purely martial land struggles to bring one down and may see it grow
+    /// unchecked. Below 1.0; against natural beasts martial hunters are always
+    /// fully effective.
+    pub arcane_martial_effectiveness: f32,
+    /// How effective a Mage is against an arcane beast, per level — the arcane is
+    /// answered in kind, so a Mage is the surest bane of a wyrm. Mages lend
+    /// nothing against a natural predator (a spell is no substitute for a spear).
+    pub mage_arcane_effectiveness: f32,
 }

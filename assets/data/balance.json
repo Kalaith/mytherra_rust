@@ -572,7 +572,9 @@
     "ferocity_growth": 0.08,
     "slay_per_might": 0.02,
     "min_ferocity": 0.2,
-    "slay_renown": 15.0
+    "slay_renown": 15.0,
+    "arcane_martial_effectiveness": 0.4,
+    "mage_arcane_effectiveness": 1.2
   },
   "refugee": {
     "flee_threshold": 55.0,

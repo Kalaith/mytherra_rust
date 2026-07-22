@@ -58,11 +58,13 @@ pub fn tick_monster(
             let loss = settlement.population * ty.raid_population * monster.ferocity;
             settlement.population = (settlement.population - loss).max(0.0);
         }
-        // The hunt: resident Warriors and Rangers grind the beast down; left
-        // unopposed it grows into a greater terror.
-        let might = hunter_might(heroes, &monster.region_id);
-        if might > 0 {
-            monster.ferocity -= might as f32 * balance.slay_per_might;
+        // The hunt: resident hunters grind the beast down — but who can fight it
+        // depends on its nature. Steel bites a natural predator full, but only
+        // weakly bites an arcane horror, which a Mage must answer in kind. Left
+        // wholly unopposed, the beast grows into a greater terror.
+        let might = hunter_might(heroes, &monster.region_id, ty.arcane, balance);
+        if might > 0.0 {
+            monster.ferocity -= might * balance.slay_per_might;
         } else {
             monster.ferocity += balance.ferocity_growth;
         }
@@ -70,22 +72,24 @@ pub fn tick_monster(
 
     // Beasts worn below the floor are slain (or, where no hunter remains, driven
     // off); the mightiest resident hunter claims the kill and its renown.
-    let slain: Vec<(String, String)> = monsters
+    let slain: Vec<(String, String, bool)> = monsters
         .iter()
         .filter(|m| m.ferocity < balance.min_ferocity)
-        .map(|m| (m.region_id.clone(), m.name.clone()))
+        .map(|m| {
+            let arcane = types
+                .iter()
+                .find(|t| t.id == m.type_id)
+                .is_some_and(|t| t.arcane);
+            (m.region_id.clone(), m.name.clone(), arcane)
+        })
         .collect();
     monsters.retain(|m| m.ferocity >= balance.min_ferocity);
 
     let mut felled: Vec<BeastSlain> = Vec::new();
-    for (region_id, name) in slain {
+    for (region_id, name, arcane) in slain {
         let slayer = heroes
             .iter_mut()
-            .filter(|h| {
-                h.is_alive
-                    && h.region_id == region_id
-                    && matches!(h.role, HeroRole::Warrior | HeroRole::Ranger)
-            })
+            .filter(|h| h.is_alive && h.region_id == region_id && hunts(h.role, arcane))
             .max_by_key(|h| h.level);
         match slayer {
             Some(hero) => {
@@ -172,17 +176,39 @@ fn spawn_monsters(
     }
 }
 
-/// Combined levels of the living Warriors and Rangers dwelling in a region — the
-/// might it can bring to bear against a beast.
-fn hunter_might(heroes: &[Hero], region_id: &str) -> u32 {
+/// Whether a hero of this role can meaningfully hunt a beast of this nature:
+/// Warriors and Rangers face any predator, while a Mage joins the hunt only
+/// against an arcane horror — magic answered in kind (GDD 5.2 <-> 5.4).
+fn hunts(role: HeroRole, arcane: bool) -> bool {
+    match role {
+        HeroRole::Warrior | HeroRole::Ranger => true,
+        HeroRole::Mage => arcane,
+        _ => false,
+    }
+}
+
+/// The might a region can bring to bear against a beast, summed over its living
+/// hunters and weighted by how well each answers the beast's nature: steel bites
+/// a natural predator in full but an arcane horror only weakly, while a Mage is
+/// the surest bane of the arcane and no help at all against a mundane beast.
+fn hunter_might(heroes: &[Hero], region_id: &str, arcane: bool, balance: &MonsterBalance) -> f32 {
     heroes
         .iter()
-        .filter(|h| {
-            h.is_alive
-                && h.region_id == region_id
-                && matches!(h.role, HeroRole::Warrior | HeroRole::Ranger)
+        .filter(|h| h.is_alive && h.region_id == region_id)
+        .map(|h| {
+            let effectiveness = match h.role {
+                HeroRole::Warrior | HeroRole::Ranger => {
+                    if arcane {
+                        balance.arcane_martial_effectiveness
+                    } else {
+                        1.0
+                    }
+                }
+                HeroRole::Mage if arcane => balance.mage_arcane_effectiveness,
+                _ => 0.0,
+            };
+            h.level as f32 * effectiveness
         })
-        .map(|h| h.level)
         .sum()
 }
 
@@ -385,6 +411,89 @@ mod tests {
                 world.regions[0].id.clone()
             )],
             "the felled beast and its slayer are reported"
+        );
+    }
+
+    #[test]
+    fn an_arcane_horror_resists_steel_but_falls_to_a_mage() {
+        // A Warrior wears an arcane beast down only weakly; a Mage of the same
+        // level answers it in kind and cuts far deeper (GDD 5.2 <-> 5.4).
+        use crate::data::{HeroRole, HeroSeed};
+        let data = GameData::load().unwrap();
+        let balance = &data.balance.monster;
+
+        // Ferocity lost in one tick to a single level-10 hunter of the given role,
+        // set against an arcane Shadow Wyrm.
+        let bite = |role: HeroRole| {
+            let mut world = WorldState::new(&data);
+            let mut b = balance.clone();
+            b.emergence_chance = 0.0;
+            let region_id = world.regions[0].id.clone();
+            world.heroes.retain(|h| h.region_id != region_id);
+            world.heroes.push(Hero::from_seed(&HeroSeed {
+                id: "h".to_owned(),
+                name: "H".to_owned(),
+                role,
+                region_id: region_id.clone(),
+                level: 10,
+                age: 30,
+            }));
+            world.monsters.push(Monster {
+                id: "m".to_owned(),
+                name: "The Wyrm".to_owned(),
+                type_id: "shadow_wyrm".to_owned(), // arcane
+                region_id,
+                ferocity: 5.0,
+                age: 0,
+            });
+            run(&mut world, &data, &b);
+            5.0 - world.monsters.first().map(|m| m.ferocity).unwrap_or(0.0)
+        };
+
+        let warrior_bite = bite(HeroRole::Warrior);
+        let mage_bite = bite(HeroRole::Mage);
+        assert!(
+            warrior_bite > 0.0,
+            "steel should still bite an arcane beast, if weakly"
+        );
+        assert!(
+            mage_bite > warrior_bite,
+            "a Mage should cut deeper into an arcane horror than a Warrior ({mage_bite} vs {warrior_bite})"
+        );
+    }
+
+    #[test]
+    fn a_mage_is_no_help_against_a_natural_predator() {
+        // Against a mundane beast a lone Mage lends nothing, so the pack grows
+        // unchecked as if unopposed (GDD 5.2).
+        use crate::data::{HeroRole, HeroSeed};
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.monster.clone();
+        balance.emergence_chance = 0.0;
+        let mut world = WorldState::new(&data);
+        let region_id = world.regions[0].id.clone();
+        world.heroes.retain(|h| h.region_id != region_id);
+        world.heroes.push(Hero::from_seed(&HeroSeed {
+            id: "mage".to_owned(),
+            name: "A Mage".to_owned(),
+            role: HeroRole::Mage,
+            region_id: region_id.clone(),
+            level: 20,
+            age: 30,
+        }));
+        world.monsters.push(Monster {
+            id: "m".to_owned(),
+            name: "The Pack".to_owned(),
+            type_id: "dire_pack".to_owned(), // natural
+            region_id,
+            ferocity: 1.0,
+            age: 0,
+        });
+
+        run(&mut world, &data, &balance);
+        assert!(
+            world.monsters[0].ferocity > 1.0,
+            "a mage can't hunt a natural pack, so it grows unopposed"
         );
     }
 
