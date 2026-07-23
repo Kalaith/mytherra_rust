@@ -226,6 +226,14 @@ impl Region {
         self.lore = clamp_stat(self.lore + amount);
     }
 
+    /// Raise (or lower) arcane attunement, clamped 0-100. A great arcane Order
+    /// that keeps a chapter here deepens the very magic of the land (GDD 5.4 <->
+    /// 5.6) — the institutional counterpart to the manasprings and mystical
+    /// wonders the magic sim's own drift already answers to.
+    pub fn add_magic_affinity(&mut self, amount: f32) {
+        self.magic_affinity = clamp_stat(self.magic_affinity + amount);
+    }
+
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion
     /// rivalry resolution as the region's threat baseline.
     pub fn pressure(&self) -> f32 {

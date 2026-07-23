@@ -90,6 +90,31 @@ pub fn tick_orders(
         }
     }
 
+    // An Order stamps its calling on the lands it holds, not merely its prestige:
+    // a great *arcane* Order — a fellowship of mages — deepens the very magic of
+    // every region it keeps a chapter in, so the institution of the arcane raises
+    // the ambient power of its seats as its living mages already raise their
+    // culture (GDD 5.4 <-> 5.6). The counterpart to the manasprings and mystical
+    // wonders the magic sim already answers to — an arcane age is one whose
+    // colleges of magic stand great. Deterministic: read from prestige and roster.
+    for order in orders.iter() {
+        if order.role != HeroRole::Mage {
+            continue;
+        }
+        let attunement = order.prestige * balance.magic_per_prestige;
+        if attunement <= 0.0 {
+            continue;
+        }
+        for region in regions.iter_mut() {
+            let has_chapter = heroes
+                .iter()
+                .any(|h| h.is_alive && h.role == order.role && h.region_id == region.id);
+            if has_chapter {
+                region.add_magic_affinity(attunement);
+            }
+        }
+    }
+
     // Belonging to a great Order is itself a distinction: every living member
     // gains renown scaled by the Order's standing, wherever they dwell, so a
     // storied fellowship speeds its own toward legend (GDD 5.4). This threads the
@@ -214,6 +239,47 @@ mod tests {
         assert_eq!(
             world.regions[1].cultural_influence, 50.0,
             "a region with no member of the calling gains nothing"
+        );
+    }
+
+    #[test]
+    fn an_arcane_order_deepens_the_magic_of_its_chapter_lands() {
+        let data = GameData::load().unwrap();
+        let b = &data.balance.order;
+
+        // The magic affinity a chapter region gains under an Order of the given
+        // calling, everything else held level. Two regions: one hosts the
+        // fellowship, the other none.
+        let magic_gain = |role: HeroRole| {
+            let mut world = WorldState::new(&data);
+            let chapter = world.regions[0].id.clone();
+            world.heroes = roster(b.found_min_members + 4, role, &chapter);
+            world.regions[0].magic_affinity = 40.0;
+            world.regions[1].magic_affinity = 40.0;
+            for _ in 0..30 {
+                run(&mut world, &data);
+            }
+            (
+                world.regions[0].magic_affinity - 40.0,
+                world.regions[1].magic_affinity - 40.0,
+            )
+        };
+
+        let (arcane_here, arcane_elsewhere) = magic_gain(HeroRole::Mage);
+        assert!(
+            arcane_here > 0.0,
+            "a region hosting an arcane chapter deepens in magic ({arcane_here})"
+        );
+        assert_eq!(
+            arcane_elsewhere, 0.0,
+            "a region with no arcane chapter gains no magic"
+        );
+
+        // A martial Order stamps culture and renown, but never the arcane.
+        let (martial_here, _) = magic_gain(HeroRole::Warrior);
+        assert_eq!(
+            martial_here, 0.0,
+            "only an arcane calling deepens its lands' magic"
         );
     }
 

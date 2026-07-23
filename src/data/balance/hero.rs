@@ -213,6 +213,13 @@ pub struct OrderBalance {
     /// storied Order lends its fame to its own and speeds them toward legend. A
     /// young Order confers little; the effect ramps with the Order's standing.
     pub renown_per_prestige: f32,
+    /// Arcane attunement an *arcane* Order (a fellowship of mages) lends each of
+    /// its chapter regions per tick per point of prestige (GDD 5.4 <-> 5.6): a
+    /// great college of magic deepens the ambient power of the lands it holds, the
+    /// institutional counterpart to the manasprings and mystical wonders the magic
+    /// sim already answers to. Only the Mage calling stamps its lands this way; the
+    /// other Orders lend culture and renown alone.
+    pub magic_per_prestige: f32,
 }
 
 /// Sainthood tuning (GDD 5.1 <-> 5.4): the veneration of the great dead, the faith

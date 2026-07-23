@@ -215,7 +215,8 @@
     "prestige_rate": 0.08,
     "prestige_cap": 100.0,
     "influence_per_prestige": 0.004,
-    "renown_per_prestige": 0.003
+    "renown_per_prestige": 0.003,
+    "magic_per_prestige": 0.004
   },
   "saint": {
     "renown_threshold": 100.0,
