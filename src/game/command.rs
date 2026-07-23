@@ -12,8 +12,8 @@
 
 use super::Game;
 use crate::data::ChampionFocus;
-use mytherra_core::command::{apply, FeedbackLevel};
-use mytherra_protocol::{BettingMarket, PlayerAction};
+use mytherra_core::command::{apply, authorize, FeedbackLevel};
+use mytherra_protocol::PlayerAction;
 
 impl Game {
     /// Authorize a command against the local deity's Standing, then apply it.
@@ -29,24 +29,10 @@ impl Game {
         self.apply_player_action(command);
     }
 
-    /// Whether the local deity's Standing permits this command (GDD 7.7).
+    /// Whether the local deity's Standing permits this command (GDD 7.7) — the
+    /// same check the server runs, shared via `mytherra_core::command`.
     fn authorized(&self, command: &PlayerAction) -> bool {
-        if let Some(verb) = command.required_verb() {
-            return self.standing.can_do(verb);
-        }
-        // The only verb-less command is a wager, authorized by the market its
-        // target event belongs to. An unknown event is left to `place_bet`,
-        // which reports it closed.
-        if let PlayerAction::PlaceBet { event_id, .. } = command {
-            return self
-                .world
-                .speculations
-                .iter()
-                .find(|event| &event.id == event_id)
-                .map(|event| self.standing.can_bet(BettingMarket::of(event.predicate)))
-                .unwrap_or(true);
-        }
-        true
+        authorize(&self.standing, &self.world, command)
     }
 
     /// Apply an authorized command through the shared core apply (GDD 7.1) — the

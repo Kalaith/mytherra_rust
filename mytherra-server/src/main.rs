@@ -13,8 +13,14 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use axum::{extract::State, routing::get, Json, Router};
+use axum::http::StatusCode;
+use axum::{
+    extract::State,
+    routing::{get, post},
+    Json, Router,
+};
 use mytherra_core::capability::Tier;
+use mytherra_core::command::{apply, authorize, ActionReport, PlayerAction};
 use mytherra_core::data::GameData;
 use mytherra_core::sim::tick_world;
 use mytherra_core::world::{PlayerState, WorldState};
@@ -90,6 +96,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health))
         .route("/view", get(view))
+        .route("/action", post(action))
         .with_state(shared);
 
     let listener = tokio::net::TcpListener::bind(LISTEN_ADDR)
@@ -114,4 +121,26 @@ async fn view(State(shared): State<Shared>) -> Json<ClientView> {
         &authority.data,
     );
     Json(ClientView { world, player })
+}
+
+/// Submit an authoritative command (§7.1, §7.7). The server checks the guest's
+/// Standing, applies the shared core `apply` on success, and returns the
+/// feedback; an action beyond the player's Standing is a 403. One player for M1.
+async fn action(
+    State(shared): State<Shared>,
+    Json(command): Json<PlayerAction>,
+) -> Result<Json<ActionReport>, StatusCode> {
+    let mut authority = shared.lock().await;
+    if !authorize(&authority.standing, &authority.world, &command) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    let Authority {
+        data,
+        world,
+        player,
+        standing,
+    } = &mut *authority;
+    let report = apply(world, player, data, &command);
+    *standing = standing_for(data, player);
+    Ok(Json(report))
 }

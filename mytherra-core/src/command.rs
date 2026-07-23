@@ -12,14 +12,16 @@
 mod action;
 pub use action::PlayerAction;
 
+use crate::capability::{BettingMarket, Standing};
 use crate::data::{fill, ArtifactFocus, ChampionFocus, GameData};
 use crate::world::{
     adjust_pressure, quote_event, weather_cost, Artifact, Bet, ConsequenceEffect,
     DelayedConsequence, EventKind, Myth, PlayerState, WeatherEvent, WorldState,
 };
+use serde::{Deserialize, Serialize};
 
 /// The severity of a piece of player-facing feedback from a command.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FeedbackLevel {
     Success,
     Warning,
@@ -27,7 +29,7 @@ pub enum FeedbackLevel {
 }
 
 /// One player-facing message produced while applying a command.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Feedback {
     pub level: FeedbackLevel,
     pub message: String,
@@ -35,9 +37,29 @@ pub struct Feedback {
 
 /// The outcome of applying a command: the messages to surface to the player.
 /// (World/player mutations are applied in place; this only carries feedback.)
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ActionReport {
     pub feedback: Vec<Feedback>,
+}
+
+/// Whether a player's `standing` permits `action` against the current `world`
+/// (GDD 7.7) — the check the server and the client's offline mode both run
+/// before [`apply`]. A wager is authorized by the market of its target event's
+/// predicate; every other command by its required verb. An unknown bet event is
+/// permitted here and left to [`apply`], which reports it closed.
+pub fn authorize(standing: &Standing, world: &WorldState, action: &PlayerAction) -> bool {
+    if let Some(verb) = action.required_verb() {
+        return standing.can_do(verb);
+    }
+    if let PlayerAction::PlaceBet { event_id, .. } = action {
+        return world
+            .speculations
+            .iter()
+            .find(|event| &event.id == event_id)
+            .map(|event| standing.can_bet(BettingMarket::of(event.predicate)))
+            .unwrap_or(true);
+    }
+    true
 }
 
 impl ActionReport {
