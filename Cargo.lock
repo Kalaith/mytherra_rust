@@ -287,6 +287,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mytherra-protocol"
+version = "0.1.0"
+dependencies = [
+ "mytherra-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ndk-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

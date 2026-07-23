@@ -1,0 +1,15 @@
+[package]
+name = "mytherra-protocol"
+version = "0.1.0"
+edition = "2021"
+
+# The shared wire vocabulary (GDD 12) that the client and the future server both
+# compile against so they can never drift: the §5.9 Standing/capability model,
+# the `PlayerAction` command enum, and the per-player `WorldView`/`PlayerView`
+# projections (§7.7). Pure types + projection logic — no I/O.
+[dependencies]
+mytherra-core = { path = "../mytherra-core" }
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0"

@@ -68,7 +68,10 @@ use macroquad_toolkit::rng::SeededRng;
 use serde::{Deserialize, Serialize};
 
 /// Aggregate, read-only snapshot of the world's regions for dashboards.
-#[derive(Debug, Clone, Copy, Default)]
+/// Serializable so a low-tier player who can't see individual regions still
+/// receives the world's overall tenor in their [`WorldView`](../../mytherra_protocol)
+/// projection (GDD 5.9/7.7).
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct WorldSummary {
     pub region_count: usize,
     pub avg_prosperity: f32,
