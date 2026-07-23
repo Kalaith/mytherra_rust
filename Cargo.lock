@@ -273,6 +273,7 @@ dependencies = [
  "macroquad",
  "macroquad-toolkit",
  "mytherra-core",
+ "mytherra-protocol",
  "serde",
  "serde_json",
 ]

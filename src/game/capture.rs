@@ -49,10 +49,12 @@ impl Game {
         }
         if scene == "weather" {
             self.weather_intensity = 2;
-            self.shape_weather();
+            let region = self.selected_region_id();
+            self.shape_weather(&region, self.weather_pattern, self.weather_intensity);
             self.selected_region = 1;
             self.weather_pattern = 2;
-            self.shape_weather();
+            let region = self.selected_region_id();
+            self.shape_weather(&region, self.weather_pattern, self.weather_intensity);
             self.selected_region = 0;
             self.weather_pattern = 0;
             self.weather_intensity = 0;
@@ -94,7 +96,8 @@ impl Game {
             }
         }
         if scene == "civilization" {
-            self.advance_agenda(0);
+            let region = self.selected_region_id();
+            self.advance_agenda(&region, 0);
             for _ in 0..3 {
                 self.run_tick();
             }
@@ -117,7 +120,8 @@ impl Game {
             self.selected_region = 0;
             self.weather_pattern = 0;
             self.weather_intensity = 2;
-            self.shape_weather();
+            let region = self.selected_region_id();
+            self.shape_weather(&region, self.weather_pattern, self.weather_intensity);
             self.weather_intensity = 0;
         }
         if scene == "eras" {
@@ -136,7 +140,8 @@ impl Game {
         if scene == "omens" {
             // Run long enough that region genesis grows the map past one page, so
             // the forecast's pagination shows, and seed a fresh divine work or two.
-            self.create_artifact();
+            let region = self.selected_region_id();
+            self.create_artifact(&region, self.create_focus);
             for _ in 0..120 {
                 self.run_tick();
             }
@@ -231,7 +236,7 @@ impl Game {
                     .map(|e| e.id.clone())
                     .collect();
                 for id in ids {
-                    self.place_bet(&id);
+                    self.place_bet(&id, self.bet_confidence, self.bet_stake_index);
                 }
                 for _ in 0..12 {
                     self.run_tick();

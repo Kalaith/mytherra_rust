@@ -5,6 +5,7 @@ mod achievements;
 mod actions;
 mod actions_tools;
 mod capture;
+mod command;
 
 use crate::data::{fill, ArtifactFocus, GameData};
 use crate::save::{migrate_save_value, SaveData};
@@ -20,6 +21,7 @@ use macroquad_toolkit::persistence::{
     load_from_slot_with_migration, save_to_slot_with_version, slot_exists,
 };
 use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_frame};
+use mytherra_protocol::{PlayerAction, Standing, Tier};
 
 pub struct Game {
     data: GameData,
@@ -67,6 +69,10 @@ pub struct Game {
     /// Guards the auto-save on leaving to the menu, so merely visiting Settings
     /// from the title never overwrites a real save with an unplayed world.
     session_active: bool,
+    /// The local deity's Standing — what it may see, do, and bet on (GDD 5.9).
+    /// Offline it holds full Elder standing, so every command authorizes; M0.5
+    /// drives this from progression and gates visibility/verbs against it.
+    standing: Standing,
 }
 
 /// Rasterize every glyph the UI can draw, at every size it uses, once at
@@ -145,6 +151,7 @@ impl Game {
             last_autosave_tick: 0,
             quit_requested: false,
             session_active: false,
+            standing: Tier::Elder.standing(),
         };
         game.refresh_save_state();
         game.sync_achievements();
@@ -302,11 +309,27 @@ impl Game {
             UiAction::SetRegionPage(page) => self.region_page = page,
             UiAction::SetOmensPage(page) => self.omens_page = page,
             UiAction::SetErasPage(page) => self.eras_page = page,
-            UiAction::RegionAction(id) => self.apply_region_action(&id),
-            UiAction::DesignateChampion(id) => self.designate_champion(&id),
-            UiAction::CultivateChampion(id) => self.cultivate_champion(&id),
-            UiAction::CycleChampionFocus(id) => self.cycle_champion_focus(&id),
-            UiAction::PlaceBet(id) => self.place_bet(&id),
+            UiAction::RegionAction(id) => self.submit(PlayerAction::RegionAction {
+                region_id: self.selected_region_id(),
+                action_id: id,
+            }),
+            UiAction::DesignateChampion(id) => {
+                self.submit(PlayerAction::DesignateChampion { hero_id: id })
+            }
+            UiAction::CultivateChampion(id) => {
+                self.submit(PlayerAction::CultivateChampion { hero_id: id })
+            }
+            UiAction::CycleChampionFocus(id) => {
+                // The client cycles; the wire command carries the concrete focus.
+                if let Some(focus) = self.next_champion_focus(&id) {
+                    self.submit(PlayerAction::SetChampionFocus { hero_id: id, focus });
+                }
+            }
+            UiAction::PlaceBet(id) => self.submit(PlayerAction::PlaceBet {
+                event_id: id,
+                confidence_index: self.bet_confidence,
+                stake_index: self.bet_stake_index,
+            }),
             UiAction::CycleConfidence => {
                 self.bet_confidence = (self.bet_confidence + 1) % self.data.confidence_levels.len();
             }
@@ -332,11 +355,30 @@ impl Game {
             UiAction::TogglePause => self.paused = !self.paused,
             UiAction::SelectDivineTab(index) => self.divine_tab = index,
             UiAction::CycleArtifactFocus => self.create_focus = self.create_focus.next(),
-            UiAction::CreateArtifact => self.create_artifact(),
-            UiAction::EmpowerArtifact(id) => self.empower_artifact(&id),
-            UiAction::StabilizeArtifact(id) => self.stabilize_artifact(&id),
-            UiAction::TransferArtifact(id) => self.transfer_artifact(&id),
-            UiAction::ShapeWeather => self.shape_weather(),
+            UiAction::CreateArtifact => self.submit(PlayerAction::CreateArtifact {
+                region_id: self.selected_region_id(),
+                focus: self.create_focus,
+            }),
+            UiAction::EmpowerArtifact(id) => {
+                self.submit(PlayerAction::EmpowerArtifact { artifact_id: id })
+            }
+            UiAction::StabilizeArtifact(id) => {
+                self.submit(PlayerAction::StabilizeArtifact { artifact_id: id })
+            }
+            UiAction::TransferArtifact(id) => {
+                // The client resolves the next region; the command names it.
+                if let Some(to_region_id) = self.next_region_for_artifact(&id) {
+                    self.submit(PlayerAction::TransferArtifact {
+                        artifact_id: id,
+                        to_region_id,
+                    });
+                }
+            }
+            UiAction::ShapeWeather => self.submit(PlayerAction::ShapeWeather {
+                region_id: self.selected_region_id(),
+                pattern_index: self.weather_pattern,
+                intensity_index: self.weather_intensity,
+            }),
             UiAction::CycleWeatherPattern => {
                 self.weather_pattern =
                     (self.weather_pattern + 1) % self.data.weather_patterns.len();
@@ -345,11 +387,18 @@ impl Game {
                 self.weather_intensity =
                     (self.weather_intensity + 1) % self.data.weather_intensities.len();
             }
-            UiAction::ResearchMagic(id) => self.research_magic(&id),
-            UiAction::PromoteMyth(id) => self.promote_myth(&id),
-            UiAction::AdvanceAgenda(index) => self.advance_agenda(index),
-            UiAction::AppeaseDeity(id) => self.appease_deity(&id),
-            UiAction::ChallengeDeity(id) => self.challenge_deity(&id),
+            UiAction::ResearchMagic(id) => self.submit(PlayerAction::ResearchMagic { path_id: id }),
+            UiAction::PromoteMyth(id) => {
+                self.submit(PlayerAction::PromoteMyth { candidate_id: id })
+            }
+            UiAction::AdvanceAgenda(index) => self.submit(PlayerAction::AdvanceAgenda {
+                region_id: self.selected_region_id(),
+                agenda_index: index,
+            }),
+            UiAction::AppeaseDeity(id) => self.submit(PlayerAction::AppeaseDeity { deity_id: id }),
+            UiAction::ChallengeDeity(id) => {
+                self.submit(PlayerAction::ChallengeDeity { deity_id: id })
+            }
             UiAction::AdvanceTick => {
                 self.run_tick();
                 self.notifications

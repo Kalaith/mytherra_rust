@@ -7,16 +7,16 @@ use crate::data::{fill, ChampionFocus};
 use crate::world::{quote_event, Bet, EventKind};
 
 impl Game {
-    pub(super) fn apply_region_action(&mut self, id: &str) {
+    pub(super) fn apply_region_action(&mut self, region_id: &str, action_id: &str) {
         let notes = &self.data.strings.notifications;
-        let Some(def) = self.data.region_actions.get(id).cloned() else {
+        let Some(def) = self.data.region_actions.get(action_id).cloned() else {
             self.notifications
-                .warning(fill(&notes.unknown_action, &[("id", id.to_owned())]));
+                .warning(fill(&notes.unknown_action, &[("id", action_id.to_owned())]));
             return;
         };
-        let index = self
-            .selected_region
-            .min(self.world.regions.len().saturating_sub(1));
+        let Some(index) = self.world.regions.iter().position(|r| r.id == region_id) else {
+            return;
+        };
         let Some(region) = self.world.region(index) else {
             return;
         };
@@ -117,12 +117,11 @@ impl Game {
             .success(fill(&notes.champion_cultivated, &[("hero", hero_name)]));
     }
 
-    pub(super) fn cycle_champion_focus(&mut self, hero_id: &str) {
+    pub(super) fn set_champion_focus(&mut self, hero_id: &str, focus: ChampionFocus) {
         let Some(champion) = self.player.champion_mut(hero_id) else {
             return;
         };
-        champion.focus = champion.focus.next();
-        let focus = champion.focus;
+        champion.focus = focus;
         let hero_name = self.hero_name(hero_id);
         self.notifications.info(fill(
             &self.data.strings.notifications.champion_focus_changed,
@@ -130,14 +129,17 @@ impl Game {
         ));
     }
 
-    pub(super) fn place_bet(&mut self, event_id: &str) {
+    pub(super) fn place_bet(
+        &mut self,
+        event_id: &str,
+        confidence_index: usize,
+        stake_index: usize,
+    ) {
         let notes = self.data.strings.notifications.clone();
         let betting = &self.data.balance.betting;
-        let stake =
-            betting.stake_presets[self.bet_stake_index.min(betting.stake_presets.len() - 1)];
-        let confidence = self.data.confidence_levels[self
-            .bet_confidence
-            .min(self.data.confidence_levels.len() - 1)]
+        let stake = betting.stake_presets[stake_index.min(betting.stake_presets.len() - 1)];
+        let confidence = self.data.confidence_levels
+            [confidence_index.min(self.data.confidence_levels.len() - 1)]
         .clone();
 
         let Some(idx) = self

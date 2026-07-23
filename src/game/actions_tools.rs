@@ -3,14 +3,14 @@
 //! keep each file focused; another `impl Game` block over the same fields.
 
 use super::Game;
-use crate::data::fill;
+use crate::data::{fill, ArtifactFocus};
 use crate::world::{
     adjust_pressure, weather_cost, Artifact, ConsequenceEffect, DelayedConsequence, Myth,
     WeatherEvent,
 };
 
 impl Game {
-    pub(super) fn create_artifact(&mut self) {
+    pub(super) fn create_artifact(&mut self, region_id: &str, focus: ArtifactFocus) {
         let notes = self.data.strings.notifications.clone();
         let balance = &self.data.balance.artifact;
         if self.world.artifacts.len() >= balance.max_active {
@@ -24,19 +24,9 @@ impl Game {
             self.notifications.warning(notes.not_enough_favor);
             return;
         }
-        let index = self
-            .selected_region
-            .min(self.world.regions.len().saturating_sub(1));
-        let region_id = self
-            .world
-            .regions
-            .get(index)
-            .map(|r| r.id.clone())
-            .unwrap_or_default();
 
         self.world.artifact_seq += 1;
         let seq = self.world.artifact_seq;
-        let focus = self.create_focus;
         let name = fill(
             &self.data.strings.divine.new_artifact_name,
             &[("focus", focus.label().to_owned()), ("n", seq.to_string())],
@@ -47,7 +37,7 @@ impl Game {
             focus,
             power: 1,
             instability: 0.0,
-            region_id,
+            region_id: region_id.to_owned(),
         });
         self.notifications
             .success(fill(&notes.artifact_created, &[("name", name)]));
@@ -100,24 +90,21 @@ impl Game {
         }
     }
 
-    pub(super) fn transfer_artifact(&mut self, id: &str) {
+    pub(super) fn transfer_artifact(&mut self, id: &str, to_region_id: &str) {
         let notes = self.data.strings.notifications.clone();
         let balance = &self.data.balance.artifact;
-        let Some(current) = self
+        if !self.world.artifacts.iter().any(|a| a.id == id) {
+            return;
+        }
+        let Some(next_name) = self
             .world
-            .artifacts
+            .regions
             .iter()
-            .find(|a| a.id == id)
-            .map(|a| a.region_id.clone())
+            .find(|r| r.id == to_region_id)
+            .map(|r| r.name.clone())
         else {
             return;
         };
-        let Some(cur_idx) = self.world.regions.iter().position(|r| r.id == current) else {
-            return;
-        };
-        if self.world.regions.len() < 2 {
-            return;
-        }
         if !self
             .player
             .spend(balance.transfer_cost, &self.data.balance.player)
@@ -125,11 +112,9 @@ impl Game {
             self.notifications.warning(notes.not_enough_favor);
             return;
         }
-        let next = &self.world.regions[(cur_idx + 1) % self.world.regions.len()];
-        let (next_id, next_name) = (next.id.clone(), next.name.clone());
         let transfer_instability = balance.transfer_instability;
         if let Some(artifact) = self.world.artifacts.iter_mut().find(|a| a.id == id) {
-            artifact.region_id = next_id;
+            artifact.region_id = to_region_id.to_owned();
             // Wrenching a bound relic loose unsettles it — the journey adds
             // instability, so moving is a considered act, not a free reposition.
             artifact.instability += transfer_instability;
@@ -205,19 +190,17 @@ impl Game {
             .success(fill(template, &[("deity", name)]));
     }
 
-    pub(super) fn advance_agenda(&mut self, agenda_index: usize) {
+    pub(super) fn advance_agenda(&mut self, region_id: &str, agenda_index: usize) {
         let notes = self.data.strings.notifications.clone();
         if agenda_index >= self.data.agendas.len() {
             return;
         }
-        let region_index = self
-            .selected_region
-            .min(self.world.regions.len().saturating_sub(1));
-        let Some((region_id, region_name)) = self
+        let Some(region_name) = self
             .world
             .regions
-            .get(region_index)
-            .map(|r| (r.id.clone(), r.name.clone()))
+            .iter()
+            .find(|r| r.id == region_id)
+            .map(|r| r.name.clone())
         else {
             return;
         };
@@ -306,31 +289,37 @@ impl Game {
         }
     }
 
-    pub(super) fn shape_weather(&mut self) {
+    pub(super) fn shape_weather(
+        &mut self,
+        region_id: &str,
+        pattern_index: usize,
+        intensity_index: usize,
+    ) {
         let notes = self.data.strings.notifications.clone();
         if self.world.weather.len() >= self.data.balance.weather.max_active {
             self.notifications.warning(notes.weather_max);
             return;
         }
-        let pattern = self.data.weather_patterns[self
-            .weather_pattern
-            .min(self.data.weather_patterns.len() - 1)]
+        let pattern = self.data.weather_patterns
+            [pattern_index.min(self.data.weather_patterns.len() - 1)]
         .clone();
-        let intensity = self.data.weather_intensities[self
-            .weather_intensity
-            .min(self.data.weather_intensities.len() - 1)]
+        let intensity = self.data.weather_intensities
+            [intensity_index.min(self.data.weather_intensities.len() - 1)]
         .clone();
-        let index = self
-            .selected_region
-            .min(self.world.regions.len().saturating_sub(1));
-        let Some((region_id, region_name, cost)) = self.world.regions.get(index).map(|r| {
-            let cost = weather_cost(
-                self.data.balance.weather.base_cost,
-                intensity.cost_mult,
-                r.cost_multiplier(&self.data.balance.region),
-            );
-            (r.id.clone(), r.name.clone(), cost)
-        }) else {
+        let Some((region_id, region_name, cost)) = self
+            .world
+            .regions
+            .iter()
+            .find(|r| r.id == region_id)
+            .map(|r| {
+                let cost = weather_cost(
+                    self.data.balance.weather.base_cost,
+                    intensity.cost_mult,
+                    r.cost_multiplier(&self.data.balance.region),
+                );
+                (r.id.clone(), r.name.clone(), cost)
+            })
+        else {
             return;
         };
         if !self.player.spend(cost, &self.data.balance.player) {
