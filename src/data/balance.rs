@@ -60,6 +60,7 @@ pub struct Balance {
     pub war: WarBalance,
     pub vassalage: VassalageBalance,
     pub pact: PactBalance,
+    pub festival: FestivalBalance,
     pub player: PlayerBalance,
     pub settings: SettingsBalance,
     pub tenor: TenorBalance,

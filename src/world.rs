@@ -9,6 +9,7 @@ mod chronicle;
 mod civilization;
 mod consequence;
 mod era;
+mod festival;
 mod hero;
 mod house;
 mod landmark;
@@ -39,6 +40,7 @@ pub use chronicle::{Chronicle, EventKind, WorldEvent};
 pub use civilization::{agenda_score, dominant_agenda, spillover_target, RegionAgendas};
 pub use consequence::{ConsequenceEffect, DelayedConsequence};
 pub use era::{compute_scores, generate_era_name, pantheon_wrath, EraRecord, EraState};
+pub use festival::Festival;
 pub use hero::Hero;
 pub use house::House;
 pub use landmark::Landmark;
@@ -161,6 +163,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of saints canonized mid-run.
     #[serde(default)]
     pub saint_seq: u64,
+    /// The great celebrations flourishing realms are holding (GDD 5.2 <-> 6);
+    /// arise dynamically, so this starts empty on a fresh world.
+    #[serde(default)]
+    pub festivals: Vec<Festival>,
+    /// Monotonic counter for unique ids of festivals held mid-run.
+    #[serde(default)]
+    pub festival_seq: u64,
     pub artifacts: Vec<Artifact>,
     /// Monotonic counter for unique created-artifact ids.
     pub artifact_seq: u64,
@@ -294,6 +303,8 @@ impl WorldState {
             order_seq: 0,
             saints: Vec::new(),
             saint_seq: 0,
+            festivals: Vec::new(),
+            festival_seq: 0,
             artifacts,
             artifact_seq: 0,
             pending_consequences: Vec::new(),

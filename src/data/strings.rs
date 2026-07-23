@@ -25,6 +25,25 @@ pub struct Strings {
     pub title: TitleText,
     pub orders: OrderNames,
     pub prophecies: ProphecyNames,
+    pub festivals: FestivalNames,
+}
+
+/// The names the world's great celebrations take, drawn from in turn (GDD 5.2 <->
+/// 6).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FestivalNames {
+    pub names: Vec<String>,
+}
+
+impl FestivalNames {
+    /// The name for the `seq`-th festival held, cycling through the bank so a long
+    /// age draws them in a fixed, repeatable order — deterministic, no roll.
+    pub fn pick(&self, seq: u64) -> &str {
+        if self.names.is_empty() {
+            return "the Grand Festival";
+        }
+        &self.names[(seq as usize - 1) % self.names.len()]
+    }
 }
 
 /// The name each pole of prophecy takes when spoken (GDD 5.6).
@@ -503,6 +522,10 @@ pub struct ChronicleText {
     pub saint_canonized: String,
     pub saint_forgotten: String,
     pub saint_name: String,
+    /// A flourishing realm throws open its gates for a great festival, which in
+    /// time passes into memory (GDD 5.2 <-> 6); slots `{festival}`, `{region}`.
+    pub festival_begins: String,
+    pub festival_ends: String,
     /// A pantheon deity cresting into the height of its wrath.
     pub deity_ascendant: String,
     pub champion_resolved: String,

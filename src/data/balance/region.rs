@@ -407,3 +407,39 @@ pub struct PactBalance {
     /// which also cools the belligerence that would drive it to war (GDD 5.2).
     pub chaos_relief: f32,
 }
+
+/// Festival tuning (GDD 5.2 <-> 6): the great celebrations a flourishing realm
+/// holds. The constructive mirror of the crisis systems — deliberately spare, and
+/// deliberately off the crisis levers: a festival lifts a land's renown, faith, and
+/// legends, never its wealth, so it can never feed a prosperity runaway. Kindling
+/// runs on a fixed cadence, not a roll, so it never perturbs the seeded RNG stream.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FestivalBalance {
+    /// The cadence, in years, at which the world may raise a festival: on years
+    /// divisible by this, the single foremost eligible realm begins one, and on the
+    /// years between, none. A great celebration is a rare thing of a generation, and
+    /// being a fixed cadence rather than a roll it leaves the seeded stream untouched.
+    pub interval: u32,
+    /// Prosperity a realm must reach to be fit to host — only a thriving land can
+    /// bear the cost of a great celebration.
+    pub min_prosperity: f32,
+    /// Cultural influence a realm must reach to host — a festival is thrown by the
+    /// world's cultural hearts, the lands whose name already carries.
+    pub min_culture: f32,
+    /// Chaos a host must sit below — the strife-torn hold no festivals; peace is the
+    /// precondition of celebration.
+    pub max_chaos: f32,
+    /// How many years a festival lasts once begun, lifting its host each tick before
+    /// it passes into memory.
+    pub duration: u32,
+    /// Cultural influence the festival lends its host each tick it runs — the world's
+    /// eye upon a great celebration makes its name the more storied.
+    pub culture_boon: f32,
+    /// Divine resonance the festival lends its host each tick — the rites and
+    /// thanksgivings of a celebration deepen the land's faith.
+    pub resonance_boon: f32,
+    /// Renown each living hero dwelling in the host region gains per tick of the
+    /// festival — the games, contests, and honours crown those who shine at them,
+    /// threading the festival into the renown-and-legend web.
+    pub renown_boon: f32,
+}

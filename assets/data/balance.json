@@ -568,7 +568,12 @@
     "construction_population_min": 4000.0,
     "construction_chance": 0.04,
     "culture_affinity_weight": 2.0,
-    "tier_thresholds": [1000.0, 5000.0, 15000.0, 35000.0]
+    "tier_thresholds": [
+      1000.0,
+      5000.0,
+      15000.0,
+      35000.0
+    ]
   },
   "culture": {
     "inertia": 3.0,
@@ -771,5 +776,15 @@
       -25.0,
       -70.0
     ]
+  },
+  "festival": {
+    "interval": 40,
+    "min_prosperity": 70.0,
+    "min_culture": 60.0,
+    "max_chaos": 35.0,
+    "duration": 3,
+    "culture_boon": 1.5,
+    "resonance_boon": 1.0,
+    "renown_boon": 3.0
   }
 }

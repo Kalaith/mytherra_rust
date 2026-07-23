@@ -8,6 +8,7 @@ mod consequence;
 mod culture;
 mod era;
 mod famine;
+mod festival;
 mod genesis;
 mod hero;
 mod house;
@@ -660,6 +661,21 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
             data,
         );
     }
+
+    // The world's great celebrations: once in a generation a flourishing, peaceful
+    // realm holds a festival that lifts its culture and faith and crowns its heroes
+    // — the constructive mirror of the crises above (GDD 5.2 <-> 6).
+    festival::tick_festivals(
+        &mut world.festivals,
+        &mut world.regions,
+        &mut world.heroes,
+        &mut world.festival_seq,
+        &data.balance.festival,
+        &data.strings.festivals,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
 }
 
 /// Living heroes who have reached `bar` renown this tick but hadn't before, so

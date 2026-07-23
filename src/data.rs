@@ -30,10 +30,10 @@ pub use action::RegionActionDef;
 pub use artifact::{ArtifactFocus, ArtifactSeed};
 pub use balance::{
     ArtifactBalance, Balance, BettingBalance, ChampionBalance, CivilizationBalance,
-    ConquestBalance, CultureBalance, EraBalance, FamineBalance, FrontierBalance, GenesisBalance,
-    HeroBalance, HeroMightWeights, HouseBalance, LoreBalance, MagicBalance, MigrationBalance,
-    MonsterBalance, MythBalance, OrderBalance, PactBalance, PantheonBalance, PlagueBalance,
-    PlayerBalance, ProphecyBalance, RefugeeBalance, RegionBalance, ResourceBalance,
+    ConquestBalance, CultureBalance, EraBalance, FamineBalance, FestivalBalance, FrontierBalance,
+    GenesisBalance, HeroBalance, HeroMightWeights, HouseBalance, LoreBalance, MagicBalance,
+    MigrationBalance, MonsterBalance, MythBalance, OrderBalance, PactBalance, PantheonBalance,
+    PlagueBalance, PlayerBalance, ProphecyBalance, RefugeeBalance, RegionBalance, ResourceBalance,
     ResourceOutputs, SaintBalance, SettlementBalance, TradeBalance, VassalageBalance, WarBalance,
     WeatherBalance,
 };

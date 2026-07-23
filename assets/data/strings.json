@@ -394,7 +394,9 @@
     "region_founded": "{founder} leads settlers out of {parent} to found the frontier of {frontier}.",
     "weather_natural": "{intensity} {pattern} sweep across {region}.",
     "weather_withered": "The {pattern} over {region} parch {node} until it withers to ruin.",
-    "weather_quickened": "The {pattern} over {region} coax {node} into full flourish."
+    "weather_quickened": "The {pattern} over {region} coax {node} into full flourish.",
+    "festival_begins": "{region} throws open its gates for {festival}, a celebration the age will remember",
+    "festival_ends": "{festival} in {region} passes into memory, its revels spent"
   },
   "genesis": {
     "breakaway_names": [
@@ -448,5 +450,15 @@
     "doom": "the Coming of the Long Dark",
     "golden_age": "the Dawn of a Golden Age",
     "age_of_magic": "the Rising of the Arcane Tide"
+  },
+  "festivals": {
+    "names": [
+      "the Grand Jubilee",
+      "the Feast of the Ages",
+      "the Radiant Concord",
+      "the Millennial Games",
+      "the Great Revels",
+      "the Golden Assembly"
+    ]
   }
 }
