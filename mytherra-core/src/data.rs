@@ -60,35 +60,35 @@ use macroquad_toolkit::data_loader::{
     load_embedded_json, load_embedded_json_labeled, DataRegistry,
 };
 
-const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
-const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
-const REGION_ACTIONS_JSON: &str = include_str!("../assets/data/region_actions.json");
-const HEROES_JSON: &str = include_str!("../assets/data/heroes.json");
-const HERO_NAMES_JSON: &str = include_str!("../assets/data/hero_names.json");
-const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
-const SETTLEMENT_NAMES_JSON: &str = include_str!("../assets/data/settlement_names.json");
-const RESOURCE_NODES_JSON: &str = include_str!("../assets/data/resource_nodes.json");
-const LANDMARKS_JSON: &str = include_str!("../assets/data/landmarks.json");
-const LANDMARK_NAMES_JSON: &str = include_str!("../assets/data/landmark_names.json");
-const PLAGUE_NAMES_JSON: &str = include_str!("../assets/data/plague_names.json");
-const TRADE_ROUTES_JSON: &str = include_str!("../assets/data/trade_routes.json");
-const BUILDING_TYPES_JSON: &str = include_str!("../assets/data/building_types.json");
-const BUILDINGS_JSON: &str = include_str!("../assets/data/buildings.json");
-const ARTIFACTS_JSON: &str = include_str!("../assets/data/artifacts.json");
-const WEATHER_PATTERNS_JSON: &str = include_str!("../assets/data/weather_patterns.json");
-const WEATHER_INTENSITIES_JSON: &str = include_str!("../assets/data/weather_intensities.json");
-const MAGIC_PATHS_JSON: &str = include_str!("../assets/data/magic_paths.json");
-const MONSTER_TYPES_JSON: &str = include_str!("../assets/data/monster_types.json");
-const MYTH_THEMES_JSON: &str = include_str!("../assets/data/myth_themes.json");
-const AGENDAS_JSON: &str = include_str!("../assets/data/agendas.json");
-const PANTHEON_JSON: &str = include_str!("../assets/data/pantheon.json");
-const ERA_NAMES_JSON: &str = include_str!("../assets/data/era_names.json");
-const BET_TYPES_JSON: &str = include_str!("../assets/data/bet_types.json");
-const CONFIDENCE_JSON: &str = include_str!("../assets/data/confidence_levels.json");
-const TIMEFRAMES_JSON: &str = include_str!("../assets/data/timeframe_modifiers.json");
-const BALANCE_JSON: &str = include_str!("../assets/data/balance.json");
-const STRINGS_JSON: &str = include_str!("../assets/data/strings.json");
-const ACHIEVEMENTS_JSON: &str = include_str!("../assets/data/achievements.json");
+const GAME_CONFIG_JSON: &str = include_str!("../../assets/data/game_config.json");
+const REGIONS_JSON: &str = include_str!("../../assets/data/regions.json");
+const REGION_ACTIONS_JSON: &str = include_str!("../../assets/data/region_actions.json");
+const HEROES_JSON: &str = include_str!("../../assets/data/heroes.json");
+const HERO_NAMES_JSON: &str = include_str!("../../assets/data/hero_names.json");
+const SETTLEMENTS_JSON: &str = include_str!("../../assets/data/settlements.json");
+const SETTLEMENT_NAMES_JSON: &str = include_str!("../../assets/data/settlement_names.json");
+const RESOURCE_NODES_JSON: &str = include_str!("../../assets/data/resource_nodes.json");
+const LANDMARKS_JSON: &str = include_str!("../../assets/data/landmarks.json");
+const LANDMARK_NAMES_JSON: &str = include_str!("../../assets/data/landmark_names.json");
+const PLAGUE_NAMES_JSON: &str = include_str!("../../assets/data/plague_names.json");
+const TRADE_ROUTES_JSON: &str = include_str!("../../assets/data/trade_routes.json");
+const BUILDING_TYPES_JSON: &str = include_str!("../../assets/data/building_types.json");
+const BUILDINGS_JSON: &str = include_str!("../../assets/data/buildings.json");
+const ARTIFACTS_JSON: &str = include_str!("../../assets/data/artifacts.json");
+const WEATHER_PATTERNS_JSON: &str = include_str!("../../assets/data/weather_patterns.json");
+const WEATHER_INTENSITIES_JSON: &str = include_str!("../../assets/data/weather_intensities.json");
+const MAGIC_PATHS_JSON: &str = include_str!("../../assets/data/magic_paths.json");
+const MONSTER_TYPES_JSON: &str = include_str!("../../assets/data/monster_types.json");
+const MYTH_THEMES_JSON: &str = include_str!("../../assets/data/myth_themes.json");
+const AGENDAS_JSON: &str = include_str!("../../assets/data/agendas.json");
+const PANTHEON_JSON: &str = include_str!("../../assets/data/pantheon.json");
+const ERA_NAMES_JSON: &str = include_str!("../../assets/data/era_names.json");
+const BET_TYPES_JSON: &str = include_str!("../../assets/data/bet_types.json");
+const CONFIDENCE_JSON: &str = include_str!("../../assets/data/confidence_levels.json");
+const TIMEFRAMES_JSON: &str = include_str!("../../assets/data/timeframe_modifiers.json");
+const BALANCE_JSON: &str = include_str!("../../assets/data/balance.json");
+const STRINGS_JSON: &str = include_str!("../../assets/data/strings.json");
+const ACHIEVEMENTS_JSON: &str = include_str!("../../assets/data/achievements.json");
 
 /// All static content the game needs, resolved once at boot.
 #[derive(Debug, Clone)]

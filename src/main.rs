@@ -7,12 +7,13 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
 
-mod data;
 mod game;
-mod save;
-mod sim;
 mod ui;
-mod world;
+
+// The simulation core lives in the `mytherra-core` crate (GDD 7.2). Re-export
+// its modules at the crate root so the client's `crate::{data,world,sim,save}`
+// paths resolve unchanged.
+pub use mytherra_core::{data, save, sim, world};
 
 use game::Game;
 

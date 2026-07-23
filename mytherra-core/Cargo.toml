@@ -1,0 +1,13 @@
+[package]
+name = "mytherra-core"
+version = "0.1.0"
+edition = "2021"
+
+# The headless simulation core (GDD 7.2): the world state, the deterministic
+# tick, the data model, and save serialization. No macroquad rendering — only
+# the pure toolkit utilities (rng/math/data_loader/achievements). Both the
+# client's offline mode and the future server depend on this crate.
+[dependencies]
+macroquad-toolkit = { path = "../../macroquad-toolkit" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

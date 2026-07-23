@@ -272,6 +272,16 @@ version = "0.1.0"
 dependencies = [
  "macroquad",
  "macroquad-toolkit",
+ "mytherra-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "mytherra-core"
+version = "0.1.0"
+dependencies = [
+ "macroquad-toolkit",
  "serde",
  "serde_json",
 ]

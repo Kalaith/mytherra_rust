@@ -3,7 +3,13 @@ name = "mytherra"
 version = "0.1.0"
 edition = "2021"
 
+# This package is the macroquad client (GDD 12); the simulation lives in the
+# `mytherra-core` member crate, which the client embeds for its offline mode.
+[workspace]
+members = ["mytherra-core"]
+
 [dependencies]
+mytherra-core = { path = "mytherra-core" }
 macroquad = "0.4"
 macroquad-toolkit = { path = "../macroquad-toolkit" }
 serde = { version = "1.0", features = ["derive"] }

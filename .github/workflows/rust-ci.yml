@@ -81,13 +81,13 @@ jobs:
           fi
 
       - name: Check formatting
-        run: cargo fmt --manifest-path Cargo.toml -- --check
+        run: cargo fmt --manifest-path Cargo.toml -p mytherra -p mytherra-core -- --check
 
       - name: Run Clippy
-        run: cargo clippy --manifest-path Cargo.toml --all-targets --all-features -- -D warnings
+        run: cargo clippy --manifest-path Cargo.toml --workspace --all-targets --all-features -- -D warnings
 
       - name: Run tests
-        run: cargo test --manifest-path Cargo.toml --all-features
+        run: cargo test --manifest-path Cargo.toml --workspace --all-features
 
       - name: Build WebGL release
         run: cargo build --manifest-path Cargo.toml --release --target wasm32-unknown-unknown
