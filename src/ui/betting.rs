@@ -8,6 +8,7 @@ use crate::world::{bet_record, quote_event, Bet, SpeculationEvent};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
+use mytherra_protocol::BettingMarket;
 
 pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let area = content_rect();
@@ -59,11 +60,14 @@ fn draw_events_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction
         actions.push(UiAction::CycleStake);
     }
 
+    // Only propositions in a market the deity's Standing has opened (GDD 5.9): a
+    // Watcher sees hero-fate wagers; region fortunes, world turnings, and region
+    // collapse open with the tiers above.
     let active: Vec<&SpeculationEvent> = ctx
         .world
         .speculations
         .iter()
-        .filter(|e| e.is_active())
+        .filter(|e| e.is_active() && ctx.standing.can_bet(BettingMarket::of(e.predicate)))
         .collect();
     if active.is_empty() {
         draw_ui_text_ex(
