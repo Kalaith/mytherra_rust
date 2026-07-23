@@ -5,17 +5,17 @@
 //! projection their Standing reveals (§7.7); the server is the sole simulation
 //! authority (§7.1, §5.8).
 //!
-//! This is the M1 scaffold: a single in-memory guest player and read-only
-//! endpoints. `POST /action` (which needs the pure command-apply extracted into
-//! `mytherra-core`), the since-cursor event delta, auth, and DB persistence are
-//! the phases that follow.
+//! M1 serves a single in-memory guest: `GET /view` (Standing-filtered
+//! projection), `GET /events?since=` (the change delta, §7.4), and `POST
+//! /action` (authorize + apply). Multiple authenticated accounts, nudge caps
+//! (§7.5), and DB persistence are the phases that follow.
 
 use std::sync::Arc;
 use std::time::Duration;
 
 use axum::http::StatusCode;
 use axum::{
-    extract::State,
+    extract::{Query, State},
     routing::{get, post},
     Json, Router,
 };
@@ -23,9 +23,9 @@ use mytherra_core::capability::Tier;
 use mytherra_core::command::{apply, authorize, ActionReport, PlayerAction};
 use mytherra_core::data::GameData;
 use mytherra_core::sim::tick_world;
-use mytherra_core::world::{PlayerState, WorldState};
+use mytherra_core::world::{PlayerState, WorldEvent, WorldState};
 use mytherra_protocol::{project, PlayerView, Standing, WorldView};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
 /// Where the server listens. M1 dev default; a later phase moves this to config.
@@ -77,6 +77,21 @@ struct ClientView {
     player: PlayerView,
 }
 
+/// `GET /events?since=<cursor>` — a returning player asks what changed since
+/// they last acknowledged (GDD 7.4). Omitting `since` yields the retained tail.
+#[derive(Deserialize)]
+struct EventsQuery {
+    #[serde(default)]
+    since: u64,
+}
+
+/// The event delta and the new cursor to pass next time.
+#[derive(Serialize)]
+struct EventsDelta {
+    events: Vec<WorldEvent>,
+    cursor: u64,
+}
+
 #[tokio::main]
 async fn main() {
     let shared: Shared = Arc::new(Mutex::new(Authority::load()));
@@ -96,6 +111,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health))
         .route("/view", get(view))
+        .route("/events", get(events))
         .route("/action", post(action))
         .with_state(shared);
 
@@ -121,6 +137,21 @@ async fn view(State(shared): State<Shared>) -> Json<ClientView> {
         &authority.data,
     );
     Json(ClientView { world, player })
+}
+
+/// The chronicle events pushed since the client's cursor, plus the new cursor
+/// (GDD 7.4) — so a returning player sees exactly what changed, including other
+/// deities' visible acts, instead of a blind refetch.
+async fn events(
+    State(shared): State<Shared>,
+    Query(query): Query<EventsQuery>,
+) -> Json<EventsDelta> {
+    let authority = shared.lock().await;
+    let (events, cursor) = authority.world.chronicle.since(query.since);
+    Json(EventsDelta {
+        events: events.into_iter().cloned().collect(),
+        cursor,
+    })
 }
 
 /// Submit an authoritative command (§7.1, §7.7). The server checks the guest's

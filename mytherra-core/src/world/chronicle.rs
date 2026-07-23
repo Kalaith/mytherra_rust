@@ -49,6 +49,11 @@ pub struct WorldEvent {
 pub struct Chronicle {
     events: Vec<WorldEvent>,
     cap: usize,
+    /// Monotonic count of every event ever pushed — it survives the cap drops
+    /// (unlike `events.len()`), so it serves as a stable since-cursor for a
+    /// returning player's event delta (GDD 7.4).
+    #[serde(default)]
+    total_pushed: u64,
 }
 
 impl Default for Chronicle {
@@ -56,6 +61,7 @@ impl Default for Chronicle {
         Self {
             events: Vec::new(),
             cap: 200,
+            total_pushed: 0,
         }
     }
 }
@@ -67,6 +73,7 @@ impl Chronicle {
             kind,
             message: message.into(),
         });
+        self.total_pushed += 1;
         if self.events.len() > self.cap {
             let overflow = self.events.len() - self.cap;
             self.events.drain(0..overflow);
@@ -75,6 +82,22 @@ impl Chronicle {
 
     pub fn is_empty(&self) -> bool {
         self.events.is_empty()
+    }
+
+    /// The current since-cursor: pass it back to [`since`](Self::since) to get
+    /// only the events pushed after this moment.
+    pub fn cursor(&self) -> u64 {
+        self.total_pushed
+    }
+
+    /// The events newer than `cursor` (chronological, oldest first) paired with
+    /// the new cursor to pass next time (GDD 7.4). If `cursor` predates the
+    /// retained window, only the still-retained events are returned — older ones
+    /// were dropped past the cap.
+    pub fn since(&self, cursor: u64) -> (Vec<&WorldEvent>, u64) {
+        let oldest_seq = self.total_pushed.saturating_sub(self.events.len() as u64);
+        let start = (cursor.saturating_sub(oldest_seq) as usize).min(self.events.len());
+        (self.events[start..].iter().collect(), self.total_pushed)
     }
 
     /// The most recent `count` events, newest first.
@@ -107,6 +130,7 @@ mod tests {
         let mut chronicle = Chronicle {
             events: Vec::new(),
             cap: 3,
+            total_pushed: 0,
         };
         for i in 0..5 {
             chronicle.push(i, EventKind::System, format!("e{i}"));
@@ -114,5 +138,52 @@ mod tests {
         assert_eq!(chronicle.recent(10).count(), 3);
         let newest = chronicle.recent(1).next().unwrap();
         assert_eq!(newest.message, "e4");
+    }
+
+    #[test]
+    fn since_returns_only_the_new_events_and_survives_the_cap() {
+        let mut chronicle = Chronicle::default();
+        chronicle.push(1, EventKind::System, "a");
+        chronicle.push(2, EventKind::System, "b");
+        let (events, cursor) = chronicle.since(0);
+        assert_eq!(
+            events
+                .iter()
+                .map(|e| e.message.as_str())
+                .collect::<Vec<_>>(),
+            vec!["a", "b"]
+        );
+        assert_eq!(cursor, 2);
+
+        // Nothing new since the cursor.
+        let (events, cursor2) = chronicle.since(cursor);
+        assert!(events.is_empty());
+        assert_eq!(cursor2, 2);
+
+        // A fresh push shows up as the only delta.
+        chronicle.push(3, EventKind::Hero, "c");
+        let (events, cursor3) = chronicle.since(cursor);
+        assert_eq!(
+            events
+                .iter()
+                .map(|e| e.message.as_str())
+                .collect::<Vec<_>>(),
+            vec!["c"]
+        );
+        assert_eq!(cursor3, 3);
+
+        // A cursor older than the retained window still yields the retained tail,
+        // never a panic — even after the cap has dropped the oldest events.
+        let mut small = Chronicle {
+            events: Vec::new(),
+            cap: 2,
+            total_pushed: 0,
+        };
+        for i in 0..5 {
+            small.push(i, EventKind::System, format!("e{i}"));
+        }
+        let (events, cursor) = small.since(0);
+        assert_eq!(events.len(), 2, "only the retained tail survives");
+        assert_eq!(cursor, 5, "the cursor still counts every event ever pushed");
     }
 }
