@@ -2,12 +2,14 @@
 //!
 //! Standing moves along two orthogonal axes — *visibility* ([`VisibilityScope`])
 //! and *influence* ([`ActionVerb`]), plus a [`BettingMarket`] axis for the
-//! Observatory. A [`Standing`] is a set of unlocked capabilities; the reference
-//! [`Tier`] ladder bundles them into the four named ranks (Watcher → Patron →
-//! Shaper → Elder), **purely additively** — a higher tier grants more and never
-//! revokes a lower tier's grants.
+//! Observatory. A [`Standing`] is a set of unlocked capabilities; the named
+//! [`Tier`] ranks (Watcher → Patron → Shaper → Elder) bundle them **purely
+//! additively** — a higher tier grants more and never revokes a lower one's
+//! grants. The tier → capability mapping itself is data-driven (see
+//! [`crate::data::TierTable`], loaded from `tiers.json`); this module holds only
+//! the vocabulary and the level→tier rule.
 
-use mytherra_core::data::BetPredicate;
+use crate::data::BetPredicate;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
@@ -28,7 +30,7 @@ pub enum VisibilityScope {
 }
 
 /// A divine verb a player's Standing can unlock. Gates the matching
-/// [`PlayerAction`](crate::PlayerAction) families (§7.7).
+/// `PlayerAction` families (GDD 7.7).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum ActionVerb {
     RegionAction,
@@ -75,7 +77,7 @@ impl BettingMarket {
 /// server-side (§7.7); the client mirrors it only to enable/disable affordances.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Standing {
-    /// The reference tier rank this Standing corresponds to (0 = Watcher).
+    /// The tier rank this Standing corresponds to (0 = Watcher).
     pub tier: u8,
     pub scopes: BTreeSet<VisibilityScope>,
     pub verbs: BTreeSet<ActionVerb>,
@@ -96,9 +98,8 @@ impl Standing {
     }
 }
 
-/// The four reference ranks of divine Standing (§5.9). The mapping below is a
-/// starting progression baked into the crate; M0.5 will let `tiers.json`
-/// override which capabilities land at which rank.
+/// The four named ranks of divine Standing (§5.9). The pure ladder — the
+/// capabilities each rank grants live in [`crate::data::TierTable`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Tier {
     Watcher,
@@ -144,88 +145,11 @@ impl Tier {
         }
         tier
     }
-
-    /// The capabilities this tier *adds* on top of the ranks below it (§5.9).
-    fn granted(
-        self,
-    ) -> (
-        &'static [VisibilityScope],
-        &'static [ActionVerb],
-        &'static [BettingMarket],
-    ) {
-        use ActionVerb as A;
-        use BettingMarket as M;
-        use VisibilityScope as V;
-        match self {
-            // A newly-woken deity: sees its heroes and the Observatory, may make
-            // the one hero-adjacent nudge of cultivating a champion, and wagers
-            // only on a single hero's fate.
-            Tier::Watcher => (&[V::Heroes, V::Observatory], &[A::Champion], &[M::HeroFate]),
-            // Steward of lands: the classic loop — bless/corrupt/guide regions and
-            // wager on their fortunes.
-            Tier::Patron => (&[V::Regions], &[A::RegionAction], &[M::RegionFortune]),
-            // Shaper of civilization: settlements, resources, and the artifact/
-            // magic/myth tools; wagers reach the turning of the age.
-            Tier::Shaper => (
-                &[V::Settlements, V::Resources, V::DivineTools],
-                &[A::Artifact, A::Magic, A::Myth],
-                &[M::WorldTurning],
-            ),
-            // Elder of the pantheon: weather, agendas, and the gods themselves —
-            // and the wager that a region will be destroyed (§5.9).
-            Tier::Elder => (
-                &[V::Pantheon, V::Eras, V::FullChronicle],
-                &[A::Weather, A::Agenda, A::Pantheon],
-                &[M::RegionCollapse],
-            ),
-        }
-    }
-
-    /// The cumulative [`Standing`] at this tier: additive over every lower rank.
-    pub fn standing(self) -> Standing {
-        let mut standing = Standing {
-            tier: self.rank(),
-            ..Standing::default()
-        };
-        for tier in Tier::ALL {
-            if tier.rank() <= self.rank() {
-                let (scopes, verbs, markets) = tier.granted();
-                standing.scopes.extend(scopes.iter().copied());
-                standing.verbs.extend(verbs.iter().copied());
-                standing.markets.extend(markets.iter().copied());
-            }
-        }
-        standing
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn tiers_are_purely_additive() {
-        // Each rank's Standing is a superset of the one below it, on every axis.
-        for pair in Tier::ALL.windows(2) {
-            let (lo, hi) = (pair[0].standing(), pair[1].standing());
-            assert!(hi.scopes.is_superset(&lo.scopes), "scopes shrank");
-            assert!(hi.verbs.is_superset(&lo.verbs), "verbs shrank");
-            assert!(hi.markets.is_superset(&lo.markets), "markets shrank");
-        }
-    }
-
-    #[test]
-    fn a_watcher_sees_heroes_but_not_regions() {
-        let watcher = Tier::Watcher.standing();
-        assert!(watcher.can_see(VisibilityScope::Heroes));
-        assert!(watcher.can_see(VisibilityScope::Observatory));
-        assert!(!watcher.can_see(VisibilityScope::Regions));
-        // A Watcher may cultivate a champion (hero-adjacent) but not act on regions.
-        assert!(watcher.can_do(ActionVerb::Champion));
-        assert!(!watcher.can_do(ActionVerb::RegionAction));
-        assert!(watcher.can_bet(BettingMarket::HeroFate));
-        assert!(!watcher.can_bet(BettingMarket::RegionCollapse));
-    }
 
     #[test]
     fn tier_climbs_with_level_by_the_unlock_thresholds() {
@@ -237,20 +161,6 @@ mod tests {
         assert_eq!(Tier::for_level(6, &unlock), Tier::Shaper);
         assert_eq!(Tier::for_level(7, &unlock), Tier::Elder);
         assert_eq!(Tier::for_level(99, &unlock), Tier::Elder);
-    }
-
-    #[test]
-    fn only_the_elder_may_shape_weather_and_wager_on_collapse() {
-        let elder = Tier::Elder.standing();
-        assert!(elder.can_do(ActionVerb::Weather));
-        assert!(elder.can_bet(BettingMarket::RegionCollapse));
-        // ...and still retains everything a Patron could do (additive).
-        assert!(elder.can_do(ActionVerb::RegionAction));
-        assert!(elder.can_see(VisibilityScope::Regions));
-
-        let shaper = Tier::Shaper.standing();
-        assert!(!shaper.can_do(ActionVerb::Weather));
-        assert!(!shaper.can_bet(BettingMarket::RegionCollapse));
     }
 
     #[test]

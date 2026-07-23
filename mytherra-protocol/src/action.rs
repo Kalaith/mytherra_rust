@@ -7,7 +7,7 @@
 //! intents (screen selection, paging, filter cycling) are *not* here — they
 //! never leave the client.
 
-use crate::capability::ActionVerb;
+use mytherra_core::capability::ActionVerb;
 use mytherra_core::data::{ArtifactFocus, ChampionFocus};
 use serde::{Deserialize, Serialize};
 

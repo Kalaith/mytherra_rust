@@ -1,0 +1,26 @@
+[
+  {
+    "tier": "Watcher",
+    "scopes": ["Heroes", "Observatory"],
+    "verbs": ["Champion"],
+    "markets": ["HeroFate"]
+  },
+  {
+    "tier": "Patron",
+    "scopes": ["Regions"],
+    "verbs": ["RegionAction"],
+    "markets": ["RegionFortune"]
+  },
+  {
+    "tier": "Shaper",
+    "scopes": ["Settlements", "Resources", "DivineTools"],
+    "verbs": ["Artifact", "Magic", "Myth"],
+    "markets": ["WorldTurning"]
+  },
+  {
+    "tier": "Elder",
+    "scopes": ["Pantheon", "Eras", "FullChronicle"],
+    "verbs": ["Weather", "Agenda", "Pantheon"],
+    "markets": ["RegionCollapse"]
+  }
+]

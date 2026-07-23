@@ -23,6 +23,7 @@ mod region;
 mod resource;
 mod settlement;
 pub mod strings;
+mod tiers;
 mod trade;
 mod weather;
 
@@ -53,6 +54,7 @@ pub use region::{ClimateType, Culture, RegionSeed};
 pub use resource::{ResourceNodeSeed, ResourceStatus, ResourceType};
 pub use settlement::{SettlementNameBank, SettlementSeed};
 pub use strings::{fill, Strings};
+pub use tiers::{TierDef, TierTable};
 pub use trade::TradeRouteSeed;
 pub use weather::{WeatherIntensity, WeatherPattern};
 
@@ -89,6 +91,7 @@ const TIMEFRAMES_JSON: &str = include_str!("../../assets/data/timeframe_modifier
 const BALANCE_JSON: &str = include_str!("../../assets/data/balance.json");
 const STRINGS_JSON: &str = include_str!("../../assets/data/strings.json");
 const ACHIEVEMENTS_JSON: &str = include_str!("../../assets/data/achievements.json");
+const TIERS_JSON: &str = include_str!("../../assets/data/tiers.json");
 
 /// All static content the game needs, resolved once at boot.
 #[derive(Debug, Clone)]
@@ -126,6 +129,8 @@ pub struct GameData {
     pub strings: Strings,
     /// Achievement definitions (unlock state lives in the player's save).
     pub achievements: Vec<macroquad_toolkit::achievements::Achievement>,
+    /// The tier → capability mapping driving progressive revelation (GDD 5.9).
+    pub tiers: TierTable,
 }
 
 impl GameData {
@@ -163,9 +168,13 @@ impl GameData {
         let strings: Strings = load_embedded_json_labeled("strings", STRINGS_JSON)?;
         let achievements: Vec<macroquad_toolkit::achievements::Achievement> =
             load_embedded_json(ACHIEVEMENTS_JSON)?;
+        let tiers: TierTable = load_embedded_json_labeled("tiers", TIERS_JSON)?;
 
         if regions.is_empty() {
             return Err("regions.json contained no regions".to_owned());
+        }
+        if let Some(tier) = tiers.missing_tier() {
+            return Err(format!("tiers.json is missing the {} tier", tier.label()));
         }
         if bet_types.is_empty() || confidence_levels.is_empty() || timeframes.is_empty() {
             return Err("betting config tables must not be empty".to_owned());
@@ -204,6 +213,7 @@ impl GameData {
             balance,
             strings,
             achievements,
+            tiers,
         })
     }
 

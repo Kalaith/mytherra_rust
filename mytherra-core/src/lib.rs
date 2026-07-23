@@ -6,6 +6,7 @@
 //! serialization. This crate has no rendering dependency — the macroquad
 //! client and the future server both build on it.
 
+pub mod capability;
 pub mod data;
 pub mod save;
 pub mod sim;

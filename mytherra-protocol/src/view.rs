@@ -7,7 +7,7 @@
 //! genuinely small. A player's own [`PlayerView`] is never masked; it's private
 //! to them.
 
-use crate::capability::{BettingMarket, Standing, VisibilityScope as V};
+use mytherra_core::capability::{BettingMarket, Standing, VisibilityScope as V};
 use mytherra_core::data::GameData;
 use mytherra_core::world::{
     Artifact, EraRecord, EraState, Hero, Landmark, MagicPath, Myth, MythCandidate, PantheonDeity,
@@ -175,7 +175,7 @@ pub fn project(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capability::Tier;
+    use mytherra_core::capability::Tier;
     use mytherra_core::world::WorldState;
 
     fn fixtures() -> (GameData, WorldState, PlayerState) {
@@ -188,7 +188,8 @@ mod tests {
     #[test]
     fn a_watcher_receives_heroes_but_no_regions() {
         let (data, world, player) = fixtures();
-        let (view, _) = project(&world, &player, &Tier::Watcher.standing(), &data);
+        let watcher = data.tiers.standing(Tier::Watcher);
+        let (view, _) = project(&world, &player, &watcher, &data);
         assert!(!view.heroes.is_empty(), "a Watcher should see heroes");
         assert!(
             view.regions.is_empty(),
@@ -203,7 +204,8 @@ mod tests {
     #[test]
     fn an_elder_receives_the_whole_world() {
         let (data, world, player) = fixtures();
-        let (view, pv) = project(&world, &player, &Tier::Elder.standing(), &data);
+        let elder = data.tiers.standing(Tier::Elder);
+        let (view, pv) = project(&world, &player, &elder, &data);
         assert!(!view.regions.is_empty());
         assert!(!view.heroes.is_empty());
         assert!(!view.pantheon.is_empty());
@@ -216,7 +218,8 @@ mod tests {
     #[test]
     fn projection_serializes_to_json() {
         let (data, world, player) = fixtures();
-        let (view, pv) = project(&world, &player, &Tier::Patron.standing(), &data);
+        let patron = data.tiers.standing(Tier::Patron);
+        let (view, pv) = project(&world, &player, &patron, &data);
         assert!(serde_json::to_string(&view).is_ok());
         assert!(serde_json::to_string(&pv).is_ok());
     }

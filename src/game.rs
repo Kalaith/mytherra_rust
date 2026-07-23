@@ -122,8 +122,8 @@ impl Game {
             .position(|s| (*s - data.config.seconds_per_tick).abs() < f32::EPSILON)
             .unwrap_or(0);
 
-        let standing =
-            Tier::for_level(player.level, &data.balance.player.tier_unlock_levels).standing();
+        let tier = Tier::for_level(player.level, &data.balance.player.tier_unlock_levels);
+        let standing = data.tiers.standing(tier);
 
         let mut game = Self {
             data,
@@ -179,11 +179,11 @@ impl Game {
     /// The deity's Standing at its current level (GDD 5.9), per the data-driven
     /// unlock thresholds.
     fn standing_now(&self) -> Standing {
-        Tier::for_level(
+        let tier = Tier::for_level(
             self.player.level,
             &self.data.balance.player.tier_unlock_levels,
-        )
-        .standing()
+        );
+        self.data.tiers.standing(tier)
     }
 
     /// Recompute Standing from the player's level, announcing an ascension when
@@ -199,7 +199,7 @@ impl Game {
                 &[("tier", tier.label().to_owned())],
             ));
         }
-        self.standing = tier.standing();
+        self.standing = self.data.tiers.standing(tier);
     }
 
     /// Reconcile the player's saved unlock state with the current achievement
