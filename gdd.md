@@ -589,10 +589,13 @@ The target is a **four-crate Cargo workspace** (one repo — this is still one g
   per account, runs the tick loop (§7.1), authorizes actions and projects per-player views
   (§7.7), and persists to the DB (the DB *is* the save, §6/§8).
 - **`mytherra-client`** (bin) — today's `ui/` + loop, rendering a received `WorldView` and
-  emitting `PlayerAction`s; no local `tick_world`. It keeps an **offline mode** that embeds
-  `mytherra-core` directly (same UI against a local world) for dev iteration, the existing
-  determinism/UI tests, a single-player fallback, and — decisively — shipping the §5.9
-  revelation feature in single-player *before* any networking exists.
+  emitting `PlayerAction`s; no local `tick_world`. It is **online-only**: real play requires
+  a running `mytherra-server` to connect to — there is no playable local-world/offline mode.
+  It still embeds `mytherra-core`, but only so the headless **screenshot capture fixture**
+  (`game/capture.rs`) can drive a throwaway local world to render each screen for CI/visual
+  verification; that fixture never touches the network and is not a play mode. (Earlier
+  drafts planned an offline single-player mode to ship the §5.9 revelation feature before
+  networking — that was delivered in M0.5 and then removed once the server landed.)
 
 **Workspace prerequisite:** `mytherra-core`/`-server` must not link a GL/windowing engine,
 but the pure toolkit modules they need (`rng`, `math`, `data_loader`, `achievements`) live
@@ -791,7 +794,8 @@ src/
 
 **`mytherra-core`** (`crates/core/` — lib): today's `src/{world,sim,data}` and
 serialization, verbatim. Exposes `tick_world`, `WorldState`, `PlayerState`, `GameData`. No
-macroquad, no networking. The client's offline mode and the server both depend on it.
+macroquad, no networking. The server depends on it, as does the client's headless capture
+fixture (the client's only remaining local-world use — not a play mode).
 
 **`mytherra-protocol`** (`crates/protocol/` — lib): `WorldView`/`PlayerView` (the
 per-player projections of §7.7), `PlayerAction` (the mutating subset of `UiAction`),
@@ -806,10 +810,12 @@ authorizes/projects per player (§7.7), persists to the DB (§6/§8). Endpoints:
 - **Client `GameState` variants:** `Login`, `Gameplay` (internal screen enum per §10) — no
   `Menu`-owned save-slot concept the way single-player ports have one, since there's no
   local world save to select (§8).
-- **The client owns no simulation:** everything in `net/` + `view.rs` is fetch-state /
-  render / submit-action against the server (§7.1). The one exception is the optional
-  **offline mode**, which embeds `mytherra-core` and builds the `WorldView` locally through
-  the *same* projection code — so the UI never knows whether the world is local or remote.
+- **The client owns no simulation:** everything in `net.rs` + the online session is
+  fetch-state / render / submit-action against the server (§7.1). Real play is online-only —
+  the client requires a running server. The one remaining local-world use is the headless
+  **screenshot capture fixture**, which embeds `mytherra-core` and projects a throwaway world
+  through the *same* projection code the server uses — so the UI renders identically whether
+  the `WorldView` is fetched (play) or projected locally (capture); it is not a play mode.
 - **The `apply_action` split:** today's single `Game::apply_action` match mixes
   client-local UI-state changes (`Select*`, `Set*Page/Filter`, `Cycle*`, `TogglePause`)
   with authoritative world/player mutations. Splitting it along the "touches world/player"

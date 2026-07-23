@@ -16,12 +16,17 @@ use mytherra_core::command::{apply, authorize, FeedbackLevel};
 use mytherra_protocol::PlayerAction;
 
 impl Game {
-    /// Authorize a command against the local deity's Standing, then apply it.
+    /// Issue an authoritative command. Online, it is sent to the server, which
+    /// authorizes and applies it (§7.1, §7.7); the report returns on a later
+    /// poll. Under the capture fixture there is no server, so it is authorized
+    /// and applied locally instead.
     pub(super) fn submit(&mut self, command: PlayerAction) {
+        if let Some(session) = self.online.as_mut() {
+            session.submit(&command);
+            return;
+        }
         if !self.authorized(&command) {
-            // The deity's Standing has not unlocked this art yet (GDD 5.9). The
-            // UI hides most locked affordances, so this guards the rest (e.g. a
-            // wager on a market above the player's tier).
+            // The deity's Standing has not unlocked this art yet (GDD 5.9).
             self.notifications
                 .warning(self.data.strings.notifications.action_locked.clone());
             return;
@@ -37,9 +42,17 @@ impl Game {
 
     /// Apply an authorized command through the shared core apply (GDD 7.1) — the
     /// exact logic the server runs — then surface its feedback as notifications.
+    /// Used only by the capture fixture; online, the server does the applying.
     pub(super) fn apply_player_action(&mut self, command: PlayerAction) {
         let report = apply(&mut self.world, &mut self.player, &self.data, &command);
         self.view_dirty = true;
+        self.surface_feedback(report);
+    }
+
+    /// Turn a command's [`ActionReport`](mytherra_core::command::ActionReport)
+    /// feedback into player-facing notifications — whether it was applied locally
+    /// (capture) or returned over the wire from the server (online).
+    pub(super) fn surface_feedback(&mut self, report: mytherra_core::command::ActionReport) {
         for feedback in report.feedback {
             match feedback.level {
                 FeedbackLevel::Success => self.notifications.success(feedback.message),

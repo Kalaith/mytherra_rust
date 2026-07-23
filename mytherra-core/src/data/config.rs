@@ -26,4 +26,12 @@ pub struct GameConfig {
     pub start_year: u32,
     /// Seed for the world's deterministic simulation RNG (GDD 5.8).
     pub world_seed: u64,
+    /// Base URL of the authority server the client connects to (GDD 7.4). The
+    /// client is online-only — there is no local-world play — so this must point
+    /// at a running `mytherra-server`.
+    pub server_url: String,
+    /// Real seconds between the online client's `GET /view` polls. The shared
+    /// world turns on the server's schedule; the client re-fetches its
+    /// projection at this cadence (and immediately after each submitted action).
+    pub view_poll_seconds: f32,
 }

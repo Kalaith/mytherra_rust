@@ -1,14 +1,14 @@
 //! Dashboard: world-at-a-glance, the player's standing, and the recent chronicle.
 
 use crate::data::fill;
-use crate::ui::widgets::{bad_stat_color, button, draw_titled, good_stat_color, trend_marker};
-use crate::ui::{content_rect, UiAction, UiContext};
+use crate::ui::widgets::{bad_stat_color, draw_titled, good_stat_color, trend_marker};
+use crate::ui::{content_rect, UiContext};
 use crate::world::EventKind;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::{draw_ui_text_ex, RectExt};
 
-pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
+pub fn draw(ctx: &UiContext<'_>) {
     let area = content_rect();
     let left = Rect::new(area.x, area.y, 604.0, area.h);
     let right = Rect::new(
@@ -18,11 +18,11 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         area.h,
     );
 
-    draw_world_panel(ctx, left, actions);
+    draw_world_panel(ctx, left);
     draw_chronicle_panel(ctx, right);
 }
 
-fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
+fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect) {
     let strings = &ctx.data.strings;
     draw_titled(rect, &strings.panels.world);
     let content = rect.inset(18.0);
@@ -269,37 +269,6 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
         y,
         TextStyle::new(14.0, dark::TEXT_DIM).params(),
     );
-
-    // Save / new-world controls anchored at the bottom of the panel.
-    let btn_y = rect.bottom() - 52.0;
-    let btn_w = (content.w - 24.0) / 3.0;
-    if button(
-        Rect::new(content.x, btn_y, btn_w, 36.0),
-        &strings.ui.save,
-        true,
-        ButtonTone::Positive,
-        ctx.mouse,
-    ) {
-        actions.push(UiAction::Save);
-    }
-    if button(
-        Rect::new(content.x + btn_w + 12.0, btn_y, btn_w, 36.0),
-        &strings.ui.load,
-        ctx.save_exists,
-        ButtonTone::Primary,
-        ctx.mouse,
-    ) {
-        actions.push(UiAction::Load);
-    }
-    if button(
-        Rect::new(content.x + (btn_w + 12.0) * 2.0, btn_y, btn_w, 36.0),
-        &strings.ui.new_world,
-        true,
-        ButtonTone::Secondary,
-        ctx.mouse,
-    ) {
-        actions.push(UiAction::NewWorld);
-    }
 }
 
 fn draw_chronicle_panel(ctx: &UiContext<'_>, rect: Rect) {

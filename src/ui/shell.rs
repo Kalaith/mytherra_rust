@@ -24,7 +24,10 @@ pub fn draw_header(ctx: &UiContext<'_>) {
     let ui = &ctx.data.strings.ui;
     let y = rect.y + 16.0;
     let mut x = rect.right() - 18.0;
-    let (tick_label, tick_fill) = if ctx.paused {
+    let (tick_label, tick_fill) = if ctx.online {
+        // The world turns on the server's schedule — no local countdown.
+        (ui.tick_live.clone(), TICK_FILL)
+    } else if ctx.paused {
         (ui.tick_paused.clone(), TICK_PAUSED_FILL)
     } else {
         (next_tick_label(ctx), TICK_FILL)

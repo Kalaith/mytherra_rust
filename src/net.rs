@@ -6,10 +6,10 @@
 //! interop — *not* wasm-bindgen, so it coexists with macroquad's WebGL build).
 //!
 //! Each call returns a [`Pending<T>`] the caller polls once per frame — never
-//! blocking the game loop. Not yet wired in: the client still runs its world
-//! offline (embedding `mytherra-core` and ticking locally). The online mode that
-//! polls `/view` + `/events` and submits through `/action`, letting the server's
-//! authority replace the local tick, is the next phase.
+//! blocking the game loop. This is the client's live link to the world: it polls
+//! `/view` for its Standing-filtered projection and submits every command through
+//! `/action` (see `game/online.rs`), so the server's authority is the only
+//! simulation there is.
 //!
 //! WASM runtime caveat: quad-net's browser side calls JS functions
 //! (`http_make_request`/`http_try_recv`) that its companion JS shim must define

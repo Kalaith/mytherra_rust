@@ -27,6 +27,7 @@ use mytherra_core::world::{PlayerState, WorldState};
 use mytherra_protocol::{project, ClientView, EventsDelta, Standing};
 use serde::Deserialize;
 use tokio::sync::Mutex;
+use tower_http::cors::CorsLayer;
 
 /// Where the server listens. M1 dev default; a later phase moves this to config.
 const LISTEN_ADDR: &str = "127.0.0.1:8791";
@@ -100,6 +101,10 @@ async fn main() {
         .route("/view", get(view))
         .route("/events", get(events))
         .route("/action", post(action))
+        // The browser client is served from a different origin than this port, so
+        // it needs permissive CORS to call the API. M1 dev default; a later phase
+        // narrows this to the deployed page's origin (§7.6).
+        .layer(CorsLayer::permissive())
         .with_state(shared);
 
     let listener = tokio::net::TcpListener::bind(LISTEN_ADDR)

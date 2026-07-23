@@ -18,76 +18,96 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
 
     draw_achievements(ctx, content);
 
-    // --- World tick speed ---------------------------------------------------
-    draw_ui_text_ex(
-        &strings.tick_speed_title,
-        content.x,
-        y,
-        TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
-    );
-    y += 20.0;
-    draw_ui_text_ex(
-        &strings.tick_speed_hint,
-        content.x,
-        y,
-        TextStyle::new(14.0, dark::TEXT_DIM).params(),
-    );
-    y += 22.0;
-
-    let presets = &ctx.data.balance.settings.tick_speed_presets;
-    let chip_w = 92.0;
-    let gap = 10.0;
-    for (index, seconds) in presets.iter().enumerate() {
-        let rect = Rect::new(content.x + index as f32 * (chip_w + gap), y, chip_w, 34.0);
-        let tone = if index == ctx.tick_speed_index {
-            ButtonTone::Primary
-        } else {
-            ButtonTone::Secondary
-        };
-        let label = fill(&strings.speed_chip, &[("seconds", format!("{seconds:.0}"))]);
-        if button(rect, &label, true, tone, ctx.mouse) {
-            actions.push(UiAction::SetTickSpeed(index));
-        }
-    }
-    y += 62.0;
-
-    // --- Pacing (pause / resume) --------------------------------------------
-    draw_ui_text_ex(
-        &strings.pacing_title,
-        content.x,
-        y,
-        TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
-    );
-    y += 24.0;
-    let (btn_label, tone, status) = if ctx.paused {
-        (
-            &strings.resume,
-            ButtonTone::Positive,
-            &strings.status_paused,
-        )
+    // Pacing is a local-world concern. Online, the shared world turns on the
+    // server's own schedule (§7.1), so the tick-speed and pause controls give
+    // way to a single note; only the capture fixture ever shows the controls.
+    if ctx.online {
+        draw_ui_text_ex(
+            &strings.pacing_title,
+            content.x,
+            y,
+            TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+        );
+        y += 24.0;
+        draw_ui_text_ex(
+            &strings.online_pacing_note,
+            content.x,
+            y,
+            TextStyle::new(15.0, dark::TEXT_DIM).params(),
+        );
+        y += 64.0;
     } else {
-        (
-            &strings.pause,
-            ButtonTone::Secondary,
-            &strings.status_running,
-        )
-    };
-    if button(
-        Rect::new(content.x, y, 176.0, 38.0),
-        btn_label,
-        true,
-        tone,
-        ctx.mouse,
-    ) {
-        actions.push(UiAction::TogglePause);
+        // --- World tick speed -----------------------------------------------
+        draw_ui_text_ex(
+            &strings.tick_speed_title,
+            content.x,
+            y,
+            TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+        );
+        y += 20.0;
+        draw_ui_text_ex(
+            &strings.tick_speed_hint,
+            content.x,
+            y,
+            TextStyle::new(14.0, dark::TEXT_DIM).params(),
+        );
+        y += 22.0;
+
+        let presets = &ctx.data.balance.settings.tick_speed_presets;
+        let chip_w = 92.0;
+        let gap = 10.0;
+        for (index, seconds) in presets.iter().enumerate() {
+            let rect = Rect::new(content.x + index as f32 * (chip_w + gap), y, chip_w, 34.0);
+            let tone = if index == ctx.tick_speed_index {
+                ButtonTone::Primary
+            } else {
+                ButtonTone::Secondary
+            };
+            let label = fill(&strings.speed_chip, &[("seconds", format!("{seconds:.0}"))]);
+            if button(rect, &label, true, tone, ctx.mouse) {
+                actions.push(UiAction::SetTickSpeed(index));
+            }
+        }
+        y += 62.0;
+
+        // --- Pacing (pause / resume) ----------------------------------------
+        draw_ui_text_ex(
+            &strings.pacing_title,
+            content.x,
+            y,
+            TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+        );
+        y += 24.0;
+        let (btn_label, tone, status) = if ctx.paused {
+            (
+                &strings.resume,
+                ButtonTone::Positive,
+                &strings.status_paused,
+            )
+        } else {
+            (
+                &strings.pause,
+                ButtonTone::Secondary,
+                &strings.status_running,
+            )
+        };
+        if button(
+            Rect::new(content.x, y, 176.0, 38.0),
+            btn_label,
+            true,
+            tone,
+            ctx.mouse,
+        ) {
+            actions.push(UiAction::TogglePause);
+        }
+        draw_ui_text_ex(
+            status,
+            content.x + 196.0,
+            y + 24.0,
+            TextStyle::new(15.0, dark::TEXT_DIM).params(),
+        );
+        y += 64.0;
     }
-    draw_ui_text_ex(
-        status,
-        content.x + 196.0,
-        y + 24.0,
-        TextStyle::new(15.0, dark::TEXT_DIM).params(),
-    );
-    y += 64.0;
 
     // --- Read-only world info -----------------------------------------------
     draw_ui_text_ex(
@@ -128,8 +148,8 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         y += 24.0;
     }
 
-    // Return to the title menu — the session is saved on the way out, so
-    // Continue resumes exactly here.
+    // Return to the title menu — this disconnects from the server; the shared
+    // world keeps turning without you.
     y += 12.0;
     if button(
         Rect::new(content.x, y, 200.0, 40.0),

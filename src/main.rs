@@ -1,8 +1,11 @@
 //! Mytherra — a minor deity watching one living, shared world.
 //!
-//! This binary is the macroquad client. It currently runs a local, deterministic
-//! simulation of the world (GDD 5.2-5.7 mechanics); the multiplayer server layer
-//! (GDD 7) is a later phase.
+//! This binary is the macroquad client. It is online-only: it connects to a
+//! running `mytherra-server` (GDD 7), which owns the shared world and its tick,
+//! and renders the Standing-filtered projection the server sends. The client
+//! runs no simulation of its own. (The one exception is the headless screenshot
+//! capture harness, which drives a throwaway local world purely to render each
+//! screen — see `game/capture.rs`.)
 
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
@@ -11,9 +14,7 @@ mod game;
 mod ui;
 
 // The cross-platform HTTP client for the authority server (GDD 7.4) — one
-// poll-based API on native and wasm (via quad-net). Not yet wired into the loop
-// (the client still runs offline), hence `allow(dead_code)`.
-#[allow(dead_code)]
+// poll-based API on native and wasm (via quad-net).
 mod net;
 
 // The simulation core lives in the `mytherra-core` crate (GDD 7.2). Re-export

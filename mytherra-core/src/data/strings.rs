@@ -103,6 +103,10 @@ pub struct TitleText {
     pub exit: String,
     pub main_menu: String,
     pub no_save: String,
+    /// Primary title-menu action: connect to the server and enter the world.
+    pub enter_world: String,
+    /// The quiet line under it, noting the world lives on a shared server.
+    pub online_note: String,
 }
 
 /// Copy for region genesis — breakaway naming and the region-detail strife line.
@@ -143,6 +147,8 @@ pub struct SettingsText {
     pub resume: String,
     pub status_running: String,
     pub status_paused: String,
+    /// Shown online in place of the local pacing controls (§7.1).
+    pub online_pacing_note: String,
     pub world_title: String,
     pub info_display: String,
     pub info_version: String,
@@ -405,6 +411,8 @@ pub struct UiText {
     pub level_badge: String,
     pub tick_badge: String,
     pub tick_paused: String,
+    /// Header badge shown online, where the world turns on the server's schedule.
+    pub tick_live: String,
     pub save: String,
     pub load: String,
     pub new_world: String,
@@ -490,6 +498,11 @@ pub struct Notifications {
     /// Shown when a command is refused because the player's standing has not
     /// unlocked that divine art (GDD 5.9/7.7).
     pub action_locked: String,
+    /// Shown when the client opens a connection to the authority server (§7.1).
+    pub connecting: String,
+    /// Shown when a `GET /view` poll fails (server down/unreachable); slot
+    /// `{error}`.
+    pub view_fetch_failed: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

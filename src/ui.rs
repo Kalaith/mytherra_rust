@@ -92,13 +92,12 @@ impl Screen {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiAction {
     SelectScreen(Screen),
-    /// Start a fresh world and enter it (from the title menu).
-    StartNewGame,
-    /// Load the saved world and enter it (from the title menu).
-    ContinueGame,
+    /// Connect to the authority server and enter the shared world (§7.1). The
+    /// client is online-only, so this is the sole way in.
+    EnterWorld,
     /// Quit the game (from the title menu).
     ExitGame,
-    /// Leave the game back to the title menu, saving the session first.
+    /// Disconnect from the server and return to the title menu.
     ReturnToMenu,
     SelectRegion(usize),
     /// Open a town's detail in the Regions town browser (by settlement id).
@@ -166,9 +165,6 @@ pub enum UiAction {
     /// Challenge the pantheon deity with the given id.
     ChallengeDeity(String),
     AdvanceTick,
-    Save,
-    Load,
-    NewWorld,
 }
 
 /// Everything the view layer needs to render a frame.
@@ -186,7 +182,6 @@ pub struct UiContext<'a> {
     /// The settlement id whose detail is open in the Regions town browser, if any
     /// — drilled into from the selected region's holdings.
     pub selected_town: Option<&'a str>,
-    pub save_exists: bool,
     pub seconds_to_tick: f32,
     /// Index into `data.confidence_levels` for the next bet.
     pub bet_confidence: usize,
@@ -216,6 +211,10 @@ pub struct UiContext<'a> {
     pub tick_speed_index: usize,
     /// Whether automatic world ticking is paused.
     pub paused: bool,
+    /// Whether the client is connected to the authority server (§7.1). Online,
+    /// the world turns on the server's schedule, so the local pacing controls
+    /// (tick speed, pause) and the countdown badge give way to a live indicator.
+    pub online: bool,
     pub mouse: Vec2,
 }
 
@@ -234,7 +233,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
 
     match ctx.screen {
         Screen::Title => {}
-        Screen::Dashboard => dashboard::draw(ctx, &mut actions),
+        Screen::Dashboard => dashboard::draw(ctx),
         Screen::Chronicle => chronicle::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
         Screen::Heroes => heroes::draw(ctx, &mut actions),

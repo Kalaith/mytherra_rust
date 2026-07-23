@@ -4,9 +4,9 @@
 mod achievements;
 mod capture;
 mod command;
+mod online;
 
 use crate::data::{fill, ArtifactFocus, GameData};
-use crate::save::{migrate_save_value, SaveData};
 use crate::sim::tick_world;
 use crate::ui::{self, Screen, UiAction, UiContext};
 use crate::world::{PlayerState, WorldState};
@@ -15,11 +15,9 @@ use macroquad_toolkit::events::EventBus;
 use macroquad_toolkit::notifications::{
     NotificationAnchor, NotificationManager, NotificationRenderConfig,
 };
-use macroquad_toolkit::persistence::{
-    load_from_slot_with_migration, save_to_slot_with_version, slot_exists,
-};
 use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_frame};
 use mytherra_protocol::{project, PlayerAction, Standing, Tier, WorldView};
+use online::OnlineSession;
 
 pub struct Game {
     data: GameData,
@@ -32,7 +30,6 @@ pub struct Game {
     /// Settlement id whose detail is open in the Regions town browser (transient
     /// UI state, not persisted); `None` shows the ordinary region detail.
     selected_town: Option<String>,
-    save_exists: bool,
     tick_accum: f32,
     /// Betting selectors (transient UI state, not persisted).
     bet_confidence: usize,
@@ -59,22 +56,21 @@ pub struct Game {
     tick_speed_index: usize,
     /// Whether automatic world ticking is paused (Settings, GDD 10).
     paused: bool,
-    /// Tick count at the last autosave, so it fires once per interval.
-    last_autosave_tick: u64,
     /// Set when the player chooses Exit; the main loop ends on the next frame.
     quit_requested: bool,
-    /// Whether a world is actually being played (entered via New Game / Continue).
-    /// Guards the auto-save on leaving to the menu, so merely visiting Settings
-    /// from the title never overwrites a real save with an unplayed world.
-    session_active: bool,
-    /// The local deity's Standing — what it may see, do, and bet on (GDD 5.9),
-    /// derived from the player's level via the data-driven unlock thresholds and
-    /// refreshed each update. Gates the nav and every submitted command.
+    /// The live connection to the authority server when playing online (GDD 7.1)
+    /// — `None` on the title menu and under the headless capture fixture, `Some`
+    /// while connected. Interactive play is always online; there is no
+    /// local-world mode.
+    online: Option<OnlineSession>,
+    /// The deity's Standing — what it may see, do, and bet on (GDD 5.9). Online,
+    /// it is adopted from the server's `PlayerView`; under the capture fixture it
+    /// is derived from the player's level. Gates the nav and every command.
     standing: Standing,
-    /// The Standing-filtered projection of the world the UI renders from (§7.7),
-    /// rebuilt from the local world whenever it changes (`view_dirty`). Offline
-    /// this is projected locally; it is the exact shape the server sends online,
-    /// so the UI renders identically either way.
+    /// The Standing-filtered projection of the world the UI renders from (§7.7).
+    /// Online it is the `WorldView` the server sends; under the capture fixture
+    /// it is projected from the local world when it changes (`view_dirty`). Either
+    /// way the UI renders from the same shape.
     view: WorldView,
     view_dirty: bool,
 }
@@ -139,7 +135,6 @@ impl Game {
             screen: Screen::Title,
             selected_region: 0,
             selected_town: None,
-            save_exists: false,
             tick_accum: 0.0,
             bet_confidence: 1,
             bet_stake_index: 0,
@@ -156,14 +151,12 @@ impl Game {
             hero_filter: 0,
             tick_speed_index,
             paused: false,
-            last_autosave_tick: 0,
             quit_requested: false,
-            session_active: false,
+            online: None,
             standing,
             view,
             view_dirty: false,
         };
-        game.refresh_save_state();
         game.sync_achievements();
         game
     }
@@ -171,40 +164,40 @@ impl Game {
     pub fn update(&mut self, dt: f32) {
         self.notifications.update(dt);
         self.handle_input();
-        self.advance_tick_timer(dt);
+
+        // Under the capture fixture (the only offline path) the local world
+        // advances on its own timer; online, the server owns the tick (§7.1).
+        if !self.is_online() {
+            self.advance_tick_timer(dt);
+        }
 
         let actions: Vec<UiAction> = self.events.drain().collect();
         for action in actions {
             self.apply_action(action);
         }
 
-        self.check_achievements();
-        self.refresh_standing();
-        // Rebuild the rendered projection once, after everything that could have
-        // changed the world this frame (ticks, actions, a tier ascension).
-        if self.view_dirty {
-            self.refresh_view();
-            self.view_dirty = false;
+        if self.is_online() {
+            // Poll the connection: adopt any freshly-fetched projection and
+            // surface completed action reports.
+            self.update_online(dt);
+        } else {
+            self.check_achievements();
+            self.refresh_standing();
+            // Rebuild the projection once, after everything that could have
+            // changed the local world this frame (ticks, actions, an ascension).
+            if self.view_dirty {
+                self.refresh_view();
+                self.view_dirty = false;
+            }
         }
-        self.maybe_autosave();
     }
 
-    /// Rebuild the Standing-filtered view the UI renders from (§7.7). Offline
-    /// this projects the local world; online it would adopt the server's
-    /// `WorldView` instead. Called only when the world changes, not per frame.
+    /// Rebuild the Standing-filtered view the UI renders from (§7.7) by
+    /// projecting the local world — the capture fixture's path. Online, the view
+    /// is adopted wholesale from the server instead (see `online`).
     fn refresh_view(&mut self) {
         let (view, _) = project(&self.world, &self.player, &self.standing, &self.data);
         self.view = view;
-    }
-
-    /// The deity's Standing at its current level (GDD 5.9), per the data-driven
-    /// unlock thresholds.
-    fn standing_now(&self) -> Standing {
-        let tier = Tier::for_level(
-            self.player.level,
-            &self.data.balance.player.tier_unlock_levels,
-        );
-        self.data.tiers.standing(tier)
     }
 
     /// Recompute Standing from the player's level, announcing an ascension when
@@ -260,7 +253,6 @@ impl Game {
             screen: self.screen,
             selected_region: self.selected_region,
             selected_town: self.selected_town.as_deref(),
-            save_exists: self.save_exists,
             seconds_to_tick: (self.tick_interval() - self.tick_accum).max(0.0),
             bet_confidence: self.bet_confidence,
             bet_stake_index: self.bet_stake_index,
@@ -277,6 +269,7 @@ impl Game {
             hero_filter: self.hero_filter,
             tick_speed_index: self.tick_speed_index,
             paused: self.paused,
+            online: self.is_online(),
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);
@@ -294,18 +287,11 @@ impl Game {
     }
 
     fn handle_input(&mut self) {
-        // The world keyboard shortcuts belong to the game, not the title menu.
-        if self.screen == Screen::Title {
+        // Online play is driven entirely through the UI — the shared world is
+        // never save/load/tick-stepped from the keyboard. The title menu and the
+        // headless capture fixture take no input either.
+        if self.screen == Screen::Title || self.is_online() {
             return;
-        }
-        if is_key_pressed(KeyCode::S) {
-            self.events.push(UiAction::Save);
-        }
-        if is_key_pressed(KeyCode::L) {
-            self.events.push(UiAction::Load);
-        }
-        if is_key_pressed(KeyCode::N) {
-            self.events.push(UiAction::NewWorld);
         }
         if is_key_pressed(KeyCode::Space) {
             self.events.push(UiAction::AdvanceTick);
@@ -458,144 +444,23 @@ impl Game {
                 self.submit(PlayerAction::ChallengeDeity { deity_id: id })
             }
             UiAction::AdvanceTick => {
-                self.run_tick();
-                self.notifications
-                    .info(self.data.strings.notifications.advance_tick.clone());
-            }
-            UiAction::Save => self.save_game(),
-            UiAction::Load => self.load_game(),
-            UiAction::NewWorld => self.new_world(),
-            UiAction::StartNewGame => {
-                self.new_world();
-                self.session_active = true;
-                self.screen = Screen::Dashboard;
-            }
-            UiAction::ContinueGame => {
-                self.load_game();
-                // Only enter the world if the load actually restored one.
-                if self.save_exists {
-                    self.session_active = true;
-                    self.screen = Screen::Dashboard;
+                // The shared world turns on the server's schedule (§7.1) — a
+                // player never steps it. (The capture fixture drives ticks
+                // directly, not through this intent.)
+                if !self.is_online() {
+                    self.run_tick();
+                    self.notifications
+                        .info(self.data.strings.notifications.advance_tick.clone());
                 }
             }
-            UiAction::ReturnToMenu => {
-                // Preserve the session so Continue resumes exactly here.
-                if self.session_active {
-                    self.save_game();
-                }
-                self.session_active = false;
-                self.screen = Screen::Title;
-            }
-            UiAction::ExitGame => {
-                if self.session_active {
-                    let _ = self.write_save();
-                }
-                self.quit_requested = true;
-            }
+            UiAction::EnterWorld => self.go_online(),
+            UiAction::ReturnToMenu => self.go_offline(),
+            UiAction::ExitGame => self.quit_requested = true,
         }
     }
 
     /// Whether the player has chosen to exit; the main loop stops when set.
     pub fn quit_requested(&self) -> bool {
         self.quit_requested
-    }
-
-    fn new_world(&mut self) {
-        self.world = WorldState::new(&self.data);
-        self.player = PlayerState::new(&self.data.config);
-        self.sync_achievements();
-        self.standing = self.standing_now();
-        self.view_dirty = true;
-        self.selected_region = 0;
-        self.selected_town = None;
-        self.tick_accum = 0.0;
-        self.last_autosave_tick = 0;
-        self.notifications
-            .info(self.data.strings.notifications.new_world.clone());
-        self.notifications.info(fill(
-            &self.data.strings.notifications.awaken,
-            &[("regions", self.world.regions.len().to_string())],
-        ));
-    }
-
-    /// Write the world to its save slot. Shared by manual save and autosave.
-    fn write_save(&self) -> Result<(), String> {
-        let save = SaveData::new(&self.world, &self.player, &self.data.config.version);
-        save_to_slot_with_version(
-            &self.data.config.game_name,
-            &self.data.config.save_slot,
-            &save,
-            &self.data.config.version,
-        )
-    }
-
-    fn save_game(&mut self) {
-        let notes = self.data.strings.notifications.clone();
-        match self.write_save() {
-            Ok(()) => {
-                self.notifications.success(notes.world_saved);
-                self.refresh_save_state();
-            }
-            Err(err) => self
-                .notifications
-                .danger(fill(&notes.save_failed, &[("error", err)])),
-        }
-    }
-
-    /// Persist the world once every `autosave_every_ticks` ticks of real play.
-    /// Lives in the interactive loop only — the capture harness drives
-    /// `run_tick` directly, so headless runs never touch the disk.
-    fn maybe_autosave(&mut self) {
-        let interval = self.data.config.autosave_every_ticks;
-        if interval == 0
-            || self.world.tick_count == 0
-            || self.world.tick_count == self.last_autosave_tick
-            || !self.world.tick_count.is_multiple_of(interval)
-        {
-            return;
-        }
-        self.last_autosave_tick = self.world.tick_count;
-        let notes = self.data.strings.notifications.clone();
-        match self.write_save() {
-            Ok(()) => {
-                self.notifications.info(notes.world_autosaved);
-                self.refresh_save_state();
-            }
-            Err(err) => self
-                .notifications
-                .danger(fill(&notes.save_failed, &[("error", err)])),
-        }
-    }
-
-    fn load_game(&mut self) {
-        let loaded: Result<SaveData, String> = load_from_slot_with_migration(
-            &self.data.config.game_name,
-            &self.data.config.save_slot,
-            &self.data.config.version,
-            |version, value| migrate_save_value(version, value, &self.data.config),
-        );
-        let notes = self.data.strings.notifications.clone();
-        match loaded {
-            Ok(save) => {
-                self.world = save.world;
-                self.player = save.player;
-                self.sync_achievements();
-                self.standing = self.standing_now();
-                self.view_dirty = true;
-                self.selected_region = 0;
-                self.selected_town = None;
-                self.tick_accum = 0.0;
-                self.last_autosave_tick = self.world.tick_count;
-                self.notifications.success(notes.world_restored);
-                self.refresh_save_state();
-            }
-            Err(err) => self
-                .notifications
-                .warning(fill(&notes.load_failed, &[("error", err)])),
-        }
-    }
-
-    fn refresh_save_state(&mut self) {
-        self.save_exists = slot_exists(&self.data.config.game_name, &self.data.config.save_slot);
     }
 }

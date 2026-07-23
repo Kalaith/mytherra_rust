@@ -4,34 +4,18 @@
     "text": "Playable",
     "class": "playable"
   },
-  "controls_hint": "Click the canvas, then press Space to let the years turn",
+  "controls_hint": "Click the canvas, then Enter the World to join the shared realm",
   "canvas_rendering": "pixelated",
   "about": [
-    "You are a minor god among many. Nudge mortals toward glory or ruin, raise legendary champions, and wager on a world that never stops turning."
+    "You are a minor god among many, watching one living, shared world that keeps turning whether or not you are present. Nudge mortals toward glory or ruin, raise legendary champions, and wager on a fate you help decide — alongside every other deity connected to the same realm."
   ],
   "controls": [
     {
       "key": "Mouse",
       "desc": "Switch tabs, select regions/heroes, take divine actions"
-    },
-    {
-      "key": "Space",
-      "desc": "Advance the world one year"
-    },
-    {
-      "key": "S",
-      "desc": "Save the world"
-    },
-    {
-      "key": "L",
-      "desc": "Load the saved world"
-    },
-    {
-      "key": "N",
-      "desc": "Begin a new world"
     }
   ],
-  "controls_note": "The Settings screen also offers auto-tick pacing, so the years can turn on their own while you watch and intervene.",
+  "controls_note": "The world is hosted on a shared server and advances on its own schedule — your Standing rises as you act, revealing more of the world and more divine arts. There is no local save; the realm persists on the server.",
   "details": [
     {
       "label": "Genre",

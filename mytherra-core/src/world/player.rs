@@ -148,6 +148,8 @@ mod tests {
             autosave_every_ticks: 6,
             start_year: 1,
             world_seed: 1,
+            server_url: "http://127.0.0.1:8791".to_owned(),
+            view_poll_seconds: 2.0,
         }
     }
 

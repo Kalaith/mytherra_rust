@@ -32,28 +32,15 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
 
     if button(
         Rect::new(x, y, btn_w, btn_h),
-        &t.new_game,
+        &t.enter_world,
         true,
         ButtonTone::Positive,
         ctx.mouse,
     ) {
-        actions.push(UiAction::StartNewGame);
+        actions.push(UiAction::EnterWorld);
     }
-    y += btn_h + gap;
-
-    if button(
-        Rect::new(x, y, btn_w, btn_h),
-        &t.continue_game,
-        ctx.save_exists,
-        ButtonTone::Primary,
-        ctx.mouse,
-    ) {
-        actions.push(UiAction::ContinueGame);
-    }
-    // A quiet note when there is nothing to continue.
-    if !ctx.save_exists {
-        centered(&t.no_save, cx, y + btn_h + 12.0, 12.0, dark::TEXT_DIM);
-    }
+    // A quiet note that the world lives on a server, not this machine.
+    centered(&t.online_note, cx, y + btn_h + 12.0, 12.0, dark::TEXT_DIM);
     y += btn_h + gap;
 
     if button(
