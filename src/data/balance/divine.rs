@@ -374,4 +374,27 @@ pub struct ProphecyBalance {
     /// prominence and devotion without ever tugging the crisis levers.
     pub golden_culture: f32,
     pub golden_resonance: f32,
+    /// World-average magic affinity at or above which an Age of Magic is foretold
+    /// — the arcane rising to flood the whole world. Set deliberately high, above
+    /// what the world reaches on its own, so this third fate is spoken only over a
+    /// genuinely arcane age: a world whose mages, wonders, and wellsprings have
+    /// steeped every land in magic, not merely a magical corner or two.
+    pub magic_threshold: f32,
+    /// The average magic an Age of Magic needs to keep building; below it, the
+    /// arcane tide ebbs and the prophecy recedes.
+    pub magic_sustain: f32,
+    /// Magic affinity a foretold Age of Magic spreads to every region each tick
+    /// while it stands — the gathering wonder of the telling deepening the very
+    /// arcane it heralds, so the age leans toward arriving. Small, so a world whose
+    /// magic is genuinely ebbing can still slip it. Deepens magic, never a crisis
+    /// lever: like a golden age, an Age of Magic must not feed a runaway.
+    pub magic_wonder_affinity: f32,
+    /// A fulfilled Age of Magic's one-time gift to every region: a flood of arcane
+    /// attunement, and — as the world marvels at the wonders loosed upon it — a
+    /// flowering of cultural influence and divine resonance. Deliberately touches
+    /// only magic, culture, and faith, never the crisis stats: the arcane tide
+    /// reshapes what the land *is*, not whether it starves or burns.
+    pub age_magic_affinity: f32,
+    pub age_magic_culture: f32,
+    pub age_magic_resonance: f32,
 }

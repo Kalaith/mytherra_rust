@@ -451,7 +451,13 @@
     "doom_chaos": 6.0,
     "doom_danger": 4.0,
     "golden_culture": 6.0,
-    "golden_resonance": 5.0
+    "golden_resonance": 5.0,
+    "magic_threshold": 78.0,
+    "magic_sustain": 72.0,
+    "magic_wonder_affinity": 0.15,
+    "age_magic_affinity": 5.0,
+    "age_magic_culture": 5.0,
+    "age_magic_resonance": 4.0
   },
   "era": {
     "era_length": 100,

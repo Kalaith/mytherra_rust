@@ -32,6 +32,7 @@ pub struct Strings {
 pub struct ProphecyNames {
     pub doom: String,
     pub golden_age: String,
+    pub age_of_magic: String,
 }
 
 impl ProphecyNames {
@@ -40,6 +41,7 @@ impl ProphecyNames {
         match kind {
             ProphecyKind::Doom => &self.doom,
             ProphecyKind::GoldenAge => &self.golden_age,
+            ProphecyKind::AgeOfMagic => &self.age_of_magic,
         }
     }
 }

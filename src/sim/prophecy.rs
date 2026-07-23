@@ -2,7 +2,8 @@
 //! passing portents of an omen and the structural turn of an era, a prophecy
 //! reads the world's aggregate state and speaks a longer arc — a gathering doom
 //! when the realms as a whole tip toward darkness, a golden age when they tip
-//! toward plenty. Once spoken, it builds toward its coming while the world holds
+//! toward plenty, an Age of Magic when they are steeped past all measure in the
+//! arcane. Once spoken, it builds toward its coming while the world holds
 //! that course and recedes when the world turns, so a doom can be averted and a
 //! golden age let slip. Fulfilled, it nudges the world further along the road it
 //! was already travelling. Deterministic: the whole cycle reads world state, no
@@ -31,18 +32,23 @@ pub fn tick_prophecies(
     let avg_chaos = regions.iter().map(|r| r.chaos).sum::<f32>() / n;
     let avg_prosperity = regions.iter().map(|r| r.prosperity).sum::<f32>() / n;
     let avg_resonance = regions.iter().map(|r| r.divine_resonance).sum::<f32>() / n;
+    let avg_magic = regions.iter().map(|r| r.magic_affinity).sum::<f32>() / n;
     // The world's "weal": prosperity and faith together, the twin marks of a
     // golden age.
     let weal = (avg_prosperity + avg_resonance) * 0.5;
 
     // A prophecy is the world's single overriding fate — only one stands at a
     // time. The realms tipping far into chaos speak a doom; tipping far into weal,
-    // a golden age. Doom is read first: darkness foretells itself the louder.
+    // a golden age; steeped past all measure in the arcane, an Age of Magic. Doom
+    // is read first (darkness foretells itself the louder), then weal, then the
+    // arcane tide — the rarest, spoken only over a world drowning in wonder.
     if prophecies.is_empty() {
         let kind = if avg_chaos >= balance.doom_threshold {
             Some(ProphecyKind::Doom)
         } else if weal >= balance.golden_threshold {
             Some(ProphecyKind::GoldenAge)
+        } else if avg_magic >= balance.magic_threshold {
+            Some(ProphecyKind::AgeOfMagic)
         } else {
             None
         };
@@ -71,6 +77,7 @@ pub fn tick_prophecies(
         let premise_holds = match p.kind {
             ProphecyKind::Doom => avg_chaos >= balance.doom_sustain,
             ProphecyKind::GoldenAge => weal >= balance.golden_sustain,
+            ProphecyKind::AgeOfMagic => avg_magic >= balance.magic_sustain,
         };
         if premise_holds {
             p.progress += balance.advance_rate;
@@ -113,6 +120,11 @@ pub fn tick_prophecies(
                     region.apply_deltas(0.0, balance.doom_dread_chaos, 0.0, 0.0, region_balance)
                 }
                 ProphecyKind::GoldenAge => region.add_resonance(balance.golden_hope_resonance),
+                // The gathering wonder of a foretold arcane tide deepens the very
+                // magic it heralds, so the age leans toward its own arrival.
+                ProphecyKind::AgeOfMagic => {
+                    region.add_magic_affinity(balance.magic_wonder_affinity)
+                }
             }
         }
     }
@@ -132,6 +144,14 @@ pub fn tick_prophecies(
                 ProphecyKind::GoldenAge => {
                     region.add_cultural_influence(balance.golden_culture);
                     region.add_resonance(balance.golden_resonance);
+                }
+                // The arcane tide breaks over the world: magic floods every land,
+                // and as the realms marvel at the wonders loosed, their prominence
+                // and their faith rise with it — never a crisis lever.
+                ProphecyKind::AgeOfMagic => {
+                    region.add_magic_affinity(balance.age_magic_affinity);
+                    region.add_cultural_influence(balance.age_magic_culture);
+                    region.add_resonance(balance.age_magic_resonance);
                 }
             }
         }
@@ -158,12 +178,14 @@ mod tests {
         );
     }
 
-    /// Force every region to a given chaos / prosperity / resonance.
+    /// Force every region to a given chaos / prosperity / resonance, leaving magic
+    /// low so no Age of Magic intrudes on the doom/golden-age cases.
     fn steep(world: &mut WorldState, chaos: f32, prosperity: f32, resonance: f32) {
         for r in world.regions.iter_mut() {
             r.chaos = chaos;
             r.prosperity = prosperity;
             r.divine_resonance = resonance;
+            r.magic_affinity = 30.0;
         }
     }
 
@@ -257,6 +279,58 @@ mod tests {
             chaos_before
         );
         assert!(b.doom_dread_chaos > 0.0);
+    }
+
+    #[test]
+    fn a_world_drowning_in_magic_foretells_an_age_of_the_arcane() {
+        let data = GameData::load().unwrap();
+        let b = &data.balance.prophecy;
+        let mut world = WorldState::new(&data);
+        // Calm and only moderately rich — no doom, no golden age — but steeped in
+        // the arcane past the threshold: only an Age of Magic can be spoken.
+        for r in world.regions.iter_mut() {
+            r.chaos = 20.0;
+            r.prosperity = 55.0;
+            r.divine_resonance = 40.0;
+            r.magic_affinity = b.magic_threshold + 5.0;
+        }
+        run(&mut world, &data);
+        assert_eq!(
+            world.prophecies.len(),
+            1,
+            "a world drowning in magic should foretell an Age of Magic"
+        );
+        assert_eq!(world.prophecies[0].kind, ProphecyKind::AgeOfMagic);
+
+        // While it stands, the gathering wonder deepens the world's magic further.
+        let magic_before = world.regions[0].magic_affinity;
+        run(&mut world, &data);
+        assert!(
+            world.regions[0].magic_affinity > magic_before,
+            "a standing Age of Magic's wonder should deepen a region's magic"
+        );
+    }
+
+    #[test]
+    fn a_golden_age_outranks_an_age_of_magic_when_both_premises_hold() {
+        let data = GameData::load().unwrap();
+        let b = &data.balance.prophecy;
+        let mut world = WorldState::new(&data);
+        // Rich, devout, AND arcane — both fates are possible; the golden age, read
+        // first, is the one spoken. (Chaos low so no doom pre-empts either.)
+        for r in world.regions.iter_mut() {
+            r.chaos = 15.0;
+            r.prosperity = 95.0;
+            r.divine_resonance = 90.0;
+            r.magic_affinity = b.magic_threshold + 5.0;
+        }
+        run(&mut world, &data);
+        assert_eq!(world.prophecies.len(), 1);
+        assert_eq!(
+            world.prophecies[0].kind,
+            ProphecyKind::GoldenAge,
+            "weal is read before the arcane tide"
+        );
     }
 
     #[test]
