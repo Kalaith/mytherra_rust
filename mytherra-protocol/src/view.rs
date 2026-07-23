@@ -20,6 +20,24 @@ use std::collections::BTreeSet;
 /// How many recent chronicle events a player without `FullChronicle` receives.
 const RECENT_EVENTS: usize = 32;
 
+/// The full per-player payload a client polls (`GET /view`): its Standing-
+/// filtered world view and its own private player view (§7.7). Shared so the
+/// server serializes exactly what the client deserializes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClientView {
+    pub world: WorldView,
+    pub player: PlayerView,
+}
+
+/// The chronicle change-delta and the new since-cursor (`GET /events?since=`,
+/// §7.4): the events pushed since the client last acknowledged, plus the cursor
+/// to send next time.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventsDelta {
+    pub events: Vec<WorldEvent>,
+    pub cursor: u64,
+}
+
 /// A player's private view of their own deity — never filtered.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerView {

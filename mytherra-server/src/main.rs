@@ -23,9 +23,9 @@ use mytherra_core::capability::Tier;
 use mytherra_core::command::{apply, authorize, ActionReport, PlayerAction};
 use mytherra_core::data::GameData;
 use mytherra_core::sim::tick_world;
-use mytherra_core::world::{PlayerState, WorldEvent, WorldState};
-use mytherra_protocol::{project, PlayerView, Standing, WorldView};
-use serde::{Deserialize, Serialize};
+use mytherra_core::world::{PlayerState, WorldState};
+use mytherra_protocol::{project, ClientView, EventsDelta, Standing};
+use serde::Deserialize;
 use tokio::sync::Mutex;
 
 /// Where the server listens. M1 dev default; a later phase moves this to config.
@@ -69,27 +69,14 @@ fn standing_for(data: &GameData, player: &PlayerState) -> Standing {
 
 type Shared = Arc<Mutex<Authority>>;
 
-/// The per-player payload a client polls: its Standing-filtered world view and
-/// its own private player view (§7.7).
-#[derive(Serialize)]
-struct ClientView {
-    world: WorldView,
-    player: PlayerView,
-}
-
 /// `GET /events?since=<cursor>` — a returning player asks what changed since
 /// they last acknowledged (GDD 7.4). Omitting `since` yields the retained tail.
+/// (`ClientView` and `EventsDelta` responses are shared wire types in
+/// `mytherra_protocol`.)
 #[derive(Deserialize)]
 struct EventsQuery {
     #[serde(default)]
     since: u64,
-}
-
-/// The event delta and the new cursor to pass next time.
-#[derive(Serialize)]
-struct EventsDelta {
-    events: Vec<WorldEvent>,
-    cursor: u64,
 }
 
 #[tokio::main]

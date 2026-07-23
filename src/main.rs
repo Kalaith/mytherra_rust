@@ -10,6 +10,13 @@ use macroquad_toolkit::capture;
 mod game;
 mod ui;
 
+// The native HTTP client for the authority server (GDD 7.4). WASM uses a
+// different transport (a later spike), so this is native-only; it is not yet
+// wired into the loop (the client still runs offline), hence `allow(dead_code)`.
+#[cfg(not(target_arch = "wasm32"))]
+#[allow(dead_code)]
+mod net;
+
 // The simulation core lives in the `mytherra-core` crate (GDD 7.2). Re-export
 // its modules at the crate root so the client's `crate::{data,world,sim,save}`
 // paths resolve unchanged.
