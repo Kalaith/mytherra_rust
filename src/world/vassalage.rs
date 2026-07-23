@@ -24,4 +24,10 @@ impl Vassalage {
     pub fn involves(&self, region_id: &str) -> bool {
         self.overlord_id == region_id || self.vassal_id == region_id
     }
+
+    /// Whether this bond ties the two given regions, in either direction.
+    pub fn binds(&self, a: &str, b: &str) -> bool {
+        (self.overlord_id == a && self.vassal_id == b)
+            || (self.overlord_id == b && self.vassal_id == a)
+    }
 }

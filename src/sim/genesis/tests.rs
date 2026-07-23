@@ -522,6 +522,70 @@ fn a_region_with_a_mighty_ally_resists_conquest() {
 }
 
 #[test]
+fn a_mighty_overlord_shields_its_vassal_from_conquest() {
+    // The same defenceless crisis region that would be annexed alone is spared
+    // when a mighty overlord holds it — its overlord marches to its defence against
+    // the would-be conqueror, tribute buying the protection of the yoke (GDD 5.2).
+    use crate::world::Vassalage;
+
+    let survives = |with_overlord: bool| {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let loser_id = world.regions[0].id.clone();
+        let overlord_id = world.regions[2].id.clone();
+
+        let winner = &mut world.regions[1];
+        winner.prosperity = 90.0;
+        winner.population = 40000.0;
+        winner.chaos = 20.0;
+        winner.danger = 20.0;
+        winner.refresh_status(&data.balance.region);
+        let loser = &mut world.regions[0];
+        loser.prosperity = 8.0;
+        loser.chaos = 90.0;
+        loser.danger = 90.0;
+        loser.population = 3000.0;
+        loser.refresh_status(&data.balance.region);
+        for hero in &mut world.heroes {
+            if hero.region_id == loser_id {
+                hero.level = 1;
+            }
+        }
+        world.artifacts.retain(|a| a.region_id != loser_id);
+
+        // A mighty, populous overlord that holds the crisis region as its vassal.
+        let overlord = world
+            .regions
+            .iter_mut()
+            .find(|r| r.id == overlord_id)
+            .unwrap();
+        overlord.prosperity = 100.0;
+        overlord.population = 200000.0;
+        overlord.refresh_status(&data.balance.region);
+        if with_overlord {
+            world.vassalages.push(Vassalage {
+                id: "v".to_owned(),
+                overlord_id: overlord_id.clone(),
+                vassal_id: loser_id.clone(),
+                age: 5,
+            });
+        }
+
+        tick_genesis(&mut world, &data);
+        world.regions.iter().any(|r| r.id == loser_id)
+    };
+
+    assert!(
+        !survives(false),
+        "a masterless crisis region should be annexed"
+    );
+    assert!(
+        survives(true),
+        "a mighty overlord should shield its vassal from the conqueror"
+    );
+}
+
+#[test]
 fn a_protection_ward_turns_back_conquest() {
     use crate::data::{ArtifactFocus, ArtifactSeed};
     use crate::world::Artifact;

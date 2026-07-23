@@ -7,7 +7,7 @@ use crate::data::strings::ChronicleText;
 use crate::data::{fill, Agenda, ArtifactFocus, ConquestBalance, RegionBalance};
 use crate::world::{
     Artifact, Chronicle, EventKind, Hero, Landmark, Pact, Region, RegionAgendas, ResourceNode,
-    Settlement, TradeRoute, WeatherEvent,
+    Settlement, TradeRoute, Vassalage, WeatherEvent,
 };
 
 /// Does a hero strong enough to hold the region against invasion live there? A
@@ -55,6 +55,7 @@ fn defended_might(
     heroes: &[Hero],
     artifacts: &[Artifact],
     pacts: &[Pact],
+    vassalages: &[Vassalage],
     balance: &ConquestBalance,
 ) -> f32 {
     let own = conquest_might(region, heroes, artifacts, balance);
@@ -72,7 +73,16 @@ fn defended_might(
         .filter_map(|ally_id| regions.iter().find(|r| r.id == ally_id))
         .map(|ally| conquest_might(ally, heroes, artifacts, balance) * balance.ally_aid)
         .sum();
-    own + aid
+    // A vassal is shielded by the strength that holds it: its overlord marches to
+    // its defence against any third power that would swallow it, lending might as a
+    // sworn ally does (GDD 5.2). Tribute buys protection; the yoke is also a shield.
+    let overlord_aid: f32 = vassalages
+        .iter()
+        .filter(|v| v.vassal_id == region.id)
+        .filter_map(|v| regions.iter().find(|r| r.id == v.overlord_id))
+        .map(|overlord| conquest_might(overlord, heroes, artifacts, balance) * balance.ally_aid)
+        .sum();
+    own + aid + overlord_aid
 }
 
 /// Is the region warded by a Protection artifact strong enough to turn back a
@@ -117,6 +127,7 @@ fn pick(
     civ: &[RegionAgendas],
     agendas: &[Agenda],
     pacts: &[Pact],
+    vassalages: &[Vassalage],
     apply_threshold: f32,
     balance: &ConquestBalance,
 ) -> Option<(usize, usize)> {
@@ -132,14 +143,21 @@ fn pick(
         for (ti, target) in regions.iter().enumerate() {
             // A people does not annex a sworn ally, and one is spared even in
             // crisis (GDD 5.2): the alliance stays the hand of conquest as it stays
-            // the sword of war.
+            // the sword of war. Nor does an overlord devour its own vassal — it
+            // holds it as a tributary, not a conquest, and protects it besides.
             if ti == ai
                 || !target.status.is_crisis()
                 || pacts.iter().any(|p| p.binds(&aggressor.id, &target.id))
+                || vassalages
+                    .iter()
+                    .any(|v| v.binds(&aggressor.id, &target.id))
             {
                 continue;
             }
-            let gap = a_might - defended_might(target, regions, heroes, artifacts, pacts, balance);
+            let gap = a_might
+                - defended_might(
+                    target, regions, heroes, artifacts, pacts, vassalages, balance,
+                );
             // Both peoples' courses shape the margin: a Defense target demands a
             // wider gap and a Rivalry one lies more exposed; a Rivalry aggressor
             // will forgo margin to strike where a Defense-minded one holds off.
@@ -182,6 +200,7 @@ pub(super) fn run(
     trade_routes: &mut Vec<TradeRoute>,
     civilization: &mut Vec<RegionAgendas>,
     pacts: &[Pact],
+    vassalages: &[Vassalage],
     agendas: &[Agenda],
     apply_threshold: f32,
     conquest_momentum: &mut f32,
@@ -199,6 +218,7 @@ pub(super) fn run(
         civilization,
         agendas,
         pacts,
+        vassalages,
         apply_threshold,
         balance,
     ) else {
