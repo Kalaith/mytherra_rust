@@ -179,12 +179,16 @@ fn spawn_monsters(
         {
             continue;
         }
-        // Peril breeds beasts, but resident Rangers ward the wilds against them:
-        // the more dangerous the land the likelier one stalks forth, the more its
-        // rangers patrol the fewer do (GDD 5.2 <-> 5.4).
+        // Peril breeds beasts, but two wardings hold them back: resident Rangers
+        // who patrol the wilds (GDD 5.2 <-> 5.4), and the sacred ground of a devout
+        // land, whose faith turns back the beast as surely as any spear (GDD 5.2
+        // <-> 5.1) — so the more dangerous the land the likelier one stalks forth,
+        // the more it is patrolled and the more it is hallowed the fewer do.
         let ward = ranger_ward(heroes, &region.id) * balance.ranger_ward;
+        let hallowed = (region.divine_resonance - 50.0).max(0.0) * balance.resonance_ward;
         let chance = (balance.emergence_chance + region.danger * balance.emergence_danger_coeff
-            - ward)
+            - ward
+            - hallowed)
             .max(0.0);
         if !rng.chance(chance) {
             continue;
@@ -356,6 +360,35 @@ mod tests {
         assert!(
             emergences(0) > emergences(4),
             "a ranger-warded land should breed fewer beasts than an unwarded one"
+        );
+    }
+
+    #[test]
+    fn hallowed_ground_wards_the_wilds_against_beasts() {
+        // The same perilous region breeds fewer beasts when its faith runs deep
+        // than when it is spiritually barren (GDD 5.2 <-> 5.1). No rangers, so only
+        // the sacred ground stands between the land and the wild.
+        let data = GameData::load().unwrap();
+        let emergences = |resonance: f32| {
+            let mut world = WorldState::new(&data);
+            world.regions.truncate(1);
+            world.regions[0].danger = 95.0;
+            world.regions[0].magic_affinity = 0.0;
+            world.regions[0].divine_resonance = resonance;
+            let region_id = world.regions[0].id.clone();
+            world.heroes.retain(|h| h.region_id != region_id);
+            let mut count = 0;
+            for _ in 0..2000 {
+                world.monsters.clear(); // isolate emergence odds
+                world.regions[0].divine_resonance = resonance; // hold faith fixed
+                run(&mut world, &data, &data.balance.monster);
+                count += world.monsters.len();
+            }
+            count
+        };
+        assert!(
+            emergences(20.0) > emergences(100.0),
+            "a hallowed land should breed fewer beasts than a faithless one"
         );
     }
 

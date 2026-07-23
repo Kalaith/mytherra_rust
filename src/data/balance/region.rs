@@ -254,6 +254,13 @@ pub struct MonsterBalance {
     /// they lend against a beast already loose, and the wilderness counterpart to
     /// the Warrior's garrison and the Cleric's tended faith.
     pub ranger_ward: f32,
+    /// Emergence chance a region loses per point of its divine resonance above the
+    /// neutral baseline (GDD 5.2 <-> 5.1): sacred ground turns back the beasts, so
+    /// a hallowed, devout land — one tended by its Clerics, blessed by its temples,
+    /// venerating its saints — is warded against the wild by faith itself, as a
+    /// land of rangers is warded by patrol. The wilderness counterpart to the
+    /// blessing the divine already lays on the harvest.
+    pub resonance_ward: f32,
     /// A region whose magic affinity clears this line breeds arcane beasts
     /// (wyrms, shades) rather than natural predators.
     pub arcane_magic_threshold: f32,
