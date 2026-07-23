@@ -298,6 +298,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.regions,
         &world.plagues,
         &world.monsters,
+        &world.trade_routes,
         &data.balance.refugee,
         &data.balance.region,
         &mut world.chronicle,
