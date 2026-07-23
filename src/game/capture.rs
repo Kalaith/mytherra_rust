@@ -6,6 +6,7 @@
 
 use super::Game;
 use crate::ui::Screen;
+use mytherra_protocol::PlayerAction;
 
 impl Game {
     /// Seed a named screen (and some world history) for the screenshot harness.
@@ -50,18 +51,28 @@ impl Game {
         if scene == "weather" {
             self.weather_intensity = 2;
             let region = self.selected_region_id();
-            self.shape_weather(&region, self.weather_pattern, self.weather_intensity);
+            self.apply_player_action(PlayerAction::ShapeWeather {
+                region_id: region,
+                pattern_index: self.weather_pattern,
+                intensity_index: self.weather_intensity,
+            });
             self.selected_region = 1;
             self.weather_pattern = 2;
             let region = self.selected_region_id();
-            self.shape_weather(&region, self.weather_pattern, self.weather_intensity);
+            self.apply_player_action(PlayerAction::ShapeWeather {
+                region_id: region,
+                pattern_index: self.weather_pattern,
+                intensity_index: self.weather_intensity,
+            });
             self.selected_region = 0;
             self.weather_pattern = 0;
             self.weather_intensity = 0;
         }
         if scene == "magic" {
             for _ in 0..4 {
-                self.research_magic("restoration");
+                self.apply_player_action(PlayerAction::ResearchMagic {
+                    path_id: "restoration".into(),
+                });
             }
             for _ in 0..45 {
                 self.run_tick();
@@ -89,7 +100,7 @@ impl Game {
                 .map(|c| c.id.clone())
                 .collect();
             for id in ids {
-                self.promote_myth(&id);
+                self.apply_player_action(PlayerAction::PromoteMyth { candidate_id: id });
             }
             for _ in 0..6 {
                 self.run_tick();
@@ -97,14 +108,21 @@ impl Game {
         }
         if scene == "civilization" {
             let region = self.selected_region_id();
-            self.advance_agenda(&region, 0);
+            self.apply_player_action(PlayerAction::AdvanceAgenda {
+                region_id: region,
+                agenda_index: 0,
+            });
             for _ in 0..3 {
                 self.run_tick();
             }
         }
         if scene == "pantheon" {
-            self.challenge_deity("aurex");
-            self.appease_deity("mordath");
+            self.apply_player_action(PlayerAction::ChallengeDeity {
+                deity_id: "aurex".into(),
+            });
+            self.apply_player_action(PlayerAction::AppeaseDeity {
+                deity_id: "mordath".into(),
+            });
             for _ in 0..2 {
                 self.run_tick();
             }
@@ -121,7 +139,11 @@ impl Game {
             self.weather_pattern = 0;
             self.weather_intensity = 2;
             let region = self.selected_region_id();
-            self.shape_weather(&region, self.weather_pattern, self.weather_intensity);
+            self.apply_player_action(PlayerAction::ShapeWeather {
+                region_id: region,
+                pattern_index: self.weather_pattern,
+                intensity_index: self.weather_intensity,
+            });
             self.weather_intensity = 0;
         }
         if scene == "eras" {
@@ -141,7 +163,10 @@ impl Game {
             // Run long enough that region genesis grows the map past one page, so
             // the forecast's pagination shows, and seed a fresh divine work or two.
             let region = self.selected_region_id();
-            self.create_artifact(&region, self.create_focus);
+            self.apply_player_action(PlayerAction::CreateArtifact {
+                region_id: region,
+                focus: self.create_focus,
+            });
             for _ in 0..120 {
                 self.run_tick();
             }
@@ -201,7 +226,9 @@ impl Game {
                     .map(|h| h.id.clone())
                     .collect();
                 for id in &ids {
-                    self.designate_champion(id);
+                    self.apply_player_action(PlayerAction::DesignateChampion {
+                        hero_id: id.clone(),
+                    });
                 }
                 // Align the first champion's focus to its hero's calling so the
                 // "in tune" synergy cue is visible in the capture (GDD 5.4).
@@ -236,7 +263,11 @@ impl Game {
                     .map(|e| e.id.clone())
                     .collect();
                 for id in ids {
-                    self.place_bet(&id, self.bet_confidence, self.bet_stake_index);
+                    self.apply_player_action(PlayerAction::PlaceBet {
+                        event_id: id,
+                        confidence_index: self.bet_confidence,
+                        stake_index: self.bet_stake_index,
+                    });
                 }
                 for _ in 0..12 {
                     self.run_tick();

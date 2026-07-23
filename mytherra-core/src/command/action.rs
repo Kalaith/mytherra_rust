@@ -1,14 +1,14 @@
-//! [`PlayerAction`] — the authoritative commands a client submits to the server.
+//! [`PlayerAction`] — the authoritative commands a client submits.
 //!
-//! This is the wire form of the client's mutating `UiAction` verbs, with every
-//! selector the client keeps locally (the selected region, the chosen bet
-//! confidence/stake, the weather pattern/intensity) made explicit so a command
-//! carries everything the server needs to authorize and apply it. Pure UI
-//! intents (screen selection, paging, filter cycling) are *not* here — they
-//! never leave the client.
+//! This is the wire form of the client's mutating verbs, with every selector the
+//! client keeps locally (the selected region, the chosen bet confidence/stake,
+//! the weather pattern/intensity) made explicit so a command carries everything
+//! the authority needs to authorize (via [`Standing`](crate::capability::Standing))
+//! and apply (via [`super::apply`]). Pure UI intents (screen selection, paging,
+//! filter cycling) are *not* here — they never leave the client.
 
-use mytherra_core::capability::ActionVerb;
-use mytherra_core::data::{ArtifactFocus, ChampionFocus};
+use crate::capability::ActionVerb;
+use crate::data::{ArtifactFocus, ChampionFocus};
 use serde::{Deserialize, Serialize};
 
 /// A single authoritative command. Targets are addressed by id (stable across
@@ -84,8 +84,8 @@ impl PlayerAction {
     ///
     /// Returns `None` for [`PlayerAction::PlaceBet`], which is authorized by
     /// *market* instead — the target event's predicate decides which
-    /// [`BettingMarket`](crate::BettingMarket) is required, so it can't be known
-    /// from the command alone.
+    /// [`BettingMarket`](crate::capability::BettingMarket) is required, so it
+    /// can't be known from the command alone.
     pub fn required_verb(&self) -> Option<ActionVerb> {
         use ActionVerb as A;
         Some(match self {

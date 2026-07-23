@@ -7,6 +7,7 @@
 //! client and the future server both build on it.
 
 pub mod capability;
+pub mod command;
 pub mod data;
 pub mod save;
 pub mod sim;

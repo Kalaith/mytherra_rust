@@ -12,6 +12,7 @@
 
 use super::Game;
 use crate::data::ChampionFocus;
+use mytherra_core::command::{apply, FeedbackLevel};
 use mytherra_protocol::{BettingMarket, PlayerAction};
 
 impl Game {
@@ -48,48 +49,16 @@ impl Game {
         true
     }
 
-    /// Apply an authorized command to the world/player by dispatching to the
-    /// per-verb handlers. This is the logic the server will own (GDD 7.1).
-    fn apply_player_action(&mut self, command: PlayerAction) {
-        match command {
-            PlayerAction::RegionAction {
-                region_id,
-                action_id,
-            } => self.apply_region_action(&region_id, &action_id),
-            PlayerAction::DesignateChampion { hero_id } => self.designate_champion(&hero_id),
-            PlayerAction::CultivateChampion { hero_id } => self.cultivate_champion(&hero_id),
-            PlayerAction::SetChampionFocus { hero_id, focus } => {
-                self.set_champion_focus(&hero_id, focus)
+    /// Apply an authorized command through the shared core apply (GDD 7.1) — the
+    /// exact logic the server runs — then surface its feedback as notifications.
+    pub(super) fn apply_player_action(&mut self, command: PlayerAction) {
+        let report = apply(&mut self.world, &mut self.player, &self.data, &command);
+        for feedback in report.feedback {
+            match feedback.level {
+                FeedbackLevel::Success => self.notifications.success(feedback.message),
+                FeedbackLevel::Warning => self.notifications.warning(feedback.message),
+                FeedbackLevel::Info => self.notifications.info(feedback.message),
             }
-            PlayerAction::PlaceBet {
-                event_id,
-                confidence_index,
-                stake_index,
-            } => self.place_bet(&event_id, confidence_index, stake_index),
-            PlayerAction::CreateArtifact { region_id, focus } => {
-                self.create_artifact(&region_id, focus)
-            }
-            PlayerAction::EmpowerArtifact { artifact_id } => self.empower_artifact(&artifact_id),
-            PlayerAction::StabilizeArtifact { artifact_id } => {
-                self.stabilize_artifact(&artifact_id)
-            }
-            PlayerAction::TransferArtifact {
-                artifact_id,
-                to_region_id,
-            } => self.transfer_artifact(&artifact_id, &to_region_id),
-            PlayerAction::ShapeWeather {
-                region_id,
-                pattern_index,
-                intensity_index,
-            } => self.shape_weather(&region_id, pattern_index, intensity_index),
-            PlayerAction::ResearchMagic { path_id } => self.research_magic(&path_id),
-            PlayerAction::PromoteMyth { candidate_id } => self.promote_myth(&candidate_id),
-            PlayerAction::AdvanceAgenda {
-                region_id,
-                agenda_index,
-            } => self.advance_agenda(&region_id, agenda_index),
-            PlayerAction::AppeaseDeity { deity_id } => self.appease_deity(&deity_id),
-            PlayerAction::ChallengeDeity { deity_id } => self.challenge_deity(&deity_id),
         }
     }
 

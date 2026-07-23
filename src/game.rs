@@ -2,8 +2,6 @@
 //! runs the tick timer, and interprets UI intents.
 
 mod achievements;
-mod actions;
-mod actions_tools;
 mod capture;
 mod command;
 
