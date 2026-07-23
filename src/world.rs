@@ -27,6 +27,7 @@ mod saint;
 mod settlement;
 mod speculation;
 mod trade;
+mod vassalage;
 mod war;
 mod weather;
 
@@ -56,6 +57,7 @@ pub use saint::Saint;
 pub use settlement::Settlement;
 pub use speculation::SpeculationEvent;
 pub use trade::TradeRoute;
+pub use vassalage::Vassalage;
 pub use war::War;
 pub use weather::{weather_cost, WeatherEvent};
 
@@ -189,6 +191,13 @@ pub struct WorldState {
     /// Monotonic counter for unique ids of wars that break out mid-run.
     #[serde(default)]
     pub war_seq: u64,
+    /// Standing vassalage bonds — a stronger region's tributary hold over a weaker
+    /// one (GDD 5.2); form dynamically, so this starts empty on a fresh world.
+    #[serde(default)]
+    pub vassalages: Vec<Vassalage>,
+    /// Monotonic counter for unique ids of vassalages sworn mid-run.
+    #[serde(default)]
+    pub vassalage_seq: u64,
     /// The foretold turnings the world's drift has spoken (GDD 5.6); arise
     /// dynamically, so this starts empty on a fresh world.
     #[serde(default)]
@@ -297,6 +306,8 @@ impl WorldState {
             monster_seq: 0,
             wars: Vec::new(),
             war_seq: 0,
+            vassalages: Vec::new(),
+            vassalage_seq: 0,
             prophecies: Vec::new(),
             prophecy_seq: 0,
             pacts: Vec::new(),

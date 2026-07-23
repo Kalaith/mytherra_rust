@@ -359,6 +359,38 @@ pub struct WarBalance {
     pub ally_aid: f32,
 }
 
+/// Vassalage tuning (GDD 5.2): the tributary bond a stronger region lays on a
+/// weaker one — the political middle ground between the equal amity of a pact and
+/// the annexation of conquest. Formed in peacetime (a region in crisis is
+/// conquered, not vassalized), it drains the vassal's wealth to its overlord until
+/// the vassal grows strong enough to rebel.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VassalageBalance {
+    /// How many times an overlord's total might must exceed a neighbour's for it to
+    /// subordinate that neighbour as a vassal — a bond of the strong over the far
+    /// weaker, not of near-equals.
+    pub dominance_ratio: f32,
+    /// The cadence, in years, at which a vassalage may be sworn: on years divisible
+    /// by this, the single most lopsided lawful bond comes to pass, and on the years
+    /// between, none. Diplomacy is slow work — a subjugation negotiated over years
+    /// and concluded only at these reckonings — and, being a fixed cadence rather
+    /// than a roll, it never perturbs the world's seeded RNG stream.
+    pub form_interval: u32,
+    /// Fraction of the vassal's prosperity above the tribute floor rendered to its
+    /// overlord each tick — the wealth the yoke extracts.
+    pub tribute_fraction: f32,
+    /// Prosperity a vassal keeps untaxed: only wealth above this floor is tithed,
+    /// so a destitute vassal renders little and a rich one much.
+    pub tribute_floor: f32,
+    /// Fraction of the tribute that actually reaches the overlord (the rest lost to
+    /// the cost of holding a subject down), so vassalage is never a pure creation
+    /// of wealth — it moves it, and wastes some in the moving.
+    pub tribute_efficiency: f32,
+    /// Once a vassal's total might climbs back to this fraction of its overlord's,
+    /// it has the strength to throw off the yoke and rebels to independence.
+    pub rebel_ratio: f32,
+}
+
 /// Alliance tuning (GDD 5.2): the pacts that form between like-cultured,
 /// trade-linked, peaceful regions. Amity to war's enmity — allies do not fall
 /// upon one another, and each stands the more secure for the alliance.

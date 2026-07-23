@@ -27,6 +27,7 @@ mod saint;
 mod settlement;
 mod speculation;
 mod trade;
+mod vassalage;
 mod war;
 mod weather;
 
@@ -253,6 +254,24 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.war,
         &data.balance.region,
         &mut world.rng,
+        &mut world.chronicle,
+        &data.strings.chronicle,
+        world.year,
+    );
+
+    // In the space between alliance and annexation, the strong bend the weak:
+    // a dominant region takes a far weaker, trade-linked neighbour at peace as a
+    // tributary vassal, draining its wealth until it grows strong enough to rebel
+    // (GDD 5.2).
+    vassalage::tick_vassalages(
+        &mut world.vassalages,
+        &mut world.regions,
+        &world.heroes,
+        &world.trade_routes,
+        &mut world.vassalage_seq,
+        &data.balance.vassalage,
+        &data.balance.conquest,
+        &data.balance.region,
         &mut world.chronicle,
         &data.strings.chronicle,
         world.year,

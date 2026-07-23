@@ -382,6 +382,8 @@
     "war_stalemate": "The war between {aggressor} and {defender} grinds to an exhausted, bloody stalemate.",
     "pact_formed": "{region_a} and {region_b} swear an alliance, bound by kinship and commerce.",
     "pact_dissolved": "The alliance between {region_a} and {region_b} lapses as their paths diverge.",
+    "vassalage_sworn": "{overlord} bends {vassal} to its will, taking the weaker realm as a tributary vassal.",
+    "vassalage_broken": "{vassal} throws off the yoke of {overlord}, its strength grown enough to stand alone once more.",
     "refugee_flight": "Refugees abandon {source} in droves, fleeing for the safety of {haven}.",
     "famine_begins": "The granaries of {region} run dry, and famine grips the land.",
     "famine_breaks": "The harvest returns to {region}, and the long famine is broken at last.",

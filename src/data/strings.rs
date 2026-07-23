@@ -584,6 +584,10 @@ pub struct ChronicleText {
     /// (GDD 5.2); slots `{region_a}`, `{region_b}`.
     pub pact_formed: String,
     pub pact_dissolved: String,
+    /// A stronger region subordinates a weaker one as its vassal, or the vassal
+    /// throws off the yoke (GDD 5.2); slots `{overlord}`, `{vassal}`.
+    pub vassalage_sworn: String,
+    pub vassalage_broken: String,
     /// A notable flight of refugees from a perilous settlement to a safe haven
     /// (GDD 5.3); slots `{source}`, `{haven}`.
     pub refugee_flight: String,

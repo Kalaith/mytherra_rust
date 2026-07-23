@@ -712,6 +712,14 @@
     "artifact_might": 8.0,
     "ally_aid": 0.5
   },
+  "vassalage": {
+    "dominance_ratio": 1.6,
+    "form_interval": 12,
+    "tribute_fraction": 0.008,
+    "tribute_floor": 30.0,
+    "tribute_efficiency": 0.6,
+    "rebel_ratio": 0.75
+  },
   "pact": {
     "form_chance": 0.01,
     "form_max_belligerence": 80.0,
