@@ -11,5 +11,6 @@
   "start_year": 1,
   "world_seed": 20260718,
   "server_url": "http://127.0.0.1:8791",
+  "server_listen_addr": "127.0.0.1:8791",
   "view_poll_seconds": 2.0
 }

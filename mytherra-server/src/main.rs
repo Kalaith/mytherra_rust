@@ -29,9 +29,6 @@ use serde::Deserialize;
 use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 
-/// Where the server listens. M1 dev default; a later phase moves this to config.
-const LISTEN_ADDR: &str = "127.0.0.1:8791";
-
 /// The authoritative shared world plus the (single, for M1) player.
 struct Authority {
     data: GameData,
@@ -84,6 +81,10 @@ struct EventsQuery {
 async fn main() {
     let shared: Shared = Arc::new(Mutex::new(Authority::load()));
 
+    // Listen address and tick cadence both come from config (GDD 7.6), not
+    // source constants, so the deployment address lives in one place.
+    let listen_addr = shared.lock().await.data.config.server_listen_addr.clone();
+
     // The world advances on the server's own schedule (GDD 7.1).
     let seconds = shared.lock().await.data.config.seconds_per_tick.max(1.0);
     let ticker = shared.clone();
@@ -107,10 +108,10 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(shared);
 
-    let listener = tokio::net::TcpListener::bind(LISTEN_ADDR)
+    let listener = tokio::net::TcpListener::bind(&listen_addr)
         .await
         .expect("bind listen address");
-    println!("mytherra-server listening on http://{LISTEN_ADDR}");
+    println!("mytherra-server listening on http://{listen_addr}");
     axum::serve(listener, app).await.expect("server error");
 }
 

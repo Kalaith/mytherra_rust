@@ -30,6 +30,9 @@ pub struct GameConfig {
     /// client is online-only — there is no local-world play — so this must point
     /// at a running `mytherra-server`.
     pub server_url: String,
+    /// Address the authority server binds its listener to (GDD 7.6). Kept in
+    /// config so the deployment address lives in one place, not a source const.
+    pub server_listen_addr: String,
     /// Real seconds between the online client's `GET /view` polls. The shared
     /// world turns on the server's schedule; the client re-fetches its
     /// projection at this cadence (and immediately after each submitted action).
