@@ -10,9 +10,9 @@
 use mytherra_core::capability::{BettingMarket, Standing, VisibilityScope as V};
 use mytherra_core::data::GameData;
 use mytherra_core::world::{
-    Artifact, EraRecord, EraState, Hero, Landmark, MagicPath, Myth, MythCandidate, PantheonDeity,
-    PlayerState, Region, RegionAgendas, ResourceNode, Settlement, SpeculationEvent, WorldEvent,
-    WorldState, WorldSummary,
+    Artifact, Building, EraRecord, EraState, Hero, Landmark, MagicPath, Monster, Myth,
+    MythCandidate, Pact, PantheonDeity, Plague, PlayerState, Region, RegionAgendas, ResourceNode,
+    Settlement, SpeculationEvent, Vassalage, WeatherEvent, WorldEvent, WorldState, WorldSummary,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -69,6 +69,18 @@ pub struct WorldView {
     pub settlements: Vec<Settlement>,
     pub resource_nodes: Vec<ResourceNode>,
     pub landmarks: Vec<Landmark>,
+    // Region furniture the detail views read — revealed with `Regions` (a
+    // Watcher sees no regions, so none of this either).
+    pub buildings: Vec<Building>,
+    pub weather: Vec<WeatherEvent>,
+    pub plagues: Vec<Plague>,
+    pub monsters: Vec<Monster>,
+    pub pacts: Vec<Pact>,
+    pub vassalages: Vec<Vassalage>,
+    /// Decaying tallies of recent conquests/secessions feeding era pressure —
+    /// aggregate scalars (like `summary`), always sent (GDD 5.2 ↔ 5.7).
+    pub conquest_momentum: f32,
+    pub secession_momentum: f32,
     pub artifacts: Vec<Artifact>,
     pub magic_paths: Vec<MagicPath>,
     pub myths: Vec<Myth>,
@@ -113,11 +125,24 @@ pub fn project(
     } else {
         Vec::new()
     };
-    // Landmarks are region furniture — revealed with Regions.
+    // Landmarks and the rest of a region's furniture are revealed with Regions.
     let landmarks = if standing.can_see(V::Regions) {
         world.landmarks.clone()
     } else {
         Vec::new()
+    };
+    let (buildings, weather, plagues, monsters, pacts, vassalages) = if standing.can_see(V::Regions)
+    {
+        (
+            world.buildings.clone(),
+            world.weather.clone(),
+            world.plagues.clone(),
+            world.monsters.clone(),
+            world.pacts.clone(),
+            world.vassalages.clone(),
+        )
+    } else {
+        Default::default()
     };
     // Artifacts / magic / myths / agendas are the divine-tools screen.
     let (artifacts, magic_paths, myths, myth_candidates, civilization) =
@@ -169,6 +194,14 @@ pub fn project(
         settlements,
         resource_nodes,
         landmarks,
+        buildings,
+        weather,
+        plagues,
+        monsters,
+        pacts,
+        vassalages,
+        conquest_momentum: world.conquest_momentum,
+        secession_momentum: world.secession_momentum,
         artifacts,
         magic_paths,
         myths,
@@ -214,8 +247,15 @@ mod tests {
             "a Watcher has not unlocked regions"
         );
         assert!(view.pantheon.is_empty());
-        // The aggregate tenor is always present, even without per-region access.
+        // Region furniture is gated with Regions — a Watcher gets none of it,
+        // even the buildings a fresh world seeds.
+        assert!(view.buildings.is_empty(), "buildings are region-gated");
+        assert!(view.weather.is_empty());
+        assert!(view.plagues.is_empty() && view.vassalages.is_empty());
+        // The aggregate tenor and momentum scalars are always present, even
+        // without per-region access.
         assert!(view.summary.region_count > 0);
+        assert_eq!(view.conquest_momentum, world.conquest_momentum);
         assert!(!view.revealed.contains(&V::Regions));
     }
 
@@ -227,6 +267,8 @@ mod tests {
         assert!(!view.regions.is_empty());
         assert!(!view.heroes.is_empty());
         assert!(!view.pantheon.is_empty());
+        // An Elder receives the region furniture in full (all buildings, etc.).
+        assert_eq!(view.buildings.len(), world.buildings.len());
         assert!(view.revealed.contains(&V::FullChronicle));
         // The player's own favor ceiling comes through pre-computed.
         assert_eq!(pv.player.favor, player.favor);
