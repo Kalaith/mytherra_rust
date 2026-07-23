@@ -17,9 +17,9 @@ mod title;
 mod widgets;
 
 use crate::data::GameData;
-use crate::world::{PlayerState, WorldState};
+use crate::world::PlayerState;
 use macroquad::prelude::Vec2;
-use mytherra_protocol::{Standing, VisibilityScope};
+use mytherra_protocol::{Standing, VisibilityScope, WorldView};
 
 pub const LOGICAL_WIDTH: f32 = 1280.0;
 pub const LOGICAL_HEIGHT: f32 = 720.0;
@@ -174,7 +174,9 @@ pub enum UiAction {
 /// Everything the view layer needs to render a frame.
 pub struct UiContext<'a> {
     pub data: &'a GameData,
-    pub world: &'a WorldState,
+    /// The Standing-filtered projection of the world (§7.7) — the client renders
+    /// from this whether the world is local (offline) or fetched (online).
+    pub world: &'a WorldView,
     pub player: &'a PlayerState,
     /// The local deity's Standing — gates which screens/verbs the view reveals
     /// (GDD 5.9).

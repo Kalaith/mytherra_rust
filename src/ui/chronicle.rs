@@ -24,11 +24,11 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         .and_then(|i| EventKind::ALL.get(i).copied());
     let filter_name = filter_name(ctx, kind);
 
-    let total = ctx.world.chronicle.iter_newest().count();
+    let total = ctx.world.chronicle.len();
     let events: Vec<&WorldEvent> = ctx
         .world
         .chronicle
-        .iter_newest()
+        .iter()
         .filter(|e| match kind {
             Some(k) => e.kind == k,
             None => true,

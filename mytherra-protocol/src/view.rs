@@ -10,9 +10,10 @@
 use mytherra_core::capability::{BettingMarket, Standing, VisibilityScope as V};
 use mytherra_core::data::GameData;
 use mytherra_core::world::{
-    Artifact, Building, EraRecord, EraState, Hero, Landmark, MagicPath, Monster, Myth,
-    MythCandidate, Pact, PantheonDeity, Plague, PlayerState, Region, RegionAgendas, ResourceNode,
-    Settlement, SpeculationEvent, Vassalage, WeatherEvent, WorldEvent, WorldState, WorldSummary,
+    Artifact, Building, DelayedConsequence, EraRecord, EraState, Hero, Landmark, MagicPath,
+    Monster, Myth, MythCandidate, Pact, PantheonDeity, Plague, PlayerState, Region, RegionAgendas,
+    ResourceNode, Settlement, SpeculationEvent, TradeRoute, Vassalage, War, WeatherEvent,
+    WorldEvent, WorldState, WorldSummary,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -72,11 +73,14 @@ pub struct WorldView {
     // Region furniture the detail views read — revealed with `Regions` (a
     // Watcher sees no regions, so none of this either).
     pub buildings: Vec<Building>,
+    pub trade_routes: Vec<TradeRoute>,
     pub weather: Vec<WeatherEvent>,
     pub plagues: Vec<Plague>,
     pub monsters: Vec<Monster>,
+    pub wars: Vec<War>,
     pub pacts: Vec<Pact>,
     pub vassalages: Vec<Vassalage>,
+    pub pending_consequences: Vec<DelayedConsequence>,
     /// Decaying tallies of recent conquests/secessions feeding era pressure —
     /// aggregate scalars (like `summary`), always sent (GDD 5.2 ↔ 5.7).
     pub conquest_momentum: f32,
@@ -94,6 +98,26 @@ pub struct WorldView {
     /// Newest-first: the whole chronicle with `FullChronicle`, else the most
     /// recent [`RECENT_EVENTS`].
     pub chronicle: Vec<WorldEvent>,
+}
+
+impl WorldView {
+    /// The revealed region at `index`, if any (mirrors `WorldState::region`).
+    pub fn region(&self, index: usize) -> Option<&Region> {
+        self.regions.get(index)
+    }
+
+    /// A revealed region's display name by id (for hero/UI cross-references).
+    pub fn region_name(&self, id: &str) -> Option<&str> {
+        self.regions
+            .iter()
+            .find(|r| r.id == id)
+            .map(|r| r.name.as_str())
+    }
+
+    /// Count of living heroes in the revealed roster.
+    pub fn living_heroes(&self) -> usize {
+        self.heroes.iter().filter(|h| h.is_alive).count()
+    }
 }
 
 /// Project the shared world and a player onto what that player's [`Standing`]
@@ -131,15 +155,38 @@ pub fn project(
     } else {
         Vec::new()
     };
-    let (buildings, weather, plagues, monsters, pacts, vassalages) = if standing.can_see(V::Regions)
-    {
+    #[allow(clippy::type_complexity)]
+    let (
+        buildings,
+        trade_routes,
+        weather,
+        plagues,
+        monsters,
+        wars,
+        pacts,
+        vassalages,
+        pending_consequences,
+    ): (
+        Vec<Building>,
+        Vec<TradeRoute>,
+        Vec<WeatherEvent>,
+        Vec<Plague>,
+        Vec<Monster>,
+        Vec<War>,
+        Vec<Pact>,
+        Vec<Vassalage>,
+        Vec<DelayedConsequence>,
+    ) = if standing.can_see(V::Regions) {
         (
             world.buildings.clone(),
+            world.trade_routes.clone(),
             world.weather.clone(),
             world.plagues.clone(),
             world.monsters.clone(),
+            world.wars.clone(),
             world.pacts.clone(),
             world.vassalages.clone(),
+            world.pending_consequences.clone(),
         )
     } else {
         Default::default()
@@ -195,11 +242,14 @@ pub fn project(
         resource_nodes,
         landmarks,
         buildings,
+        trade_routes,
         weather,
         plagues,
         monsters,
+        wars,
         pacts,
         vassalages,
+        pending_consequences,
         conquest_momentum: world.conquest_momentum,
         secession_momentum: world.secession_momentum,
         artifacts,

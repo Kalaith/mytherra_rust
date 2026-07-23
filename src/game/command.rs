@@ -39,6 +39,7 @@ impl Game {
     /// exact logic the server runs — then surface its feedback as notifications.
     pub(super) fn apply_player_action(&mut self, command: PlayerAction) {
         let report = apply(&mut self.world, &mut self.player, &self.data, &command);
+        self.view_dirty = true;
         for feedback in report.feedback {
             match feedback.level {
                 FeedbackLevel::Success => self.notifications.success(feedback.message),

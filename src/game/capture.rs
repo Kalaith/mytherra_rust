@@ -6,11 +6,19 @@
 
 use super::Game;
 use crate::ui::Screen;
-use mytherra_protocol::PlayerAction;
+use mytherra_protocol::{PlayerAction, Tier};
 
 impl Game {
     /// Seed a named screen (and some world history) for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
+        // Captures document each screen's full content, so the harness deity holds
+        // full Elder standing regardless of scene — real play gates this by
+        // progression (GDD 5.9). The high level keeps `refresh_standing` from
+        // dropping it back as the scene ticks.
+        self.player.level = 12;
+        self.standing = self.data.tiers.standing(Tier::Elder);
+        self.view_dirty = true;
+
         self.screen = match scene {
             "title" | "menu" => Screen::Title,
             "chronicle" | "event_log" => Screen::Chronicle,

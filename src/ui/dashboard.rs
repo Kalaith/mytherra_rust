@@ -28,7 +28,7 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>
     let content = rect.inset(18.0);
     let mut y = content.y + 40.0;
 
-    let summary = ctx.world.summary();
+    let summary = ctx.world.summary;
 
     // The age's tenor: a qualitative read of the world's health, from a golden
     // age to a dark one (GDD 10).
@@ -317,7 +317,7 @@ fn draw_chronicle_panel(ctx: &UiContext<'_>, rect: Rect) {
         return;
     }
 
-    for event in ctx.world.chronicle.recent(16) {
+    for event in ctx.world.chronicle.iter().take(16) {
         let color = kind_color(event.kind);
         draw_badge(
             Rect::new(content.x, y - 15.0, 74.0, 20.0),

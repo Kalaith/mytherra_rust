@@ -19,7 +19,7 @@ use macroquad_toolkit::persistence::{
     load_from_slot_with_migration, save_to_slot_with_version, slot_exists,
 };
 use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_frame};
-use mytherra_protocol::{PlayerAction, Standing, Tier};
+use mytherra_protocol::{project, PlayerAction, Standing, Tier, WorldView};
 
 pub struct Game {
     data: GameData,
@@ -71,6 +71,12 @@ pub struct Game {
     /// derived from the player's level via the data-driven unlock thresholds and
     /// refreshed each update. Gates the nav and every submitted command.
     standing: Standing,
+    /// The Standing-filtered projection of the world the UI renders from (§7.7),
+    /// rebuilt from the local world whenever it changes (`view_dirty`). Offline
+    /// this is projected locally; it is the exact shape the server sends online,
+    /// so the UI renders identically either way.
+    view: WorldView,
+    view_dirty: bool,
 }
 
 /// Rasterize every glyph the UI can draw, at every size it uses, once at
@@ -122,6 +128,7 @@ impl Game {
 
         let tier = Tier::for_level(player.level, &data.balance.player.tier_unlock_levels);
         let standing = data.tiers.standing(tier);
+        let (view, _) = project(&world, &player, &standing, &data);
 
         let mut game = Self {
             data,
@@ -153,6 +160,8 @@ impl Game {
             quit_requested: false,
             session_active: false,
             standing,
+            view,
+            view_dirty: false,
         };
         game.refresh_save_state();
         game.sync_achievements();
@@ -171,7 +180,21 @@ impl Game {
 
         self.check_achievements();
         self.refresh_standing();
+        // Rebuild the rendered projection once, after everything that could have
+        // changed the world this frame (ticks, actions, a tier ascension).
+        if self.view_dirty {
+            self.refresh_view();
+            self.view_dirty = false;
+        }
         self.maybe_autosave();
+    }
+
+    /// Rebuild the Standing-filtered view the UI renders from (§7.7). Offline
+    /// this projects the local world; online it would adopt the server's
+    /// `WorldView` instead. Called only when the world changes, not per frame.
+    fn refresh_view(&mut self) {
+        let (view, _) = project(&self.world, &self.player, &self.standing, &self.data);
+        self.view = view;
     }
 
     /// The deity's Standing at its current level (GDD 5.9), per the data-driven
@@ -191,6 +214,9 @@ impl Game {
             self.player.level,
             &self.data.balance.player.tier_unlock_levels,
         );
+        if tier.rank() == self.standing.tier {
+            return;
+        }
         if tier.rank() > self.standing.tier {
             self.notifications.success(fill(
                 &self.data.strings.notifications.ascension,
@@ -198,6 +224,8 @@ impl Game {
             ));
         }
         self.standing = self.data.tiers.standing(tier);
+        // A new tier reveals more of the world — reproject next.
+        self.view_dirty = true;
     }
 
     /// Reconcile the player's saved unlock state with the current achievement
@@ -226,7 +254,7 @@ impl Game {
         let virtual_ui = begin_virtual_ui_frame(ui::LOGICAL_WIDTH, ui::LOGICAL_HEIGHT);
         let ctx = UiContext {
             data: &self.data,
-            world: &self.world,
+            world: &self.view,
             player: &self.player,
             standing: &self.standing,
             screen: self.screen,
@@ -313,6 +341,7 @@ impl Game {
     fn run_tick(&mut self) {
         let era_before = self.world.era.number;
         tick_world(&mut self.world, &mut self.player, &self.data);
+        self.view_dirty = true;
         // An age turning is the world's most consequential event — surface it
         // proactively rather than leaving it to be found in the chronicle.
         if self.world.era.number > era_before {
@@ -476,6 +505,7 @@ impl Game {
         self.player = PlayerState::new(&self.data.config);
         self.sync_achievements();
         self.standing = self.standing_now();
+        self.view_dirty = true;
         self.selected_region = 0;
         self.selected_town = None;
         self.tick_accum = 0.0;
@@ -551,6 +581,7 @@ impl Game {
                 self.player = save.player;
                 self.sync_achievements();
                 self.standing = self.standing_now();
+                self.view_dirty = true;
                 self.selected_region = 0;
                 self.selected_town = None;
                 self.tick_accum = 0.0;
