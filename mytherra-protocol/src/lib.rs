@@ -20,4 +20,4 @@ pub mod view;
 
 pub use mytherra_core::capability::{ActionVerb, BettingMarket, Standing, Tier, VisibilityScope};
 pub use mytherra_core::command::PlayerAction;
-pub use view::{project, ClientView, EventsDelta, PlayerView, WorldView};
+pub use view::{project, ClientView, EventsDelta, PlayerView, SessionResponse, WorldView};

@@ -4,12 +4,17 @@
 //! is a pure win/lose credit.
 
 use crate::data::{fill, BettingBalance, GameData, TargetKind};
-use crate::world::{
-    Bet, Chronicle, EventKind, Hero, PlayerState, Region, Settlement, SpeculationEvent,
-};
+#[cfg(test)]
+use crate::world::PlayerState;
+use crate::world::{Bet, Chronicle, EventKind, Hero, Region, Settlement, SpeculationEvent};
 use macroquad_toolkit::rng::SeededRng;
 
-/// Resolve, replenish, and prune speculation events for one tick.
+/// Resolve, settle, replenish, and prune speculation events for one tick — the
+/// single-player composition the speculation tests drive. Production runs the
+/// three phases split apart so one shared board serves many deities:
+/// [`resolve_events`] once, [`settle_bets`] per player, then [`refresh_market`]
+/// (see `sim::tick_shared`).
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub fn tick_speculations(
     events: &mut Vec<SpeculationEvent>,
@@ -25,17 +30,116 @@ pub fn tick_speculations(
     era_number: u32,
     era_progress: f32,
 ) {
-    resolve_due(
+    resolve_events(events, heroes, regions, settlements, year, era_number);
+    settle_bets(
+        &mut player.bets,
+        &mut player.favor,
         events,
-        player,
-        heroes,
-        regions,
-        settlements,
         chronicle,
         data,
         year,
-        era_number,
     );
+    refresh_market(
+        events,
+        seq,
+        heroes,
+        regions,
+        settlements,
+        rng,
+        data,
+        year,
+        era_number,
+        era_progress,
+    );
+}
+
+/// Mark every due event won/lost — world state only, no player. Run once per
+/// tick before any deity settles against the board (GDD 5.5).
+pub(crate) fn resolve_events(
+    events: &mut [SpeculationEvent],
+    heroes: &[Hero],
+    regions: &[Region],
+    settlements: &[Settlement],
+    year: u32,
+    era_number: u32,
+) {
+    for event in events.iter_mut() {
+        if !event.is_active() {
+            continue;
+        }
+        let outcome = if event.is_satisfied(heroes, regions, settlements, era_number) {
+            Some(true)
+        } else if year >= event.deadline_year {
+            Some(false)
+        } else {
+            None
+        };
+        if let Some(won) = outcome {
+            event.resolved = Some(won);
+        }
+    }
+}
+
+/// Settle one deity's outstanding wagers against the events that have now
+/// resolved: credit each winning bet's locked payout and chronicle the outcome
+/// (GDD 5.5). Idempotent — a settled bet is skipped — so it runs safely every
+/// tick, once per connected player, against the shared board.
+pub(crate) fn settle_bets(
+    bets: &mut Vec<Bet>,
+    favor: &mut i64,
+    events: &[SpeculationEvent],
+    chronicle: &mut Chronicle,
+    data: &GameData,
+    year: u32,
+) {
+    let text = &data.strings.chronicle;
+    for event in events.iter() {
+        let Some(won) = event.resolved else { continue };
+        for bet in bets
+            .iter_mut()
+            .filter(|b| b.event_id == event.id && b.resolved.is_none())
+        {
+            bet.resolved = Some(won);
+            let template = if won {
+                *favor += bet.potential_payout;
+                &text.bet_won
+            } else {
+                &text.bet_lost
+            };
+            chronicle.push(
+                year,
+                EventKind::Divine,
+                fill(
+                    template,
+                    &[
+                        ("target", event.target_name.clone()),
+                        ("payout", bet.potential_payout.to_string()),
+                        ("stake", bet.stake.to_string()),
+                    ],
+                ),
+            );
+        }
+    }
+    prune_bets(bets, data.balance.betting.bet_history_cap);
+}
+
+/// Let the crowd keep betting, top the board back up to target, and drop the
+/// oldest resolved events — world state only. Run once per tick, after every
+/// deity has settled (so a just-resolved event isn't pruned before its backers
+/// are paid).
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn refresh_market(
+    events: &mut Vec<SpeculationEvent>,
+    seq: &mut u64,
+    heroes: &[Hero],
+    regions: &[Region],
+    settlements: &[Settlement],
+    rng: &mut SeededRng,
+    data: &GameData,
+    year: u32,
+    era_number: u32,
+    era_progress: f32,
+) {
     drift_crowds(
         events,
         heroes,
@@ -57,63 +161,6 @@ pub fn tick_speculations(
         era_progress,
     );
     prune(events, data.balance.betting.event_cap);
-    prune_bets(&mut player.bets, data.balance.betting.bet_history_cap);
-}
-
-#[allow(clippy::too_many_arguments)]
-fn resolve_due(
-    events: &mut [SpeculationEvent],
-    player: &mut PlayerState,
-    heroes: &[Hero],
-    regions: &[Region],
-    settlements: &[Settlement],
-    chronicle: &mut Chronicle,
-    data: &GameData,
-    year: u32,
-    era_number: u32,
-) {
-    let text = &data.strings.chronicle;
-    for event in events.iter_mut() {
-        if !event.is_active() {
-            continue;
-        }
-        let outcome = if event.is_satisfied(heroes, regions, settlements, era_number) {
-            Some(true)
-        } else if year >= event.deadline_year {
-            Some(false)
-        } else {
-            None
-        };
-        let Some(won) = outcome else { continue };
-        event.resolved = Some(won);
-
-        for bet in player
-            .bets
-            .iter_mut()
-            .filter(|b| b.event_id == event.id && b.resolved.is_none())
-        {
-            bet.resolved = Some(won);
-            let template = if won {
-                // Credit the locked payout directly (disjoint field from bets).
-                player.favor += bet.potential_payout;
-                &text.bet_won
-            } else {
-                &text.bet_lost
-            };
-            chronicle.push(
-                year,
-                EventKind::Divine,
-                fill(
-                    template,
-                    &[
-                        ("target", event.target_name.clone()),
-                        ("payout", bet.potential_payout.to_string()),
-                        ("stake", bet.stake.to_string()),
-                    ],
-                ),
-            );
-        }
-    }
 }
 
 #[allow(clippy::too_many_arguments)]

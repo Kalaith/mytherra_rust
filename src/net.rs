@@ -1,32 +1,39 @@
 //! Talking to the authority server (GDD 7.4).
 //!
-//! A cross-platform, non-blocking HTTP client for the client's future *online*
-//! mode. It's built on `quad-net`, which shares one poll-based API across
-//! native (a background thread) and WASM (macroquad's own `sapp-jsutils` JS
-//! interop — *not* wasm-bindgen, so it coexists with macroquad's WebGL build).
+//! A cross-platform, non-blocking HTTP client — the client's live link to the
+//! world. It's built on `quad-net`, which shares one poll-based API across native
+//! (a background thread) and WASM (macroquad's own `sapp-jsutils` JS interop —
+//! *not* wasm-bindgen, so it coexists with macroquad's WebGL build).
 //!
 //! Each call returns a [`Pending<T>`] the caller polls once per frame — never
-//! blocking the game loop. This is the client's live link to the world: it polls
-//! `/view` for its Standing-filtered projection and submits every command through
-//! `/action` (see `game/online.rs`), so the server's authority is the only
-//! simulation there is.
+//! blocking the game loop. It mints a guest session (`/session`), polls `/view`
+//! for its Standing-filtered projection, listens to `/events` for the world's
+//! stirrings, and submits every command through `/action` (see `game/online.rs`),
+//! so the server's authority is the only simulation there is.
 //!
 //! WASM runtime caveat: quad-net's browser side calls JS functions
-//! (`http_make_request`/`http_try_recv`) that its companion JS shim must define
-//! on the page. Wiring that shim into the publish pipeline's page template, and
-//! verifying fetch against a deployed server in a real browser, is the one step
-//! that can't be checked from a headless build — it remains to be done.
+//! (`http_make_request`/`http_try_recv`) that its companion JS shim provides. That
+//! shim (`quad-net.js`) is deployed with the WebGL build (see the RustGames
+//! publish template); the one step that still can't be checked from a headless
+//! build is verifying fetch against a deployed server in a real browser.
 
 use mytherra_core::command::ActionReport;
-use mytherra_protocol::{ClientView, EventsDelta, PlayerAction};
+use mytherra_protocol::{ClientView, EventsDelta, PlayerAction, SessionResponse};
 use quad_net::http_request::{Method, Request, RequestBuilder};
 use serde::de::DeserializeOwned;
 use std::marker::PhantomData;
 
+/// The header every request presents to identify the client's guest session
+/// (GDD 7.7) — matched by the server's `PLAYER_ID_HEADER`.
+const PLAYER_ID_HEADER: &str = "X-Player-Id";
+
 /// A handle to one authority server, addressed by base URL (e.g.
-/// `http://127.0.0.1:8791`).
+/// `http://127.0.0.1:8791`). Carries the guest session id once
+/// [`create_session`](ServerClient::create_session) has returned one, and
+/// presents it on every subsequent request.
 pub struct ServerClient {
     base_url: String,
+    player_id: Option<String>,
 }
 
 /// A request in flight. Poll it each frame with [`poll`](Pending::poll): `None`
@@ -61,17 +68,48 @@ impl ServerClient {
     pub fn new(base_url: impl Into<String>) -> Self {
         Self {
             base_url: base_url.into(),
+            player_id: None,
         }
+    }
+
+    /// Adopt the guest session id the server minted, so every later request
+    /// carries it (GDD 7.7).
+    pub fn set_player_id(&mut self, player_id: String) {
+        self.player_id = Some(player_id);
+    }
+
+    /// A `GET` request builder for `path`, carrying the session header if we have
+    /// one yet (`/session` itself does not).
+    fn get(&self, path: &str) -> RequestBuilder {
+        self.with_session(RequestBuilder::new(&format!("{}{path}", self.base_url)))
+    }
+
+    /// Attach the `X-Player-Id` header once a session has been established.
+    fn with_session(&self, builder: RequestBuilder) -> RequestBuilder {
+        match &self.player_id {
+            Some(id) => builder.header(PLAYER_ID_HEADER, id),
+            None => builder,
+        }
+    }
+
+    /// `POST /session` — ask the server for a fresh guest session (§7.7). Feed the
+    /// returned id to [`set_player_id`](ServerClient::set_player_id).
+    pub fn create_session(&self) -> Pending<SessionResponse> {
+        Pending::new(
+            RequestBuilder::new(&format!("{}/session", self.base_url))
+                .method(Method::Post)
+                .send(),
+        )
     }
 
     /// `GET /view` — the player's Standing-filtered view of the world (§7.7).
     pub fn fetch_view(&self) -> Pending<ClientView> {
-        Pending::new(RequestBuilder::new(&format!("{}/view", self.base_url)).send())
+        Pending::new(self.get("/view").send())
     }
 
     /// `GET /events?since=` — the chronicle delta since `cursor` (§7.4).
     pub fn fetch_events(&self, since: u64) -> Pending<EventsDelta> {
-        Pending::new(RequestBuilder::new(&format!("{}/events?since={since}", self.base_url)).send())
+        Pending::new(self.get(&format!("/events?since={since}")).send())
     }
 
     /// `POST /action` — submit an authoritative command, returning its feedback.
@@ -79,11 +117,13 @@ impl ServerClient {
     pub fn submit_action(&self, action: &PlayerAction) -> Pending<ActionReport> {
         let body = serde_json::to_string(action).unwrap_or_default();
         Pending::new(
-            RequestBuilder::new(&format!("{}/action", self.base_url))
-                .method(Method::Post)
-                .header("Content-Type", "application/json")
-                .body(&body)
-                .send(),
+            self.with_session(
+                RequestBuilder::new(&format!("{}/action", self.base_url))
+                    .method(Method::Post)
+                    .header("Content-Type", "application/json")
+                    .body(&body),
+            )
+            .send(),
         )
     }
 }
@@ -113,7 +153,17 @@ mod tests {
     #[test]
     #[ignore = "needs a live mytherra-server on 127.0.0.1:8791"]
     fn round_trip_against_a_live_server() {
-        let client = ServerClient::new("http://127.0.0.1:8791");
+        let mut client = ServerClient::new("http://127.0.0.1:8791");
+
+        // A request without a session is rejected (§7.7).
+        assert!(
+            block_on(client.fetch_view()).is_err(),
+            "a view without a session is unauthorized"
+        );
+
+        // Establish a guest session; every later request carries its id.
+        let session = block_on(client.create_session()).expect("create session");
+        client.set_player_id(session.player_id);
 
         let view = block_on(client.fetch_view()).expect("fetch view");
         assert!(!view.world.heroes.is_empty(), "a fresh guest sees heroes");
@@ -138,5 +188,61 @@ mod tests {
 
         let delta = block_on(client.fetch_events(0)).expect("fetch events");
         assert!(delta.cursor >= 1, "the awakening event advances the cursor");
+    }
+
+    /// Two guests get independent state: each has its own favor, so one deity's
+    /// spending never touches another's. Start the server, then run:
+    /// `cargo test -p mytherra -- --ignored two_guests`.
+    #[test]
+    #[ignore = "needs a live mytherra-server on 127.0.0.1:8791"]
+    fn two_guests_hold_independent_favor() {
+        let base = "http://127.0.0.1:8791";
+        let mut alice = ServerClient::new(base);
+        let mut bob = ServerClient::new(base);
+        alice.set_player_id(
+            block_on(alice.create_session())
+                .expect("alice session")
+                .player_id,
+        );
+        bob.set_player_id(
+            block_on(bob.create_session())
+                .expect("bob session")
+                .player_id,
+        );
+
+        let alice_before = block_on(alice.fetch_view())
+            .expect("alice view")
+            .player
+            .player
+            .favor;
+        let bob_before = block_on(bob.fetch_view())
+            .expect("bob view")
+            .player
+            .player
+            .favor;
+
+        // Alice designates a champion — favor leaves *her* purse.
+        let hero = block_on(alice.fetch_view())
+            .expect("alice view")
+            .world
+            .heroes[0]
+            .id
+            .clone();
+        block_on(alice.submit_action(&PlayerAction::DesignateChampion { hero_id: hero }))
+            .expect("alice designates");
+
+        let alice_after = block_on(alice.fetch_view())
+            .expect("alice view")
+            .player
+            .player
+            .favor;
+        let bob_after = block_on(bob.fetch_view())
+            .expect("bob view")
+            .player
+            .player
+            .favor;
+
+        assert!(alice_after < alice_before, "alice paid for her champion");
+        assert_eq!(bob_after, bob_before, "bob's favor is untouched by alice");
     }
 }

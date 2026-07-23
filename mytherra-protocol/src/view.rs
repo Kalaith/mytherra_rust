@@ -21,6 +21,14 @@ use std::collections::BTreeSet;
 /// How many recent chronicle events a player without `FullChronicle` receives.
 const RECENT_EVENTS: usize = 32;
 
+/// The server's reply to `POST /session`: the freshly-minted guest id the client
+/// then presents (as `X-Player-Id`) on every later request (GDD 7.7). Each
+/// connected deity has its own id, its own favor, and its own Standing.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionResponse {
+    pub player_id: String,
+}
+
 /// The full per-player payload a client polls (`GET /view`): its Standing-
 /// filtered world view and its own private player view (§7.7). Shared so the
 /// server serializes exactly what the client deserializes.

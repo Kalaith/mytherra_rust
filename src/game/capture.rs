@@ -11,6 +11,16 @@ use mytherra_protocol::{PlayerAction, Tier};
 impl Game {
     /// Seed a named screen (and some world history) for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
+        // The "online" scene isn't a seeded local world at all: it connects to a
+        // running `mytherra-server` (at config.server_url) and renders whatever
+        // the server sends — a screenshot of real online play. The capture loop
+        // runs enough real frames for the session handshake and first `/view` to
+        // arrive. Every other scene seeds a local world (the capture fixture).
+        if scene == "online" {
+            self.go_online();
+            return;
+        }
+
         // Captures document each screen's full content, so the harness deity holds
         // full Elder standing regardless of scene — real play gates this by
         // progression (GDD 5.9). The high level keeps `refresh_standing` from

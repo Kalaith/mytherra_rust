@@ -6,19 +6,50 @@
 
 use crate::data::{fill, Culture, GameData, HeroRole};
 use crate::sim::culture::culture_role;
+#[cfg(test)]
+use crate::world::PlayerState;
 use crate::world::{
-    compute_scores, generate_era_name, EraRecord, EventKind, Hero, PlayerState, WorldState,
+    compute_scores, generate_era_name, Bet, EraRecord, EventKind, Hero, WorldState,
 };
 
-/// Recompute era pressure and transition if due.
+/// Recompute era pressure and transition if due, for a single deity — the
+/// one-player composition of [`tick_era_world`] + [`expire_boundary_bets`] that
+/// the era tests drive in isolation. Production advances the era through the two
+/// halves directly (see `sim::tick_shared`).
+#[cfg(test)]
 pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameData) {
-    let balance = &data.balance.era;
+    // Aggregates over one player equal the player itself, so this is
+    // byte-identical to the pre-multiplayer era tick.
     let pending_stake: i64 = player
         .bets
         .iter()
         .filter(|b| b.resolved.is_none())
         .map(|b| b.stake)
         .sum();
+    if tick_era_world(
+        world,
+        player.favor,
+        data.config.max_favor,
+        pending_stake,
+        data,
+    ) {
+        expire_boundary_bets(&mut player.bets, &mut player.favor);
+    }
+}
+
+/// Recompute era pressure from the shared world plus the deities' *aggregate*
+/// favor and pending stake, and transition the world if due. Player state is
+/// untouched here — a transition's per-deity effect (boundary bets) is
+/// [`expire_boundary_bets`], applied to each connected player afterward.
+/// Returns whether an age turned this tick.
+pub(crate) fn tick_era_world(
+    world: &mut WorldState,
+    total_favor: i64,
+    total_max_favor: i64,
+    total_pending_stake: i64,
+    data: &GameData,
+) -> bool {
+    let balance = &data.balance.era;
     let wrath = crate::world::pantheon_wrath(&world.pantheon, data.balance.pantheon.drift_target);
     // What share of the world lies under plague — one plague per region, so the
     // afflicted count is the distinct region count (GDD 5.7 <-> 5.3).
@@ -34,9 +65,9 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
         &world.regions,
         &world.heroes,
         &world.magic_paths,
-        player.favor,
-        data.config.max_favor,
-        pending_stake,
+        total_favor,
+        total_max_favor,
+        total_pending_stake,
         world.conquest_momentum,
         world.secession_momentum,
         plague_ratio,
@@ -55,11 +86,31 @@ pub fn tick_era(world: &mut WorldState, player: &mut PlayerState, data: &GameDat
 
     let elapsed = world.year.saturating_sub(world.era.start_year);
     if elapsed >= balance.era_length || pressure >= balance.breaking_threshold {
-        transition(world, player, data);
+        transition(world, data);
+        true
+    } else {
+        false
     }
 }
 
-fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData) {
+/// A turning age settles a deity's open wagers: a bet that the age would end
+/// wins (this transition is exactly its condition), every other pending bet is
+/// force-expired (GDD 5.7 <-> 5.5). Player state only — no world, no RNG — so it
+/// runs per connected deity after the shared transition.
+pub(crate) fn expire_boundary_bets(bets: &mut [Bet], favor: &mut i64) {
+    for bet in bets.iter_mut() {
+        if bet.resolved.is_none() {
+            if bet.predicate == crate::data::BetPredicate::AgeEnds {
+                bet.resolved = Some(true);
+                *favor += bet.potential_payout;
+            } else {
+                bet.resolved = Some(false);
+            }
+        }
+    }
+}
+
+fn transition(world: &mut WorldState, data: &GameData) {
     let balance = &data.balance.era;
     // How the age ends shapes its transition: a violent trigger is deadlier to
     // heroes and rouses a different number of heirs (GDD 5.7).
@@ -192,19 +243,6 @@ fn transition(world: &mut WorldState, player: &mut PlayerState, data: &GameData)
     });
     if world.era_history.len() > 20 {
         world.era_history.remove(0);
-    }
-
-    // Bets spanning the boundary are force-expired — except a wager on the age
-    // ending, whose winning condition is exactly this transition (GDD 5.7 <-> 5.5).
-    for bet in player.bets.iter_mut() {
-        if bet.resolved.is_none() {
-            if bet.predicate == crate::data::BetPredicate::AgeEnds {
-                bet.resolved = Some(true);
-                player.favor += bet.potential_payout;
-            } else {
-                bet.resolved = Some(false);
-            }
-        }
     }
 
     // The land is renewed — plus the mark the ending age's trigger leaves, so a

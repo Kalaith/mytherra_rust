@@ -17,7 +17,7 @@ use crate::data::fill;
 use crate::net::{self, Pending};
 use crate::ui::Screen;
 use mytherra_core::command::ActionReport;
-use mytherra_protocol::{ClientView, EventsDelta};
+use mytherra_protocol::{ClientView, EventsDelta, SessionResponse};
 
 /// The most recent stirrings of the world to surface as notifications on any one
 /// poll, so a burst of events after a server tick can't flood the screen.
@@ -27,6 +27,12 @@ const MAX_STIRRINGS_PER_POLL: usize = 4;
 /// and the poll cadence. State only — the driving logic lives on [`Game`].
 pub(super) struct OnlineSession {
     client: net::ServerClient,
+    /// The `POST /session` handshake in flight, until the server returns a guest
+    /// id (GDD 7.7). View/events polling waits on it.
+    session_req: Option<Pending<SessionResponse>>,
+    /// Set once the guest session id is in hand — the client is then identified
+    /// and may fetch its view, poll events, and submit actions.
+    identified: bool,
     /// A `GET /view` in flight, if any. At most one is outstanding at a time.
     view_req: Option<Pending<ClientView>>,
     /// A `GET /events?since=` in flight, if any (GDD 7.4).
@@ -51,6 +57,8 @@ impl OnlineSession {
     fn new(client: net::ServerClient) -> Self {
         Self {
             client,
+            session_req: None,
+            identified: false,
             view_req: None,
             events_req: None,
             action_reqs: Vec::new(),
@@ -76,14 +84,12 @@ impl Game {
     }
 
     /// Open a connection to the authority server and enter the world (§7.1). The
-    /// first `/view` is kicked immediately; its arrival populates the screens.
+    /// guest-session handshake is kicked immediately; once its id arrives the
+    /// first `/view` follows and the screens populate.
     pub(super) fn go_online(&mut self) {
         let mut session =
             OnlineSession::new(net::ServerClient::new(self.data.config.server_url.clone()));
-        // Kick the first view and events fetches immediately so the world
-        // populates without waiting a poll cycle.
-        session.view_req = Some(session.client.fetch_view());
-        session.events_req = Some(session.client.fetch_events(session.cursor));
+        session.session_req = Some(session.client.create_session());
         self.online = Some(session);
         self.screen = Screen::Dashboard;
         self.notifications
@@ -96,11 +102,58 @@ impl Game {
         self.screen = Screen::Title;
     }
 
+    /// Poll the guest-session handshake (§7.7). Returns `true` once the session id
+    /// is in hand — so normal view/events/action polling can run — and `false`
+    /// while still waiting (or after a failure to reach the server). On success it
+    /// adopts the id and kicks the first `/view` + `/events`.
+    fn finish_session_handshake(&mut self) -> bool {
+        if self.online.as_ref().is_some_and(|s| s.identified) {
+            return true;
+        }
+        let mut result: Option<Result<SessionResponse, String>> = None;
+        {
+            let Some(session) = self.online.as_mut() else {
+                return false;
+            };
+            if let Some(req) = session.session_req.as_mut() {
+                if let Some(r) = req.poll() {
+                    result = Some(r);
+                    session.session_req = None;
+                }
+            }
+        }
+        match result {
+            Some(Ok(session_resp)) => {
+                if let Some(s) = self.online.as_mut() {
+                    s.client.set_player_id(session_resp.player_id);
+                    s.identified = true;
+                    s.view_req = Some(s.client.fetch_view());
+                    s.events_req = Some(s.client.fetch_events(s.cursor));
+                }
+                true
+            }
+            Some(Err(err)) => {
+                self.notifications.danger(fill(
+                    &self.data.strings.notifications.view_fetch_failed,
+                    &[("error", err)],
+                ));
+                false
+            }
+            None => false,
+        }
+    }
+
     /// Drive the online session for a frame: keep the `/view` poll cadence, adopt
     /// any freshly-arrived projection, and surface completed action reports.
     /// Splits neatly in two — first everything that borrows the session, then the
     /// application of the owned results to `self`.
     pub(super) fn update_online(&mut self, dt: f32) {
+        // Phase 0: complete the guest-session handshake before anything else.
+        // Until the id arrives, every other request would be turned away (§7.7).
+        if !self.finish_session_handshake() {
+            return;
+        }
+
         let mut fetched: Option<Result<ClientView, String>> = None;
         let mut delta: Option<Result<EventsDelta, String>> = None;
         let mut reports: Vec<Result<ActionReport, String>> = Vec::new();

@@ -50,9 +50,20 @@ pub fn faith_tithe(regions: &[Region], balance: &PlayerBalance) -> i64 {
     (devotion * balance.favor_per_resonance) as i64
 }
 
-/// Advance the entire world by one tick: age every region, credit passive
-/// favor, and record the chronicle entries a returning player would read.
+/// Advance the entire world by one tick for a single deity — the capture fixture
+/// and every determinism test. The one-player case of [`tick_shared`]: aggregates
+/// over one player equal that player, so this is byte-identical to the
+/// pre-multiplayer tick.
 pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameData) {
+    tick_shared(world, std::slice::from_mut(player), data);
+}
+
+/// Advance the shared world by one tick for every connected deity (GDD 7.1). The
+/// world itself advances once; each per-deity effect — champions nudging heroes
+/// and regions, wagers settling, favor recovering, and a turning age's boundary
+/// bets — runs once per player (deterministically, in the slice's order). The
+/// server calls this with all its players; single-player calls it with one.
+pub fn tick_shared(world: &mut WorldState, players: &mut [PlayerState], data: &GameData) {
     world.year += 1;
     world.tick_count += 1;
 
@@ -380,16 +391,20 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.balance.region,
     );
 
-    champion::tick_champions(
-        &mut player.champions,
-        &mut world.heroes,
-        &mut world.regions,
-        &data.balance.champion,
-        &data.balance.region,
-        &mut world.chronicle,
-        &data.strings.chronicle,
-        world.year,
-    );
+    // Each deity's champions nudge the shared heroes and regions, in player
+    // order (deterministic). A world with no one connected simply has none.
+    for player in players.iter_mut() {
+        champion::tick_champions(
+            &mut player.champions,
+            &mut world.heroes,
+            &mut world.regions,
+            &data.balance.champion,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            world.year,
+        );
+    }
 
     artifact::tick_artifacts(
         &mut world.artifacts,
@@ -531,14 +546,32 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     }
 
     let era_progress = world.era.pressure / data.balance.era.breaking_threshold.max(1.0);
-    speculation::tick_speculations(
+    // Resolve the shared board once, settle each deity's wagers against it
+    // (before the board is pruned), then refresh it.
+    speculation::resolve_events(
         &mut world.speculations,
-        &mut world.speculation_seq,
-        player,
         &world.heroes,
         &world.regions,
         &world.settlements,
-        &mut world.chronicle,
+        world.year,
+        world.era.number,
+    );
+    for player in players.iter_mut() {
+        speculation::settle_bets(
+            &mut player.bets,
+            &mut player.favor,
+            &world.speculations,
+            &mut world.chronicle,
+            data,
+            world.year,
+        );
+    }
+    speculation::refresh_market(
+        &mut world.speculations,
+        &mut world.speculation_seq,
+        &world.heroes,
+        &world.regions,
+        &world.settlements,
         &mut world.rng,
         data,
         world.year,
@@ -546,10 +579,32 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         era_progress,
     );
 
-    era::tick_era(world, player, data);
+    // Era pressure reads the deities' aggregate favor and pending stake; a
+    // turning age then settles each deity's boundary-spanning bets.
+    let total_favor: i64 = players.iter().map(|p| p.favor).sum();
+    let total_max_favor: i64 = data.config.max_favor * players.len().max(1) as i64;
+    let total_pending_stake: i64 = players
+        .iter()
+        .flat_map(|p| p.bets.iter())
+        .filter(|b| b.resolved.is_none())
+        .map(|b| b.stake)
+        .sum();
+    if era::tick_era_world(
+        world,
+        total_favor,
+        total_max_favor,
+        total_pending_stake,
+        data,
+    ) {
+        for player in players.iter_mut() {
+            era::expire_boundary_bets(&mut player.bets, &mut player.favor);
+        }
+    }
 
     let tithe = faith_tithe(&world.regions, &data.balance.player);
-    player.recover(tithe, &data.config, &data.balance.player);
+    for player in players.iter_mut() {
+        player.recover(tithe, &data.config, &data.balance.player);
+    }
 
     // The chronicle records notable events, not the passing of each year — the
     // year and favor already live in the HUD, so no per-tick heartbeat clutters
