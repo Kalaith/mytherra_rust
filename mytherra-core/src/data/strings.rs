@@ -484,6 +484,12 @@ pub struct Notifications {
     pub deity_appeased: String,
     pub deity_challenged: String,
     pub deity_cooldown: String,
+    /// Shown when the player's standing rises to a new tier (GDD 5.9); slot
+    /// `{tier}`.
+    pub ascension: String,
+    /// Shown when a command is refused because the player's standing has not
+    /// unlocked that divine art (GDD 5.9/7.7).
+    pub action_locked: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

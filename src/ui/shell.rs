@@ -55,13 +55,17 @@ pub fn draw_header(ctx: &UiContext<'_>) {
 
 pub fn draw_nav(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let rect = Rect::new(18.0, 84.0, LOGICAL_WIDTH - 36.0, 44.0);
-    let labels: Vec<&str> = Screen::ALL.iter().map(|s| s.label()).collect();
-    let active = Screen::ALL
+    // Only the screens the deity's Standing has revealed appear in the nav — a
+    // fledgling Watcher sees a handful; an Elder sees them all (GDD 5.9).
+    let revealed: Vec<Screen> = Screen::ALL
         .iter()
-        .position(|s| *s == ctx.screen)
-        .unwrap_or(0);
+        .copied()
+        .filter(|s| s.is_revealed(ctx.standing))
+        .collect();
+    let labels: Vec<&str> = revealed.iter().map(|s| s.label()).collect();
+    let active = revealed.iter().position(|s| *s == ctx.screen).unwrap_or(0);
     if let Some(index) = nav_tabs(rect, &labels, active, ctx.mouse) {
-        actions.push(UiAction::SelectScreen(Screen::ALL[index]));
+        actions.push(UiAction::SelectScreen(revealed[index]));
     }
 }
 

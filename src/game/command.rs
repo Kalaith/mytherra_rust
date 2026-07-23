@@ -18,9 +18,11 @@ impl Game {
     /// Authorize a command against the local deity's Standing, then apply it.
     pub(super) fn submit(&mut self, command: PlayerAction) {
         if !self.authorized(&command) {
-            // Offline the deity holds full Elder standing, so this never fires.
-            // M0.5 drives `self.standing` from progression and surfaces a
-            // locked-affordance notice here.
+            // The deity's Standing has not unlocked this art yet (GDD 5.9). The
+            // UI hides most locked affordances, so this guards the rest (e.g. a
+            // wager on a market above the player's tier).
+            self.notifications
+                .warning(self.data.strings.notifications.action_locked.clone());
             return;
         }
         self.apply_player_action(command);

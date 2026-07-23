@@ -160,6 +160,7 @@ mod tests {
             achievement_experience: 60,
             favor_per_resonance: 0.03,
             favor_tithe_baseline: 50.0,
+            tier_unlock_levels: vec![2, 4, 7],
         }
     }
 

@@ -119,6 +119,32 @@ impl Tier {
         }
     }
 
+    /// The tier's display name (a proper design rank, not tuned content).
+    pub fn label(self) -> &'static str {
+        match self {
+            Tier::Watcher => "Watcher",
+            Tier::Patron => "Patron",
+            Tier::Shaper => "Shaper",
+            Tier::Elder => "Elder",
+        }
+    }
+
+    /// The tier a player of the given standing-level holds, per the data-driven
+    /// `unlock_levels` (the level at which each tier above Watcher opens, in
+    /// order Patron/Shaper/Elder). Extra thresholds are ignored; missing ones
+    /// simply cap the reachable tier.
+    pub fn for_level(level: u32, unlock_levels: &[u32]) -> Tier {
+        let mut tier = Tier::Watcher;
+        for (i, &threshold) in unlock_levels.iter().enumerate() {
+            if level >= threshold {
+                if let Some(&next) = Tier::ALL.get(i + 1) {
+                    tier = next;
+                }
+            }
+        }
+        tier
+    }
+
     /// The capabilities this tier *adds* on top of the ranks below it (§5.9).
     fn granted(
         self,
@@ -131,16 +157,13 @@ impl Tier {
         use BettingMarket as M;
         use VisibilityScope as V;
         match self {
-            // A newly-woken deity: sees its heroes and the Observatory, and may
-            // only wager on a single hero's fate.
-            Tier::Watcher => (&[V::Heroes, V::Observatory], &[], &[M::HeroFate]),
-            // Steward of lands: the classic loop — bless/corrupt/guide regions,
-            // cultivate champions, wager on a region's fortunes.
-            Tier::Patron => (
-                &[V::Regions],
-                &[A::RegionAction, A::Champion],
-                &[M::RegionFortune],
-            ),
+            // A newly-woken deity: sees its heroes and the Observatory, may make
+            // the one hero-adjacent nudge of cultivating a champion, and wagers
+            // only on a single hero's fate.
+            Tier::Watcher => (&[V::Heroes, V::Observatory], &[A::Champion], &[M::HeroFate]),
+            // Steward of lands: the classic loop — bless/corrupt/guide regions and
+            // wager on their fortunes.
+            Tier::Patron => (&[V::Regions], &[A::RegionAction], &[M::RegionFortune]),
             // Shaper of civilization: settlements, resources, and the artifact/
             // magic/myth tools; wagers reach the turning of the age.
             Tier::Shaper => (
@@ -197,9 +220,23 @@ mod tests {
         assert!(watcher.can_see(VisibilityScope::Heroes));
         assert!(watcher.can_see(VisibilityScope::Observatory));
         assert!(!watcher.can_see(VisibilityScope::Regions));
+        // A Watcher may cultivate a champion (hero-adjacent) but not act on regions.
+        assert!(watcher.can_do(ActionVerb::Champion));
         assert!(!watcher.can_do(ActionVerb::RegionAction));
         assert!(watcher.can_bet(BettingMarket::HeroFate));
         assert!(!watcher.can_bet(BettingMarket::RegionCollapse));
+    }
+
+    #[test]
+    fn tier_climbs_with_level_by_the_unlock_thresholds() {
+        let unlock = [2u32, 4, 7]; // Patron@2, Shaper@4, Elder@7
+        assert_eq!(Tier::for_level(1, &unlock), Tier::Watcher);
+        assert_eq!(Tier::for_level(2, &unlock), Tier::Patron);
+        assert_eq!(Tier::for_level(3, &unlock), Tier::Patron);
+        assert_eq!(Tier::for_level(4, &unlock), Tier::Shaper);
+        assert_eq!(Tier::for_level(6, &unlock), Tier::Shaper);
+        assert_eq!(Tier::for_level(7, &unlock), Tier::Elder);
+        assert_eq!(Tier::for_level(99, &unlock), Tier::Elder);
     }
 
     #[test]

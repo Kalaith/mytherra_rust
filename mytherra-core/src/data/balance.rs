@@ -103,6 +103,10 @@ pub struct PlayerBalance {
     /// (50) at which a land is neither faithful nor faithless, matching the
     /// cost/effect-multiplier pivot in `Region`.
     pub favor_tithe_baseline: f32,
+    /// The standing-levels at which each tier above Watcher opens, in order
+    /// Patron/Shaper/Elder (GDD 5.9). The deity's progressive revelation pace —
+    /// deliberately data-driven, since §13.5 flags it as playtest-tuned.
+    pub tier_unlock_levels: Vec<u32>,
 }
 
 /// Settings-screen tuning (GDD 10): the selectable auto-tick cadences, in real

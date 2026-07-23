@@ -69,9 +69,9 @@ pub struct Game {
     /// Guards the auto-save on leaving to the menu, so merely visiting Settings
     /// from the title never overwrites a real save with an unplayed world.
     session_active: bool,
-    /// The local deity's Standing — what it may see, do, and bet on (GDD 5.9).
-    /// Offline it holds full Elder standing, so every command authorizes; M0.5
-    /// drives this from progression and gates visibility/verbs against it.
+    /// The local deity's Standing — what it may see, do, and bet on (GDD 5.9),
+    /// derived from the player's level via the data-driven unlock thresholds and
+    /// refreshed each update. Gates the nav and every submitted command.
     standing: Standing,
 }
 
@@ -122,6 +122,9 @@ impl Game {
             .position(|s| (*s - data.config.seconds_per_tick).abs() < f32::EPSILON)
             .unwrap_or(0);
 
+        let standing =
+            Tier::for_level(player.level, &data.balance.player.tier_unlock_levels).standing();
+
         let mut game = Self {
             data,
             world,
@@ -151,7 +154,7 @@ impl Game {
             last_autosave_tick: 0,
             quit_requested: false,
             session_active: false,
-            standing: Tier::Elder.standing(),
+            standing,
         };
         game.refresh_save_state();
         game.sync_achievements();
@@ -169,7 +172,34 @@ impl Game {
         }
 
         self.check_achievements();
+        self.refresh_standing();
         self.maybe_autosave();
+    }
+
+    /// The deity's Standing at its current level (GDD 5.9), per the data-driven
+    /// unlock thresholds.
+    fn standing_now(&self) -> Standing {
+        Tier::for_level(
+            self.player.level,
+            &self.data.balance.player.tier_unlock_levels,
+        )
+        .standing()
+    }
+
+    /// Recompute Standing from the player's level, announcing an ascension when
+    /// it crosses into a higher tier. Called each update during play.
+    fn refresh_standing(&mut self) {
+        let tier = Tier::for_level(
+            self.player.level,
+            &self.data.balance.player.tier_unlock_levels,
+        );
+        if tier.rank() > self.standing.tier {
+            self.notifications.success(fill(
+                &self.data.strings.notifications.ascension,
+                &[("tier", tier.label().to_owned())],
+            ));
+        }
+        self.standing = tier.standing();
     }
 
     /// Reconcile the player's saved unlock state with the current achievement
@@ -200,6 +230,7 @@ impl Game {
             data: &self.data,
             world: &self.world,
             player: &self.player,
+            standing: &self.standing,
             screen: self.screen,
             selected_region: self.selected_region,
             selected_town: self.selected_town.as_deref(),
@@ -446,6 +477,7 @@ impl Game {
         self.world = WorldState::new(&self.data);
         self.player = PlayerState::new(&self.data.config);
         self.sync_achievements();
+        self.standing = self.standing_now();
         self.selected_region = 0;
         self.selected_town = None;
         self.tick_accum = 0.0;
@@ -520,6 +552,7 @@ impl Game {
                 self.world = save.world;
                 self.player = save.player;
                 self.sync_achievements();
+                self.standing = self.standing_now();
                 self.selected_region = 0;
                 self.selected_town = None;
                 self.tick_accum = 0.0;

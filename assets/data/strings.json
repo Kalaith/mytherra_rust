@@ -246,7 +246,9 @@
     "agenda_cooldown": "Diplomacy must rest before another push.",
     "deity_appeased": "You appease {deity}.",
     "deity_challenged": "You challenge {deity}.",
-    "deity_cooldown": "{deity} will not hear you again so soon."
+    "deity_cooldown": "{deity} will not hear you again so soon.",
+    "ascension": "Your standing rises — you are now the {tier}.",
+    "action_locked": "That divine art lies beyond your present standing."
   },
   "heroes": {
     "panel": "Heroes & Champions",

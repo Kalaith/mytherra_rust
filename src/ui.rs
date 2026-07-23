@@ -19,6 +19,7 @@ mod widgets;
 use crate::data::GameData;
 use crate::world::{PlayerState, WorldState};
 use macroquad::prelude::Vec2;
+use mytherra_protocol::{Standing, VisibilityScope};
 
 pub const LOGICAL_WIDTH: f32 = 1280.0;
 pub const LOGICAL_HEIGHT: f32 = 720.0;
@@ -64,6 +65,26 @@ impl Screen {
             Screen::Eras => "Eras",
             Screen::Settings => "Settings",
         }
+    }
+
+    /// The visibility scope a player's Standing must have unlocked for this
+    /// screen to appear in the nav (GDD 5.9). `None` screens are always shown —
+    /// the Dashboard, Event Log, and Settings are open to a fledgling deity.
+    pub fn required_scope(self) -> Option<VisibilityScope> {
+        match self {
+            Screen::Title | Screen::Dashboard | Screen::Chronicle | Screen::Settings => None,
+            Screen::Heroes => Some(VisibilityScope::Heroes),
+            Screen::Betting => Some(VisibilityScope::Observatory),
+            Screen::Regions => Some(VisibilityScope::Regions),
+            Screen::DivineTools => Some(VisibilityScope::DivineTools),
+            Screen::Eras => Some(VisibilityScope::Eras),
+        }
+    }
+
+    /// Whether this screen is revealed to the given Standing.
+    pub fn is_revealed(self, standing: &Standing) -> bool {
+        self.required_scope()
+            .is_none_or(|scope| standing.can_see(scope))
     }
 }
 
@@ -155,6 +176,9 @@ pub struct UiContext<'a> {
     pub data: &'a GameData,
     pub world: &'a WorldState,
     pub player: &'a PlayerState,
+    /// The local deity's Standing — gates which screens/verbs the view reveals
+    /// (GDD 5.9).
+    pub standing: &'a Standing,
     pub screen: Screen,
     pub selected_region: usize,
     /// The settlement id whose detail is open in the Regions town browser, if any
