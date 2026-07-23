@@ -72,6 +72,21 @@ pub fn tick_magic(
         .count() as f32
         * balance.evidence_per_manaspring;
 
+    // The world's practical learning readies it for the arcane: a civilization
+    // deep in medicine, engineering, and husbandry grasps magic sooner than a
+    // benighted one, so the average lore of the realms — above the common measure
+    // every land begins with — hastens every path (GDD 5.6 <-> 5.4). This closes
+    // the knowledge cycle begun in tick_lore, where a Known path raises the lore
+    // ceiling: risen lore now hastens the next path in turn. Read once, applied to
+    // all. Deterministic — a mean of world state, no roll.
+    let avg_lore = if regions.is_empty() {
+        0.0
+    } else {
+        regions.iter().map(|r| r.lore).sum::<f32>() / regions.len() as f32
+    };
+    let lore_evidence =
+        (avg_lore - balance.evidence_lore_floor).max(0.0) * balance.evidence_per_lore;
+
     for path in paths.iter_mut() {
         path.progress =
             (path.progress + balance.progress_per_tick + avg_magic * balance.magic_affinity_coeff)
@@ -81,7 +96,8 @@ pub fn tick_magic(
             + scholar_evidence
             + relic_evidence
             + landmark_evidence
-            + manaspring_evidence)
+            + manaspring_evidence
+            + lore_evidence)
             .min(balance.stat_cap);
         path.recompute_state(balance);
 
@@ -319,6 +335,60 @@ mod tests {
             learned > unlettered,
             "a learned society should uncover magic faster ({learned} vs {unlettered})"
         );
+    }
+
+    #[test]
+    fn a_learned_world_grasps_the_arcane_sooner() {
+        let data = GameData::load().unwrap();
+        // Evidence a fresh Dormant path accrues in one tick, given the world's
+        // average lore. Heroes, relics, wonders, and springs cleared so only lore
+        // varies — an unlettered world (lore at the floor) against a learned one.
+        let evidence_after = |lore: f32| {
+            let mut world = WorldState::new(&data);
+            world.heroes.clear();
+            world.artifacts.clear();
+            world.landmarks.clear();
+            world.resource_nodes.clear();
+            for region in world.regions.iter_mut() {
+                region.lore = lore;
+            }
+            world.magic_paths.clear();
+            world.magic_paths.push(MagicPath {
+                id: "p".to_owned(),
+                name: "Test Art".to_owned(),
+                description: String::new(),
+                effect_stat: MagicStat::Magic,
+                effect_per_tick: 0.0,
+                progress: 0.0,
+                evidence: 0.0,
+                state: MagicState::Dormant,
+                announced_known: false,
+            });
+            tick_magic(
+                &mut world.magic_paths,
+                &mut world.regions,
+                &mut world.heroes,
+                &world.artifacts,
+                &world.landmarks,
+                &world.resource_nodes,
+                &data.balance.magic,
+                &data.balance.region,
+                &mut world.chronicle,
+                &data.strings.chronicle,
+                world.year,
+            );
+            world.magic_paths[0].evidence
+        };
+
+        let floor = data.balance.magic.evidence_lore_floor;
+        let learned = evidence_after(floor + 40.0);
+        let benighted = evidence_after(floor);
+        assert!(
+            learned > benighted,
+            "a learned world should uncover magic sooner ({learned} vs {benighted})"
+        );
+        // A world below the common measure of learning adds nothing, not a penalty.
+        assert!((evidence_after(floor - 10.0) - benighted).abs() < 1e-4);
     }
 
     #[test]

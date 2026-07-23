@@ -314,6 +314,20 @@ pub struct MagicBalance {
     /// counterpart to the built libraries, and the resource system's own feed into
     /// research. A spring run dry (Depleted) offers nothing.
     pub evidence_per_manaspring: f32,
+    /// Evidence the world's practical learning contributes to every path per tick,
+    /// per point of average region lore above `evidence_lore_floor` (GDD 5.6 <->
+    /// 5.4): a civilization that has mastered medicine, engineering, and
+    /// husbandry is readier to grasp the arcane than a benighted one — the same
+    /// disciplined habits of study that soften a plague hasten the understanding
+    /// of magic. This closes a knowledge cycle: a Known path already raises the
+    /// ceiling every land's lore drifts toward, and now that risen lore in turn
+    /// hastens the next path. A wholly average world (lore at the floor)
+    /// contributes nothing; only learning past the common measure speeds research.
+    pub evidence_per_lore: f32,
+    /// The average-lore line below which the world's learning is too commonplace
+    /// to hasten the arcane (GDD 5.6 <-> 5.4): set at the lore every land begins
+    /// with, so only a genuinely learned age feeds research.
+    pub evidence_lore_floor: f32,
 }
 
 /// Prophecy tuning (GDD 5.6): the world's foretold turnings, spoken from its

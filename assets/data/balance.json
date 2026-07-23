@@ -382,7 +382,9 @@
     "evidence_per_scholar": 0.12,
     "evidence_per_knowledge_relic": 0.05,
     "evidence_per_learned_landmark": 0.03,
-    "evidence_per_manaspring": 0.08
+    "evidence_per_manaspring": 0.08,
+    "evidence_per_lore": 0.02,
+    "evidence_lore_floor": 30.0
   },
   "myth": {
     "promote_cost": 22,
