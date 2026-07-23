@@ -244,6 +244,11 @@ multiplayer):
   *Cultivate* (champions), *Forge/Empower/Transfer/Stabilize* (artifacts), *Shape*
   (weather), *Request* (omens), *Research* (magic), *Promote* (myths), *Advance*
   (civilization agendas), *Appease/Challenge* (pantheon), *Bet* (speculation events).
+- **Views and verbs are progressively revealed** by the player's Standing (§5.9): a
+  freshly-woken deity sees and acts on only a narrow slice of the world (Heroes, a hero-
+  scoped betting market), and unlocks broader visibility and higher-altitude verbs — up to
+  world-shaping weather and region-collapse wagers — as it grows. The list above is the
+  *fully-revealed* verb set, not what a new player starts with.
 
 ---
 
@@ -422,6 +427,69 @@ auditable** — more so than any single-player port in this catalog, since playe
 be trusted to verify each other's outcomes. The server owns every roll; the client never
 computes an outcome, only requests actions and displays results (§7).
 
+### 5.9 Deific Standing & Progressive Revelation
+
+A new deity wakes to a small, legible world and grows into the full pantheon-god's view
+over many sessions. What a player can *see* and *do* is gated by their **Standing** — a
+per-player set of unlocked capabilities (§6) — so onboarding is narrow and the endgame is
+systemic. This layer gates *access only*; it changes none of the cost/effect formulas in
+§5.1–5.6.
+
+Standing moves along two orthogonal axes:
+
+- **Visibility scope** — which entities/screens are revealed: Heroes → Regions →
+  Settlements/Resources → Divine Tools → Pantheon/Eras → the full Chronicle.
+- **Influence altitude** — which verbs (§4) are available, from *direct/local* (Bless a
+  region, cultivate a champion) to *systemic/indirect* (shape weather, steer a magic path,
+  tilt a civilization agenda) — where the deity perturbs an input and the simulation
+  propagates the outcome rather than dictating it.
+
+Capabilities are three data-driven flag groups on the player, unlocked in named bundles
+("tiers") defined in `tiers.json` (copy in `strings.json`, thresholds in `balance.json`):
+
+- `VisibilityScope` — Heroes, Regions, Settlements, Resources, DivineTool(kind),
+  Observatory, Pantheon, Eras, FullChronicle
+- `ActionVerb` — RegionAction, Champion, Weather, Artifact, Magic, Myth, Agenda, Pantheon
+- `BettingMarket` — which `BetPredicate` families may be wagered on (hero-scoped →
+  region-scoped → world/era-scoped)
+
+Tiers are **purely additive**: ascending grants new scopes/verbs/markets and never removes
+an earlier one. A reference progression:
+
+| Tier | Newly revealed | New verbs | New betting markets |
+| --- | --- | --- | --- |
+| 0 · Watcher | Heroes, Chronicle | — (or one cheap hero-adjacent nudge) | hero reaches legend, hero death |
+| 1 · Patron | Regions | Bless/Corrupt/Guide, champion cultivation | region prosperity, settlement growth |
+| 2 · Shaper | Settlements, Resources, Artifacts/Magic/Myths | forge/empower artifacts, research magic, promote myths | famine, plague, war |
+| 3 · Elder | Weather, Civilization, Pantheon, Eras | shape weather, advance agendas, appease/challenge deities | region collapse, age ends |
+
+High Standing is defined by *reach*, not by giving anything up — but the highest-altitude
+playstyle is deliberately **emergent and optional**. A tier-3 Elder who has unlocked
+Weather and a region-collapse market can win a "this region will be destroyed" wager
+**without ever acting on the region directly**: the simulation already chains
+`weather::tick_weather` (drought suppresses resource output) → `famine::tick_famine` (the
+harvest fails and the region starves) → `refugee::tick_refugees` (its people flee) →
+`genesis::tick_genesis` (the collapsed, undefended region is conquered and removed). The
+Elder shapes the skies; the world does the rest. Every such nudge and bet is attributed in
+the public event log (§7.5) — "visible manipulation is a feature" — so rival deities can
+counter (bless the region, shape counter-weather, bet the other side), which keeps a
+high-favor whale from acting unopposed. This market needs a `region_collapse` predicate
+added alongside the existing `AgeEnds`.
+
+Unlock hooks (all already present in the code or trivially derived):
+
+- **Standing/level** — the existing favor-driven `PlayerState.level` (§5.1) maps to tier
+  thresholds.
+- **Achievements** — `macroquad_toolkit::achievements` is already wired into
+  `PlayerState`; a milestone reveals a scope.
+- **Witnessed events** — seeing a first Legend reveals Regions; surviving a first famine
+  opens the famine/weather markets — tying revelation to the living world.
+- **Favor-purchased ascension** — an explicit favor sink that buys the next tier.
+
+Enforcement is server-authoritative (§7.7): the server sends each player only the
+projection their scopes reveal and rejects any verb they have not unlocked. Client-side
+gating is presentation only.
+
 ---
 
 ## 6. Data Model
@@ -438,8 +506,10 @@ replacing the original's `game_configs` JSON-blob pattern — `artifacts`,
 **Per-player tables** (one row set per account):
 `players` (favor balance, level/experience), `player_bets` (formerly `divine_bets`,
 already correctly player-scoped), `player_champions` (a player's cultivated roster),
-`player_achievements`, and — if the guild/pantheon-faction idea (§0, §13) is pursued —
-`player_guilds`/`guild_members`.
+`player_achievements`, `player_standing` (the unlocked `VisibilityScope`/`ActionVerb`/
+`BettingMarket` flag sets that drive §5.9's per-player projection and authorization), and
+— if the guild/pantheon-faction idea (§0, §13) is pursued — `player_guilds`/
+`guild_members`.
 
 ```json
 // bet_types.json — seed data the original never actually shipped (§0)
@@ -465,6 +535,14 @@ locally-simulated, offline binary. Every other port in `RustGames` uses
 `macroquad-toolkit::persistence` for a local save file; this game's "save" is the live
 server's database, shared by every player.*
 
+> **Status update (supersedes the earlier "keep PHP" recommendation, §7.2).** Since this
+> section was first written, the entire simulation has been **ported to Rust** as a clean,
+> deterministic, `serde`-serializable core (`sim::tick_world`, `WorldState`/`PlayerState`,
+> no rendering coupling). The right architecture is therefore a **four-crate Rust
+> workspace** — `mytherra-core` (sim) / `mytherra-protocol` (shared wire types) /
+> `mytherra-server` (axum authority) / `mytherra-client` (macroquad renderer) — described
+> in §7.2 and §12. The remaining work is extraction and interface design, not a rewrite.
+
 ### 7.1 Server authority model
 
 - **The server is the sole simulation authority.** All economy math, tick advancement,
@@ -479,29 +557,49 @@ server's database, shared by every player.*
   year cadence reads like a development/testing artifact more than a deliberate "check in
   a few times a day" pace for a live shared world.
 
-### 7.2 Keep the existing backend, build a new client — don't rewrite the simulation in Rust for v1
+### 7.2 The simulation is already a Rust core — build a Rust-native server around it
 
-The PHP/MySQL backend already implements dozens of complex, tested, **working** systems
-(region/settlement/resource ecology, hero/champion lifecycles, betting, all seven divine
-tools, the era system). Re-implementing all of that from scratch in Rust before a single
-player can log in would be a large, high-risk undertaking with real potential for
-behavioral drift from a design that's already tuned. The recommended path:
+An earlier draft of this section recommended keeping the original PHP/MySQL backend as the
+authority and *not* rewriting the simulation in Rust for v1. **That recommendation is
+superseded.** The simulation has since been fully ported to Rust, and the port is exactly
+the clean, headless authority this architecture needs:
 
-- **v1: keep the PHP backend as the authoritative server**, extended with the fixes and
-  additions in §0/§5/§6 (per-player favor, real relational tables for the seven divine
-  tools, real seed data for the betting-config tables, the crowd-lean odds adjustment,
-  the `war_outcome`/dead-code removals). The Rust/macroquad client talks to it over a
-  (versioned, extended) REST API — the same integration pattern the existing web
-  frontend already uses, just a new client speaking to it.
-- **Stretch/alternative path, not v1**: a full Rust rewrite of the backend using
-  `axum` + `tokio` + `sqlx`, following the one existing precedent for a Rust server
-  component in this catalog — `kaiju_sim/kaiju_server` (already a Cargo workspace member,
-  already using exactly this stack for its own server-custodial marketplace/transfer
-  system). Worth noting explicitly: even `kaiju_sim` ships v1 "offline-first, does not
-  require a server" and treats its server as an optional later phase — this game would be
-  the first in the catalog for which the server is *mandatory from day one*, not an add-
-  on, which is precisely why reusing a proven, already-tested backend for v1 is the lower-
-  risk choice.
+- `sim::tick_world(&mut world, &mut player, &data)` is a **pure, deterministic** function.
+  The world's `SeededRng` lives in state and is serialized, so a save — or a server row —
+  resumes the exact same sequence (§5.8; guarded by a byte-for-byte two-run determinism
+  test).
+- `WorldState` (shared) and `PlayerState` (per-account) are already the serialization
+  contract, split along the §6 shared/per-player line.
+- `world/`, `sim/`, and `data/` carry **no rendering dependency** — they touch only pure
+  toolkit utilities (`rng`, `math`, `data_loader`, `achievements`), never macroquad.
+
+So the "stretch/alternative" Rust path (`axum` + `tokio` + `sqlx`, following the
+`kaiju_sim/kaiju_server` precedent already in this workspace) is now the **recommended**
+path, and the work is *extraction + interface design*, not reimplementation from scratch.
+The target is a **four-crate Cargo workspace** (one repo — this is still one game):
+
+- **`mytherra-core`** (lib) — `world/`, `sim/`, `data/`, serialization; the authority's
+  brain. No macroquad. This is ~95% of today's `src/` (everything except `ui/`, `game.rs`,
+  `main.rs`).
+- **`mytherra-protocol`** (lib) — the shared wire types both ends compile against so they
+  can never drift: the per-player `WorldView`/`PlayerView` projections, the `PlayerAction`
+  command enum (the mutating subset of today's `UiAction`), the §5.9 capability/tier
+  definitions, error types, and the since-cursor event-delta types (§7.4).
+- **`mytherra-server`** (bin) — `axum`/`tokio`/`sqlx`; owns the world + one `PlayerState`
+  per account, runs the tick loop (§7.1), authorizes actions and projects per-player views
+  (§7.7), and persists to the DB (the DB *is* the save, §6/§8).
+- **`mytherra-client`** (bin) — today's `ui/` + loop, rendering a received `WorldView` and
+  emitting `PlayerAction`s; no local `tick_world`. It keeps an **offline mode** that embeds
+  `mytherra-core` directly (same UI against a local world) for dev iteration, the existing
+  determinism/UI tests, a single-player fallback, and — decisively — shipping the §5.9
+  revelation feature in single-player *before* any networking exists.
+
+**Workspace prerequisite:** `mytherra-core`/`-server` must not link a GL/windowing engine,
+but the pure toolkit modules they need (`rng`, `math`, `data_loader`, `achievements`) live
+in `macroquad-toolkit`, which depends on macroquad. Either feature-gate those modules to
+build window-free, or extract them into a headless `macroquad-toolkit-core` crate that both
+the toolkit and the server depend on — a win for every game in the catalog, not just this
+one.
 
 ### 7.3 Auth
 
@@ -551,6 +649,23 @@ server for as long as it's playable — a genuine ongoing operational commitment
 cost, uptime, moderation of a live shared world, database backups) rather than "ship a
 binary to itch.io/Steam and you're done." Who owns this is an open question (§13), not
 something this document can resolve on its own.
+
+### 7.7 Visibility & authorization are server-authoritative
+
+The Standing system (§5.9) must be enforced on the server, never by the client merely
+hiding screens:
+
+- **Per-player projection** — the server computes each player's `WorldView` from their
+  unlocked `VisibilityScope`s, so an un-revealed entity is *absent from the payload*, not
+  just hidden. A low-tier Watcher receives a small view; the full world is never shipped to
+  a client that has not earned it (a pleasant performance side-effect). This is the `view`
+  DTO of §12, now filtered per player.
+- **Action authorization** — every mutating command is checked against the player's
+  `ActionVerb`/`BettingMarket` flags *and* the §7.5 per-region/per-tick nudge cap before it
+  touches the world. An unauthorized `ShapeWeather` is a rejection, not a silent no-op.
+
+The client mirrors enabled/disabled affordances for UX, but the server is the sole
+authority (§7.1, §5.8).
 
 ---
 
@@ -644,7 +759,10 @@ one genuinely new engineering investment this project asks of the catalog.
 
 ## 12. Architecture Skeleton
 
-**Client** (`src/` — the macroquad game binary):
+A **four-crate Cargo workspace** (§7.2): `mytherra-core` (sim) → `mytherra-protocol`
+(shared wire types) → `mytherra-server` (axum authority) + `mytherra-client` (renderer).
+
+**`mytherra-client`** (`crates/client/src/` — the macroquad binary):
 
 ```
 src/
@@ -671,17 +789,32 @@ src/
 └── local_prefs.rs         # auth token + UI settings only (§8), via toolkit persistence
 ```
 
-**Server** (kept as the existing PHP backend for v1, per §7.2 — no Rust server skeleton
-for v1; see §7.2 for the `axum`/`tokio`/`sqlx` stretch-path stack if that's revisited
-later).
+**`mytherra-core`** (`crates/core/` — lib): today's `src/{world,sim,data}` and
+serialization, verbatim. Exposes `tick_world`, `WorldState`, `PlayerState`, `GameData`. No
+macroquad, no networking. The client's offline mode and the server both depend on it.
 
-- **`GameState` variants:** `Login`, `Gameplay` (internal screen enum per §10) — no
+**`mytherra-protocol`** (`crates/protocol/` — lib): `WorldView`/`PlayerView` (the
+per-player projections of §7.7), `PlayerAction` (the mutating subset of `UiAction`),
+`Standing`/tier definitions (§5.9), error and since-cursor delta types. No I/O — pure
+types depended on by both server and client.
+
+**`mytherra-server`** (`crates/server/` — bin): `axum`/`tokio`/`sqlx`. Holds the
+authoritative `WorldState` + one `PlayerState` per account, runs the tick loop (§7.1),
+authorizes/projects per player (§7.7), persists to the DB (§6/§8). Endpoints:
+`GET /view` (filtered), `POST /action`, `GET /events?since=` (§7.4).
+
+- **Client `GameState` variants:** `Login`, `Gameplay` (internal screen enum per §10) — no
   `Menu`-owned save-slot concept the way single-player ports have one, since there's no
-  local save to select (§8).
-- **Key client-side modules:** everything in `net/` and `view.rs` — the client's entire
-  job is fetch-state / render / submit-action; there is no `simulation/` module on the
-  client at all, unlike every other port in this catalog, because the client owns no
-  simulation (§7.1).
+  local world save to select (§8).
+- **The client owns no simulation:** everything in `net/` + `view.rs` is fetch-state /
+  render / submit-action against the server (§7.1). The one exception is the optional
+  **offline mode**, which embeds `mytherra-core` and builds the `WorldView` locally through
+  the *same* projection code — so the UI never knows whether the world is local or remote.
+- **The `apply_action` split:** today's single `Game::apply_action` match mixes
+  client-local UI-state changes (`Select*`, `Set*Page/Filter`, `Cycle*`, `TogglePause`)
+  with authoritative world/player mutations. Splitting it along the "touches world/player"
+  line yields the client↔server command boundary almost mechanically — the local variants
+  stay in the client and never round-trip; the rest become `PlayerAction`s.
 
 ---
 
@@ -689,8 +822,8 @@ later).
 
 - **Explicitly not building (v1):** real-time PvP combat, live chat/voice, a full
   liquidity-pool pari-mutuel betting engine (v1 ships the hybrid crowd-lean adjustment in
-  §5.5, not a real order book), WebSocket/real-time push transport, a Rust rewrite of the
-  backend simulation (§7.2's stretch path).
+  §5.5, not a real order book), WebSocket/real-time push transport. *(The Rust server that
+  earlier drafts listed here as a non-goal is now the recommended path — see §7.2.)*
 - **Open questions**, in priority order:
 
   1. **Tick cadence.** The original's ~1-real-minute-per-year pace looks like a dev
@@ -710,6 +843,11 @@ later).
      real tuning needs actual concurrent-player betting data, which doesn't exist until
      multiplayer is live — a genuine chicken-and-egg to solve with a small closed
      playtest before wide balance claims are made.
+  5. **Standing/tier curve** (§5.9) — the four reference tiers and their unlock triggers
+     (level vs. achievement vs. witnessed-event vs. favor-purchase) are a starting point,
+     not a tuned progression. How fast should a new deity ascend, and which capabilities
+     belong at which tier? Best settled by playtesting M0.5 in single-player, where the
+     whole system runs without the server.
 
 ---
 
@@ -717,7 +855,9 @@ later).
 
 | Milestone | Proves | Target content |
 | --- | --- | --- |
-| M1 — Mechanical proof | Networking spike resolved (native + WASM); client can log in (guest session), fetch shared world state from the existing backend, render regions/events, and submit a Bless/Corrupt/Guide action end-to-end with per-player favor | 3 regions (as original), guest auth only |
+| M0 — Crate extraction | `mytherra-core` split out as a headless lib (determinism/save tests green inside it); `mytherra-protocol` defines `WorldView`/`PlayerView`/`PlayerAction`; the client renders from a locally-built `WorldView` and the `apply_action` split (§12) is done. Pure refactor — the game still runs exactly as today | existing content |
+| M0.5 — Tiered revelation (single-player) | The §5.9 Standing system live in offline mode: capability flags on the player, per-player projection + action-gating enforced through the projection code, the four reference tiers shipped as `tiers.json`, unlocks firing off level/achievements/witnessed-events. Delivers the visibility gameplay *before* any networking | existing content + `tiers.json` |
+| M1 — Mechanical proof | Networking spike resolved (native + WASM); `mytherra-server` (axum) hosts the shared world and runs the tick loop; client logs in (guest session), fetches its filtered `WorldView`, renders regions/events, and submits a Bless/Corrupt/Guide action end-to-end with per-player favor and server-side authorization | 3 regions (as original), guest auth only |
 | M2 — Playable prototype | Full core loop: heroes/champions, betting with real seeded config tables and the crowd-lean adjustment live against at least a small pool of concurrent testers, event log delta/since-cursor working | Prototype content targets from §9 |
 | M3 — Content-complete | All seven divine tools on real relational tables, era system, expanded world content, account linking, rate-limiting/anti-grief in place | Full targets from §9 |
 
