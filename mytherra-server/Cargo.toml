@@ -1,0 +1,16 @@
+[package]
+name = "mytherra-server"
+version = "0.1.0"
+edition = "2021"
+
+# The authority server (GDD 7): owns the shared world and per-player state, runs
+# the tick loop, and serves each player their Standing-filtered projection. M1
+# scaffold — a single in-memory guest, read endpoints only. axum/tokio follow
+# the kaiju_server precedent in this catalog.
+[dependencies]
+mytherra-core = { path = "../mytherra-core" }
+mytherra-protocol = { path = "../mytherra-protocol" }
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "sync"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

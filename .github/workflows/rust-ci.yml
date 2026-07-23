@@ -81,7 +81,7 @@ jobs:
           fi
 
       - name: Check formatting
-        run: cargo fmt --manifest-path Cargo.toml -p mytherra -p mytherra-core -p mytherra-protocol -- --check
+        run: cargo fmt --manifest-path Cargo.toml -p mytherra -p mytherra-core -p mytherra-protocol -p mytherra-server -- --check
 
       - name: Run Clippy
         run: cargo clippy --manifest-path Cargo.toml --workspace --all-targets --all-features -- -D warnings
