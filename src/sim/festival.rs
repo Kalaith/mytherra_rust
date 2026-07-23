@@ -13,6 +13,12 @@ use crate::data::strings::{ChronicleText, FestivalNames};
 use crate::data::{fill, FestivalBalance};
 use crate::world::{Chronicle, EventKind, Festival, Hero, Region};
 
+/// A festival that passed into memory this tick: `(festival_name, region_id,
+/// region_name)`, returned so the caller can enshrine it in a myth (GDD 5.2 <->
+/// 6) — the festival's counterpart to a slain beast or a raised saint becoming
+/// the stuff of folklore.
+pub type FestivalRemembered = (String, String, String);
+
 #[allow(clippy::too_many_arguments)]
 pub fn tick_festivals(
     festivals: &mut Vec<Festival>,
@@ -24,11 +30,12 @@ pub fn tick_festivals(
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
-) {
+) -> Vec<FestivalRemembered> {
     // Advance every standing festival: while it runs it lifts its host and honours
     // the heroes who dwell there, then — its years spent — passes into memory. A
     // festival whose host has since been conquered away or sundered simply counts
     // down unremembered, its boons falling on no land.
+    let mut remembered: Vec<FestivalRemembered> = Vec::new();
     festivals.retain_mut(|festival| {
         let host_name = regions
             .iter()
@@ -52,9 +59,13 @@ pub fn tick_festivals(
                     EventKind::Region,
                     fill(
                         &text.festival_ends,
-                        &[("festival", festival.name.clone()), ("region", host_name)],
+                        &[
+                            ("festival", festival.name.clone()),
+                            ("region", host_name.clone()),
+                        ],
                     ),
                 );
+                remembered.push((festival.name.clone(), festival.region_id.clone(), host_name));
             }
             false
         } else {
@@ -67,7 +78,7 @@ pub fn tick_festivals(
     // rich enough to bear the cost and calm enough to celebrate — but only when no
     // festival already stands, so the world holds one great celebration at a time.
     if balance.interval == 0 || !year.is_multiple_of(balance.interval) || !festivals.is_empty() {
-        return;
+        return remembered;
     }
     let host = regions
         .iter()
@@ -100,6 +111,7 @@ pub fn tick_festivals(
             began_year: year,
         });
     }
+    remembered
 }
 
 #[cfg(test)]
@@ -108,7 +120,7 @@ mod tests {
     use crate::data::GameData;
     use crate::world::WorldState;
 
-    fn run(world: &mut WorldState, data: &GameData, year: u32) {
+    fn run(world: &mut WorldState, data: &GameData, year: u32) -> Vec<FestivalRemembered> {
         world.year = year;
         tick_festivals(
             &mut world.festivals,
@@ -120,7 +132,7 @@ mod tests {
             &mut world.chronicle,
             &data.strings.chronicle,
             year,
-        );
+        )
     }
 
     #[test]
@@ -196,17 +208,25 @@ mod tests {
         let resonance_before = world.regions[0].divine_resonance;
         let renown_before = world.heroes[0].renown;
 
-        // Begin the festival, then run it out its full duration.
+        // Begin the festival, then run it out its full duration; the final tick
+        // remembers it for a myth.
         run(&mut world, &data, b.interval);
         assert_eq!(world.festivals.len(), 1);
+        let mut remembered = Vec::new();
         for y in 1..=b.duration {
-            run(&mut world, &data, b.interval + y);
+            remembered = run(&mut world, &data, b.interval + y);
         }
 
         assert!(
             world.festivals.is_empty(),
             "a festival passes into memory once its years are spent"
         );
+        assert_eq!(
+            remembered.len(),
+            1,
+            "the festival that passes is remembered for a myth"
+        );
+        assert_eq!(remembered[0].1, host_id, "remembered in its host land");
         assert!(
             world.regions[0].cultural_influence > culture_before,
             "a festival deepens its host's cultural renown"

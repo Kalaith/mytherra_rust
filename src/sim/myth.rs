@@ -249,6 +249,57 @@ pub fn seed_saint_myth(
     );
 }
 
+/// Seed a myth candidate remembering a great festival that has passed into memory
+/// (GDD 5.2 <-> 6): a Triumph-tale of a realm's golden years, rooted in the land
+/// that held the celebration and named for both festival and region, at full
+/// resonance. So a land that celebrates its splendour grows storied for it, as one
+/// that fells beasts grows martial and one that venerates its dead grows mystical.
+/// The player still chooses whether to promote it; skipped once the board is
+/// saturated so a run of festivals can't flood it.
+pub fn seed_festival_myth(
+    candidates: &mut Vec<MythCandidate>,
+    seq: &mut u64,
+    festival_name: &str,
+    region_id: &str,
+    region_name: &str,
+    data: &GameData,
+) {
+    let balance = &data.balance.myth;
+    if candidates.len() >= balance.candidate_count * 2 {
+        return;
+    }
+    let Some(theme) = data
+        .myth_themes
+        .iter()
+        .find(|t| t.id == balance.festival_theme_id)
+        .or_else(|| data.myth_themes.first())
+    else {
+        return;
+    };
+    *seq += 1;
+    candidates.insert(
+        0,
+        MythCandidate {
+            id: format!("myth-{seq}"),
+            title: fill(
+                &data.strings.divine.festival_myth_title,
+                &[
+                    ("festival", festival_name.to_owned()),
+                    ("region", region_name.to_owned()),
+                ],
+            ),
+            theme_name: theme.name.clone(),
+            stat: theme.stat,
+            cultural_effect: theme.cultural_effect,
+            stat_effect: theme.stat_effect,
+            culture: theme.culture,
+            region_id: region_id.to_owned(),
+            region_name: region_name.to_owned(),
+            resonance: balance.resonance_max,
+        },
+    );
+}
+
 /// Seed a myth candidate commemorating a slain beast (GDD 5.2 <-> 5.6): a
 /// Valor-tale of the hunt, rooted in the region where the beast fell and named
 /// for both hero and beast, at full resonance. The same Valor theme a hero's

@@ -665,7 +665,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
     // The world's great celebrations: once in a generation a flourishing, peaceful
     // realm holds a festival that lifts its culture and faith and crowns its heroes
     // — the constructive mirror of the crises above (GDD 5.2 <-> 6).
-    festival::tick_festivals(
+    let festivals_remembered = festival::tick_festivals(
         &mut world.festivals,
         &mut world.regions,
         &mut world.heroes,
@@ -676,6 +676,20 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.strings.chronicle,
         world.year,
     );
+    // A festival that passes into memory becomes a Triumph-tale of the realm's
+    // golden years, a myth the player may promote — so celebration feeds the
+    // world's folklore as the hunt, the saint, and the legend already do (GDD 5.2
+    // <-> 6). The land that fetes its splendour grows storied for it.
+    for (festival_name, region_id, region_name) in festivals_remembered {
+        myth::seed_festival_myth(
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            &festival_name,
+            &region_id,
+            &region_name,
+            data,
+        );
+    }
 }
 
 /// Living heroes who have reached `bar` renown this tick but hadn't before, so

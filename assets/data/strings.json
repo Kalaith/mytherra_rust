@@ -181,7 +181,8 @@
     "mood_stirring": "Stirring",
     "mood_roused": "Roused",
     "mood_wrathful": "Wrathful",
-    "mood_ascendant": "Ascendant"
+    "mood_ascendant": "Ascendant",
+    "festival_myth_title": "{festival}, the Splendour of {region}"
   },
   "event_log": {
     "panel": "Event Log",

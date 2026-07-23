@@ -403,7 +403,8 @@
     "region_floor": 15.0,
     "legend_theme_id": "valor",
     "saint_theme_id": "sacrifice",
-    "echo_hero_renown": 0.4
+    "echo_hero_renown": 0.4,
+    "festival_theme_id": "triumph"
   },
   "civilization": {
     "apply_threshold": 35.0,

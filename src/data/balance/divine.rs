@@ -257,6 +257,11 @@ pub struct MythBalance {
     /// venerates its dead grows mystical in memory as one that fells beasts grows
     /// martial. Falls back to the first theme if unmatched.
     pub saint_theme_id: String,
+    /// Theme (by id) a myth takes when it remembers a great festival passing into
+    /// memory (GDD 5.2 <-> 6): a tale of triumph and plenty, so a land that
+    /// celebrates its golden years grows storied for its splendour as one that
+    /// fells beasts grows martial. Falls back to the first theme if unmatched.
+    pub festival_theme_id: String,
     /// Renown a myth grants, each time it echoes, to every living hero in its
     /// home region (GDD 5.6 <-> 5.4): a tale still sung in the land inspires the
     /// living toward legend, so myth breeds heroes just as heroes breed myth.
