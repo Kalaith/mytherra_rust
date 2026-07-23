@@ -10,7 +10,9 @@
 
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, ArtifactFocus, HeroRole, RegionBalance, WarBalance};
-use crate::world::{Artifact, Chronicle, EventKind, Hero, Pact, Region, Settlement, War};
+use crate::world::{
+    Artifact, Chronicle, EventKind, Hero, Pact, Region, Settlement, Vassalage, War,
+};
 use macroquad_toolkit::rng::SeededRng;
 
 #[allow(clippy::too_many_arguments)]
@@ -21,6 +23,7 @@ pub fn tick_wars(
     heroes: &[Hero],
     artifacts: &[Artifact],
     pacts: &[Pact],
+    vassalages: &[Vassalage],
     seq: &mut u64,
     balance: &WarBalance,
     region_balance: &RegionBalance,
@@ -30,7 +33,7 @@ pub fn tick_wars(
     year: u32,
 ) {
     ignite_wars(
-        wars, regions, pacts, seq, balance, rng, chronicle, text, year,
+        wars, regions, pacts, vassalages, seq, balance, rng, chronicle, text, year,
     );
 
     // Prosecute: each side suffers a base toll plus damage scaled by its
@@ -143,6 +146,7 @@ fn ignite_wars(
     wars: &mut Vec<War>,
     regions: &[Region],
     pacts: &[Pact],
+    vassalages: &[Vassalage],
     seq: &mut u64,
     balance: &WarBalance,
     rng: &mut SeededRng,
@@ -158,9 +162,10 @@ fn ignite_wars(
         if belligerence < balance.ignite_min_belligerence {
             continue;
         }
-        // The richest other region it isn't already at war with, nor allied to —
-        // one does not fall upon a sworn friend. Ties break by id so the target is
-        // fixed.
+        // The richest other region it isn't already at war with, nor allied to,
+        // nor bound to in vassalage — one does not fall upon a sworn friend, and an
+        // overlord does not war the vassal it protects, nor a vassal its master.
+        // Ties break by id so the target is fixed.
         let Some(target) = regions
             .iter()
             .enumerate()
@@ -168,6 +173,7 @@ fn ignite_wars(
                 *j != i
                     && !already_at_war(wars, &regions[i].id, &r.id)
                     && !pacts.iter().any(|p| p.binds(&regions[i].id, &r.id))
+                    && !vassalages.iter().any(|v| v.binds(&regions[i].id, &r.id))
             })
             .max_by(|(_, a), (_, b)| {
                 a.prosperity
@@ -346,6 +352,7 @@ mod tests {
             &world.heroes,
             &world.artifacts,
             &world.pacts,
+            &world.vassalages,
             &mut world.war_seq,
             balance,
             &data.balance.region,
@@ -421,6 +428,46 @@ mod tests {
         assert_eq!(
             world.wars[0].defender_id, next_richest,
             "war should fall on the next-richest, not the sworn ally"
+        );
+    }
+
+    #[test]
+    fn one_does_not_make_war_on_a_vassal_or_overlord() {
+        // A vassalage bond stays the sword as an alliance does: the belligerent
+        // would strike the richest region, but holding it as a vassal spares it, and
+        // war falls on the next-richest instead (GDD 5.2).
+        use crate::world::Vassalage;
+        let data = GameData::load().unwrap();
+        let mut balance = data.balance.war.clone();
+        balance.ignite_chance = 1.0;
+        let mut world = WorldState::new(&data);
+        world.wars.clear();
+        world.regions[0].chaos = 90.0;
+        world.regions[0].danger = 90.0;
+        for (i, r) in world.regions.iter_mut().enumerate() {
+            r.prosperity = match i {
+                2 => 95.0,
+                3 => 80.0,
+                _ => 40.0,
+            };
+        }
+        let aggressor = world.regions[0].id.clone();
+        let richest = world.regions[2].id.clone();
+        let next_richest = world.regions[3].id.clone();
+        // The belligerent holds the richest region as its vassal.
+        world.vassalages.push(Vassalage {
+            id: "v".to_owned(),
+            overlord_id: aggressor,
+            vassal_id: richest,
+            age: 2,
+        });
+
+        run(&mut world, &data, &balance);
+
+        assert_eq!(world.wars.len(), 1, "a war should still be declared");
+        assert_eq!(
+            world.wars[0].defender_id, next_richest,
+            "an overlord does not war the vassal it protects"
         );
     }
 

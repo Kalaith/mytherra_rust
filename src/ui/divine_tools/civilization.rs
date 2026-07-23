@@ -74,6 +74,7 @@ pub fn draw(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
                     region_index,
                     agenda.spillover_target,
                     &ctx.world.pacts,
+                    &ctx.world.vassalages,
                 )
             })
             .flatten()

@@ -3,7 +3,7 @@
 //! than stored, so they always reflect the current world.
 
 use crate::data::{Agenda, SpilloverTarget};
-use crate::world::{Pact, Region};
+use crate::world::{Pact, Region, Vassalage};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,13 +80,23 @@ pub fn spillover_target(
     self_idx: usize,
     rule: SpilloverTarget,
     pacts: &[Pact],
+    vassalages: &[Vassalage],
 ) -> Option<usize> {
     let self_id = regions.get(self_idx).map(|r| r.id.as_str());
-    let allied = |r: &Region| self_id.is_some_and(|sid| pacts.iter().any(|p| p.binds(sid, &r.id)));
+    // A region never presses upon a sworn ally, nor upon a realm it is bound to in
+    // vassalage — an overlord does not destabilize the vassal it protects, nor a
+    // vassal the master that holds it. The same amity and subjection that stay the
+    // sword stay the outward pressure of an agenda.
+    let spared = |r: &Region| {
+        self_id.is_some_and(|sid| {
+            pacts.iter().any(|p| p.binds(sid, &r.id))
+                || vassalages.iter().any(|v| v.binds(sid, &r.id))
+        })
+    };
     let others = regions
         .iter()
         .enumerate()
-        .filter(|(i, r)| *i != self_idx && !allied(r));
+        .filter(|(i, r)| *i != self_idx && !spared(r));
     match rule {
         SpilloverTarget::None => None,
         SpilloverTarget::MostProsperous => others

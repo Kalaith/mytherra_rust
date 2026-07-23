@@ -5,7 +5,7 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Agenda, CivStat, CivilizationBalance, RegionBalance};
 use crate::world::{
-    dominant_agenda, spillover_target, Chronicle, EventKind, Pact, Region, RegionAgendas,
+    dominant_agenda, spillover_target, Chronicle, EventKind, Pact, Region, RegionAgendas, Vassalage,
 };
 
 /// Advance every region's agendas by one tick.
@@ -15,6 +15,7 @@ pub fn tick_civilization(
     regions: &mut [Region],
     agendas: &[Agenda],
     pacts: &[Pact],
+    vassalages: &[Vassalage],
     balance: &CivilizationBalance,
     region_balance: &RegionBalance,
     chronicle: &mut Chronicle,
@@ -62,7 +63,8 @@ pub fn tick_civilization(
             // the neighbour it envies, an expansionist one leans on the weakest
             // (GDD 5.6).
             if agenda.spillover_amount != 0.0 {
-                if let Some(target) = spillover_target(regions, idx, agenda.spillover_target, pacts)
+                if let Some(target) =
+                    spillover_target(regions, idx, agenda.spillover_target, pacts, vassalages)
                 {
                     let (sp, sc, sd, sm) =
                         stat_deltas(agenda.spillover_stat, agenda.spillover_amount);
@@ -98,6 +100,7 @@ mod tests {
             &mut world.civilization,
             &mut world.regions,
             &data.agendas,
+            &[],
             &[],
             &data.balance.civilization,
             &data.balance.region,
@@ -140,6 +143,7 @@ mod tests {
             &mut world.regions,
             &data.agendas,
             &[],
+            &[],
             &data.balance.civilization,
             &data.balance.region,
             &mut world.chronicle,
@@ -166,16 +170,22 @@ mod tests {
         world.regions[3].prosperity = 55.0;
 
         assert_eq!(
-            spillover_target(&world.regions, 0, SpilloverTarget::MostProsperous, &[]),
+            spillover_target(&world.regions, 0, SpilloverTarget::MostProsperous, &[], &[]),
             Some(1),
             "envy should fall on the strongest *other* region, not the acting one"
         );
         assert_eq!(
-            spillover_target(&world.regions, 0, SpilloverTarget::LeastProsperous, &[]),
+            spillover_target(
+                &world.regions,
+                0,
+                SpilloverTarget::LeastProsperous,
+                &[],
+                &[]
+            ),
             Some(2)
         );
         assert_eq!(
-            spillover_target(&world.regions, 0, SpilloverTarget::None, &[]),
+            spillover_target(&world.regions, 0, SpilloverTarget::None, &[], &[]),
             None
         );
 
@@ -188,9 +198,36 @@ mod tests {
             age: 1,
         }];
         assert_eq!(
-            spillover_target(&world.regions, 0, SpilloverTarget::MostProsperous, &pacts),
+            spillover_target(
+                &world.regions,
+                0,
+                SpilloverTarget::MostProsperous,
+                &pacts,
+                &[]
+            ),
             Some(3),
             "a rivalrous people does not destabilize its own ally"
+        );
+
+        // A vassalage bond is spared the same way: with region 1 held by the actor
+        // as its vassal, envy again falls on the next-richest instead — an overlord
+        // does not press upon the vassal it protects (GDD 5.6 <-> 5.2).
+        let vassalages = vec![crate::world::Vassalage {
+            id: "v".to_owned(),
+            overlord_id: world.regions[0].id.clone(),
+            vassal_id: world.regions[1].id.clone(),
+            age: 1,
+        }];
+        assert_eq!(
+            spillover_target(
+                &world.regions,
+                0,
+                SpilloverTarget::MostProsperous,
+                &[],
+                &vassalages
+            ),
+            Some(3),
+            "an overlord does not destabilize its own vassal"
         );
     }
 
@@ -209,6 +246,7 @@ mod tests {
                 &mut world.civilization,
                 &mut world.regions,
                 &data.agendas,
+                &[],
                 &[],
                 &data.balance.civilization,
                 &data.balance.region,
@@ -260,6 +298,7 @@ mod tests {
             &mut world.civilization,
             &mut world.regions,
             &data.agendas,
+            &[],
             &[],
             &data.balance.civilization,
             &data.balance.region,
