@@ -620,7 +620,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.year,
     );
 
-    saint::tick_saints(
+    let new_saints = saint::tick_saints(
         &mut world.saints,
         &world.heroes,
         &mut world.regions,
@@ -631,6 +631,19 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &data.strings.chronicle,
         world.year,
     );
+    // A soul raised to sainthood becomes the stuff of legend: a mystical tale of
+    // its holiness the player may promote, so the faith layer feeds the world's
+    // folklore as the hunt and the passage into legend already do (GDD 5.1 <-> 5.6).
+    for (saint_name, region_id, region_name) in new_saints {
+        myth::seed_saint_myth(
+            &mut world.myth_candidates,
+            &mut world.myth_seq,
+            &saint_name,
+            &region_id,
+            &region_name,
+            data,
+        );
+    }
 }
 
 /// Living heroes who have reached `bar` renown this tick but hadn't before, so

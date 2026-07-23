@@ -203,6 +203,52 @@ pub fn seed_hero_legend(
     );
 }
 
+/// Seed a myth candidate commemorating the raising of a saint (GDD 5.1 <-> 5.6):
+/// a mystical tale of holiness and sacrifice, rooted in the land that venerates
+/// the saint, at full resonance. The faith counterpart to a beast-slaying's Valor
+/// tale, so a land that raises saints grows mystical in memory. The player still
+/// chooses whether to promote it; skipped once the board is saturated.
+pub fn seed_saint_myth(
+    candidates: &mut Vec<MythCandidate>,
+    seq: &mut u64,
+    saint_name: &str,
+    region_id: &str,
+    region_name: &str,
+    data: &GameData,
+) {
+    let balance = &data.balance.myth;
+    if candidates.len() >= balance.candidate_count * 2 {
+        return;
+    }
+    let Some(theme) = data
+        .myth_themes
+        .iter()
+        .find(|t| t.id == balance.saint_theme_id)
+        .or_else(|| data.myth_themes.first())
+    else {
+        return;
+    };
+    *seq += 1;
+    candidates.insert(
+        0,
+        MythCandidate {
+            id: format!("myth-{seq}"),
+            title: fill(
+                &data.strings.divine.saint_myth_title,
+                &[("saint", saint_name.to_owned())],
+            ),
+            theme_name: theme.name.clone(),
+            stat: theme.stat,
+            cultural_effect: theme.cultural_effect,
+            stat_effect: theme.stat_effect,
+            culture: theme.culture,
+            region_id: region_id.to_owned(),
+            region_name: region_name.to_owned(),
+            resonance: balance.resonance_max,
+        },
+    );
+}
+
 /// Seed a myth candidate commemorating a slain beast (GDD 5.2 <-> 5.6): a
 /// Valor-tale of the hunt, rooted in the region where the beast fell and named
 /// for both hero and beast, at full resonance. The same Valor theme a hero's
@@ -757,6 +803,37 @@ mod tests {
             m.resonance, data.balance.myth.resonance_max,
             "a legend's tale rings at full resonance"
         );
+    }
+
+    #[test]
+    fn a_saint_seeds_a_mystical_tale_of_holiness() {
+        // Raising a saint seeds a mystical tale named for the saint, rooted in the
+        // land that venerates them, carrying the sacrifice theme (GDD 5.1 <-> 5.6).
+        let data = GameData::load().unwrap();
+        let mut candidates: Vec<MythCandidate> = Vec::new();
+        let mut seq = 0;
+        seed_saint_myth(
+            &mut candidates,
+            &mut seq,
+            "Saint Corvin",
+            "aldermoor",
+            "Aldermoor",
+            &data,
+        );
+        assert_eq!(candidates.len(), 1);
+        let m = &candidates[0];
+        assert!(
+            m.title.contains("Saint Corvin"),
+            "the tale names its saint: {}",
+            m.title
+        );
+        assert_eq!(m.region_id, "aldermoor");
+        assert_eq!(
+            m.culture,
+            crate::data::Culture::Mystical,
+            "a saint's tale is a mystical one, so a land of saints grows mystical in memory"
+        );
+        assert_eq!(m.resonance, data.balance.myth.resonance_max);
     }
 
     #[test]

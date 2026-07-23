@@ -252,6 +252,11 @@ pub struct MythBalance {
     /// Theme (by id) a myth takes when it commemorates a hero's passage into
     /// legend (GDD 5.4 <-> 5.6). Falls back to the first theme if unmatched.
     pub legend_theme_id: String,
+    /// Theme (by id) a myth takes when it commemorates the raising of a saint
+    /// (GDD 5.1 <-> 5.6): a mystical tale of holiness and sacrifice, so a land that
+    /// venerates its dead grows mystical in memory as one that fells beasts grows
+    /// martial. Falls back to the first theme if unmatched.
+    pub saint_theme_id: String,
     /// Renown a myth grants, each time it echoes, to every living hero in its
     /// home region (GDD 5.6 <-> 5.4): a tale still sung in the land inspires the
     /// living toward legend, so myth breeds heroes just as heroes breed myth.

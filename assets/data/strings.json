@@ -157,6 +157,7 @@
     "legend_myth_title": "The Legend of {hero}",
     "divine_myth_title": "The Wrath of {deity} upon {region}",
     "beast_myth_title": "How {hero} Slew {beast}",
+    "saint_myth_title": "The Passion of {saint}",
     "civ_panel": "Civilization",
     "civ_region": "Region: {region}",
     "civ_intro": "Agendas competing within the realm. Advance one to press it.",

@@ -11,6 +11,10 @@ use crate::data::strings::ChronicleText;
 use crate::data::{fill, HeroRole, SaintBalance};
 use crate::world::{Chronicle, EventKind, Hero, Region, Saint};
 
+/// A soul raised to sainthood this tick: `(saint_name, region_id, region_name)`,
+/// returned so the caller can commemorate it in a saint's myth (GDD 5.1 <-> 5.6).
+pub type NewSaint = (String, String, String);
+
 #[allow(clippy::too_many_arguments)]
 pub fn tick_saints(
     saints: &mut Vec<Saint>,
@@ -22,7 +26,10 @@ pub fn tick_saints(
     chronicle: &mut Chronicle,
     text: &ChronicleText,
     year: u32,
-) {
+) -> Vec<NewSaint> {
+    // Souls raised this tick, so the caller may commemorate each in a saint's myth
+    // (GDD 5.1 <-> 5.6) — the faith counterpart to a slain beast's Valor tale.
+    let mut canonized: Vec<NewSaint> = Vec::new();
     // Raise the newly-worthy dead to sainthood. A dead Cleric of high renown is
     // venerated for their holiness; a hero of any other calling must have reached
     // the legend bar besides — so sainthood is the reward of the holy or the truly
@@ -58,9 +65,10 @@ pub fn tick_saints(
             EventKind::Hero,
             fill(
                 &text.saint_canonized,
-                &[("saint", name), ("region", region_name)],
+                &[("saint", name.clone()), ("region", region_name.clone())],
             ),
         );
+        canonized.push((name, hero.region_id.clone(), region_name));
     }
 
     // Memory fades: each saint's veneration ebbs a little each tick, and one worn
@@ -93,6 +101,8 @@ pub fn tick_saints(
             region.add_resonance(patron * balance.resonance_per_veneration);
         }
     }
+
+    canonized
 }
 
 #[cfg(test)]
