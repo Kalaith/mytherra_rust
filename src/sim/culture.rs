@@ -7,8 +7,8 @@
 use crate::data::strings::ChronicleText;
 use crate::data::{fill, Culture, CultureBalance, HeroRole, RegionBalance, ResourceType};
 use crate::world::{
-    Building, Chronicle, EventKind, Hero, House, Landmark, Myth, Region, ResourceNode, Saint,
-    Settlement, TradeRoute,
+    Building, Chronicle, EventKind, Hero, House, Landmark, Myth, Order, Region, ResourceNode,
+    Saint, Settlement, TradeRoute,
 };
 use macroquad_toolkit::math::approach;
 
@@ -24,6 +24,7 @@ pub fn tick_culture(
     myths: &[Myth],
     houses: &[House],
     saints: &[Saint],
+    orders: &[Order],
     balance: &CultureBalance,
     region_balance: &RegionBalance,
     tier_thresholds: &[f32],
@@ -85,6 +86,22 @@ pub fn tick_culture(
         for saint in saints.iter().filter(|s| s.region_id == region.id) {
             let devotion = (saint.veneration / 100.0).clamp(0.0, 1.0);
             scores[Culture::Mystical.index()] += balance.saint_weight * devotion;
+        }
+        // A great Order stamps its calling on the lands it reaches (GDD 5.2 <-> 5.4):
+        // a region that hosts a chapter — a living member of the Order's calling —
+        // leans toward that calling's culture, scaled by the Order's standing, so a
+        // Warriors' Order hardens its chapters martial and an Arcane Circle turns
+        // them mystical. The institutional counterpart to the pull the members
+        // themselves already exert, and a reason a calling grown into a power
+        // reshapes the map's character, not only its own ranks.
+        for order in orders.iter() {
+            let has_chapter = heroes
+                .iter()
+                .any(|h| h.is_alive && h.role == order.role && h.region_id == region.id);
+            if has_chapter {
+                scores[hero_culture(order.role).index()] +=
+                    order.prestige * balance.order_culture_weight;
+            }
         }
         // The works a people raise speak for their character: each building in the
         // region adds to the culture it embodies (a Forge to the martial, a Temple
@@ -229,6 +246,7 @@ mod tests {
                 &[],
                 &[],
                 &[],
+                &[],
                 &data.balance.culture,
                 &data.balance.region,
                 thresholds,
@@ -278,6 +296,7 @@ mod tests {
                 &[],
                 &[],
                 &saints,
+                &[],
                 &data.balance.culture,
                 &data.balance.region,
                 thresholds,
@@ -290,6 +309,82 @@ mod tests {
             regions[0].culture,
             Culture::Mystical,
             "a land that keeps a saint's shrine should turn to the mystical"
+        );
+    }
+
+    #[test]
+    fn a_great_order_stamps_its_calling_on_its_chapter() {
+        use crate::world::{Hero, Order};
+        // A pastoral region hosting a chapter of a storied Warriors' Order — a few
+        // resident warriors and the institution behind them — should harden martial,
+        // where the same handful of warriors without the Order would not (GDD 5.2
+        // <-> 5.4).
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let mut region = world.regions[0].clone();
+        region.culture = Culture::Pastoral;
+        let region_id = region.id.clone();
+
+        // A single resident warrior — a chapter of one — whose own cultural pull
+        // sits below the inertia margin, so only the Order behind them can tip it.
+        let heroes: Vec<Hero> = (0..1)
+            .map(|i| Hero {
+                id: format!("w{i}"),
+                name: format!("Warrior {i}"),
+                role: HeroRole::Warrior,
+                region_id: region_id.clone(),
+                level: 1,
+                age: 30,
+                is_alive: true,
+                renown: 0.0,
+            })
+            .collect();
+        let order = Order {
+            id: "o".to_owned(),
+            name: "the Warriors' Order".to_owned(),
+            role: HeroRole::Warrior,
+            prestige: 100.0,
+            founded_year: 0,
+        };
+
+        let mut flips_with = |orders: &[Order]| {
+            let mut regions = vec![{
+                let mut r = region.clone();
+                r.culture = Culture::Pastoral;
+                r
+            }];
+            let thresholds = &data.balance.settlement.tier_thresholds;
+            for _ in 0..30 {
+                tick_culture(
+                    &mut regions,
+                    &heroes,
+                    &[],
+                    &[],
+                    &[],
+                    &[],
+                    &[],
+                    &[],
+                    &[],
+                    &[],
+                    orders,
+                    &data.balance.culture,
+                    &data.balance.region,
+                    thresholds,
+                    &mut world.chronicle,
+                    &data.strings.chronicle,
+                    world.year,
+                );
+            }
+            regions[0].culture == Culture::Martial
+        };
+
+        assert!(
+            flips_with(std::slice::from_ref(&order)),
+            "a chapter of a great Order should harden its land toward its calling"
+        );
+        assert!(
+            !flips_with(&[]),
+            "the same warriors without the Order behind them should not flip the land"
         );
     }
 
@@ -341,6 +436,7 @@ mod tests {
             &world.myths,
             &world.houses,
             &[],
+            &[],
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -380,6 +476,7 @@ mod tests {
             &world.myths,
             &world.houses,
             &[],
+            &[],
             &data.balance.culture,
             &data.balance.region,
             &data.balance.settlement.tier_thresholds,
@@ -410,6 +507,7 @@ mod tests {
             &world.trade_routes,
             &world.myths,
             &world.houses,
+            &[],
             &[],
             &data.balance.culture,
             &data.balance.region,
@@ -455,6 +553,7 @@ mod tests {
                     &[],
                     &[],
                     &[],
+                    &[],
                     &data.balance.culture,
                     &data.balance.region,
                     thresholds,
@@ -495,6 +594,7 @@ mod tests {
                 &world.trade_routes,
                 &world.myths,
                 &world.houses,
+                &[],
                 &[],
                 &data.balance.culture,
                 &data.balance.region,
@@ -544,6 +644,7 @@ mod tests {
                     &[],
                     &[],
                     &world.houses,
+                    &[],
                     &[],
                     &data.balance.culture,
                     &data.balance.region,
@@ -600,6 +701,7 @@ mod tests {
                 &[],
                 &[],
                 &myths,
+                &[],
                 &[],
                 &[],
                 &data.balance.culture,

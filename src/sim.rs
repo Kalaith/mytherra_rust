@@ -297,6 +297,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &world.myths,
         &world.houses,
         &world.saints,
+        &world.orders,
         &data.balance.culture,
         &data.balance.region,
         &data.balance.settlement.tier_thresholds,

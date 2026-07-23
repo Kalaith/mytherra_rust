@@ -119,6 +119,14 @@ pub struct CultureBalance {
     /// the devout, the more so the fresher the veneration. Fades with the saint's
     /// memory, so a land's holiness is no more permanent than the shrines that mark it.
     pub saint_weight: f32,
+    /// Culture score a great Order lends each of its chapter regions toward its
+    /// own calling, per point of the Order's prestige (GDD 5.2 <-> 5.4): an
+    /// institution shapes the character of the lands it reaches — a Warriors'
+    /// Order hardens its chapters martial, an Arcane Circle turns them mystical —
+    /// so a calling grown into a standing power presses its stamp on the map, not
+    /// only on its own members. Kept a nudge, not a mandate: one Order tips a close
+    /// contest, it does not by itself override a land's heroes, works, and wonders.
+    pub order_culture_weight: f32,
     /// Cultural-influence baseline and per-landmark bonus (the reversion target).
     pub influence_base: f32,
     pub influence_per_landmark: f32,
