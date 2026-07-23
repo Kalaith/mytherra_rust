@@ -68,6 +68,19 @@ pub fn tick_settlements(
         if resonance_bonus > 0.0 {
             regions[idx].add_resonance(resonance_bonus);
         }
+
+        // A settlement's granaries lay up grain against the lean years (GDD 6 <->
+        // 5.3): every Granary keeps its region's stock a little fuller each tick, a
+        // built buffer against famine beside a fertile field and a hallowed harvest,
+        // so a well-stored land tips into dearth less readily and breaks it sooner.
+        let harvest_bonus: f32 = buildings
+            .iter()
+            .filter(|b| b.settlement_id == settlement.id)
+            .map(|b| b.harvest_bonus)
+            .sum();
+        if harvest_bonus > 0.0 {
+            regions[idx].add_harvest(harvest_bonus);
+        }
         let target = supporting;
 
         // The land feeds only so many: population swells toward a capacity set by
@@ -303,6 +316,7 @@ pub fn tick_construction(
             prosperity_bonus: chosen.prosperity_bonus,
             culture: chosen.culture,
             resonance_bonus: chosen.resonance_bonus,
+            harvest_bonus: chosen.harvest_bonus,
             synergy_resource: chosen.synergy_resource,
         });
         chronicle.push(
@@ -421,6 +435,7 @@ mod tests {
             prosperity_bonus: 3.0,
             culture: None,
             resonance_bonus: resonance,
+            harvest_bonus: 0.0,
             synergy_resource: None,
         };
         world.buildings.push(building("temple", 0.5));
@@ -443,6 +458,57 @@ mod tests {
         assert!(
             (world.regions[ridx].divine_resonance - (before + 0.5)).abs() < 1e-4,
             "a temple should raise its region's resonance by exactly its bonus"
+        );
+    }
+
+    #[test]
+    fn a_granary_stores_grain_against_the_dearth() {
+        let data = GameData::load().unwrap();
+        let mut world = WorldState::new(&data);
+        let settlement = world.settlements[0].clone();
+        let ridx = world
+            .regions
+            .iter()
+            .position(|r| r.id == settlement.region_id)
+            .unwrap();
+        // A middling granary, so there is room to store more (not clamped at 100).
+        world.regions[ridx].harvest = 50.0;
+        let before = world.regions[ridx].harvest;
+
+        // Isolate a single granary's contribution: one granary (harvest bonus) and
+        // one secular hall (none).
+        world.buildings.clear();
+        let building = |id: &str, harvest: f32| Building {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            settlement_id: settlement.id.clone(),
+            type_id: id.to_owned(),
+            prosperity_bonus: 3.0,
+            culture: None,
+            resonance_bonus: 0.0,
+            harvest_bonus: harvest,
+            synergy_resource: None,
+        };
+        world.buildings.push(building("granary", 0.5));
+        world.buildings.push(building("market", 0.0));
+
+        tick_settlements(
+            &mut world.settlements,
+            &world.buildings,
+            &mut world.regions,
+            &world.resource_nodes,
+            &data.balance.settlement,
+            &data.balance.region,
+            &mut world.chronicle,
+            &data.strings.chronicle,
+            &data.strings.ui.settlement_tiers,
+            world.year,
+        );
+
+        // Only the granary stores grain, and by exactly its bonus.
+        assert!(
+            (world.regions[ridx].harvest - (before + 0.5)).abs() < 1e-4,
+            "a granary should raise its region's stock by exactly its bonus"
         );
     }
 
@@ -475,6 +541,7 @@ mod tests {
                 prosperity_bonus: 5.0,
                 culture: None,
                 resonance_bonus: 0.0,
+                harvest_bonus: 0.0,
                 synergy_resource: Some(ResourceType::Mine),
             });
             // The region's only node, if any, is the given mine.

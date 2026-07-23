@@ -26,6 +26,11 @@ pub struct Building {
     /// it. `serde(default)` keeps older saves loadable.
     #[serde(default)]
     pub resonance_bonus: f32,
+    /// Granary stock this building lays up in its region each tick, resolved from
+    /// its type at creation (GDD 6 <-> 5.3): a Granary stores grain against the
+    /// dearth. `serde(default)` keeps older saves loadable.
+    #[serde(default)]
+    pub harvest_bonus: f32,
     /// The resource kind this building draws on, resolved from its type (GDD 6
     /// <-> 5.3): when its region holds a producing node of this kind, the building
     /// earns an extra prosperity bonus. `serde(default)` keeps older saves
@@ -45,6 +50,7 @@ impl Building {
             prosperity_bonus: ty.map(|t| t.prosperity_bonus).unwrap_or(0.0),
             culture: ty.and_then(|t| t.culture),
             resonance_bonus: ty.map(|t| t.resonance_bonus).unwrap_or(0.0),
+            harvest_bonus: ty.map(|t| t.harvest_bonus).unwrap_or(0.0),
             synergy_resource: ty.and_then(|t| t.synergy_resource),
         }
     }

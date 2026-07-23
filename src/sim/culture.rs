@@ -230,6 +230,7 @@ mod tests {
                 prosperity_bonus: 0.0,
                 culture: Some(Culture::Martial),
                 resonance_bonus: 0.0,
+                harvest_bonus: 0.0,
                 synergy_resource: None,
             })
             .collect();

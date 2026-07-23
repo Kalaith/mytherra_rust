@@ -1,8 +1,44 @@
 [
-  { "id": "market", "name": "Market", "prosperity_bonus": 6.0, "culture": "mercantile" },
-  { "id": "granary", "name": "Granary", "prosperity_bonus": 4.0, "culture": "pastoral", "synergy_resource": "farmland" },
-  { "id": "guildhall", "name": "Guildhall", "prosperity_bonus": 8.0, "culture": "scholarly" },
-  { "id": "harbor", "name": "Harbor", "prosperity_bonus": 7.0, "culture": "mercantile", "synergy_resource": "fishery" },
-  { "id": "forge", "name": "Forge", "prosperity_bonus": 5.0, "culture": "martial", "synergy_resource": "mine" },
-  { "id": "temple", "name": "Temple", "prosperity_bonus": 3.0, "culture": "mystical", "resonance_bonus": 0.05, "synergy_resource": "manaspring" }
+  {
+    "id": "market",
+    "name": "Market",
+    "prosperity_bonus": 6.0,
+    "culture": "mercantile"
+  },
+  {
+    "id": "granary",
+    "name": "Granary",
+    "prosperity_bonus": 4.0,
+    "culture": "pastoral",
+    "synergy_resource": "farmland",
+    "harvest_bonus": 0.08
+  },
+  {
+    "id": "guildhall",
+    "name": "Guildhall",
+    "prosperity_bonus": 8.0,
+    "culture": "scholarly"
+  },
+  {
+    "id": "harbor",
+    "name": "Harbor",
+    "prosperity_bonus": 7.0,
+    "culture": "mercantile",
+    "synergy_resource": "fishery"
+  },
+  {
+    "id": "forge",
+    "name": "Forge",
+    "prosperity_bonus": 5.0,
+    "culture": "martial",
+    "synergy_resource": "mine"
+  },
+  {
+    "id": "temple",
+    "name": "Temple",
+    "prosperity_bonus": 3.0,
+    "culture": "mystical",
+    "resonance_bonus": 0.05,
+    "synergy_resource": "manaspring"
+  }
 ]

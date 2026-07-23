@@ -22,6 +22,14 @@ pub struct BuildingType {
     /// tithes. `serde(default)` leaves the secular building types at zero.
     #[serde(default)]
     pub resonance_bonus: f32,
+    /// Granary stock this building lays up in its region each tick (GDD 6 <->
+    /// 5.3): a Granary is a store against the lean years, so a land studded with
+    /// them keeps a fuller granary and tips into famine less readily — the built
+    /// counterpart to a fertile field or a hallowed harvest, threading the
+    /// buildings into the food economy. `serde(default)` leaves the other building
+    /// types at zero, storing no grain of their own.
+    #[serde(default)]
+    pub harvest_bonus: f32,
     /// The resource kind this building draws on for its trade (GDD 6 <-> 5.3): a
     /// Forge works a Mine's ore, a Harbor a Fishery's catch, a Granary a
     /// Farmland's grain, a Temple a Manaspring's flow. When its region holds a
