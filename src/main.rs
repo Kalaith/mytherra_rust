@@ -10,10 +10,9 @@ use macroquad_toolkit::capture;
 mod game;
 mod ui;
 
-// The native HTTP client for the authority server (GDD 7.4). WASM uses a
-// different transport (a later spike), so this is native-only; it is not yet
-// wired into the loop (the client still runs offline), hence `allow(dead_code)`.
-#[cfg(not(target_arch = "wasm32"))]
+// The cross-platform HTTP client for the authority server (GDD 7.4) — one
+// poll-based API on native and wasm (via quad-net). Not yet wired into the loop
+// (the client still runs offline), hence `allow(dead_code)`.
 #[allow(dead_code)]
 mod net;
 
