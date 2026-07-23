@@ -12,6 +12,7 @@ mod genesis;
 mod hero;
 mod house;
 mod landmark;
+mod lore;
 mod magic;
 mod monster;
 mod myth;
@@ -173,6 +174,17 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         world.year,
     );
 
+    // A civilization's accumulated knowledge creeps toward what its scholars,
+    // libraries, mastered magic, and wealth can sustain — the resilience that will
+    // soften the plague and dearth to come (GDD 5.6 <-> 5.3).
+    lore::tick_lore(
+        &mut world.regions,
+        &world.heroes,
+        &world.landmarks,
+        &world.magic_paths,
+        &data.balance.lore,
+    );
+
     plague::tick_plague(
         &mut world.plagues,
         &mut world.regions,
@@ -182,6 +194,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &mut world.plague_seq,
         &data.plague_names,
         &data.balance.plague,
+        &data.balance.lore,
         &data.balance.region,
         &mut world.rng,
         &mut world.chronicle,
@@ -288,6 +301,7 @@ pub fn tick_world(world: &mut WorldState, player: &mut PlayerState, data: &GameD
         &world.weather,
         &world.resource_nodes,
         &data.balance.famine,
+        &data.balance.lore,
         &data.balance.resource.outputs,
         &mut world.chronicle,
         &data.strings.chronicle,

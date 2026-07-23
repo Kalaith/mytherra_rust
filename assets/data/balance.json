@@ -666,6 +666,16 @@
     "famine_prosperity": 0.4,
     "famine_mortality": 0.008
   },
+  "lore": {
+    "base": 20.0,
+    "per_scholar": 8.0,
+    "per_learned_landmark": 0.5,
+    "per_known_path": 6.0,
+    "prosperity_coeff": 0.3,
+    "drift_rate": 0.02,
+    "plague_toll_relief": 0.15,
+    "famine_mortality_relief": 0.5
+  },
   "resource": {
     "stress_chaos": 0.4,
     "stress_danger": 0.3,

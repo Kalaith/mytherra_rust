@@ -83,6 +83,14 @@ pub struct Region {
     /// falls past the onset floor, cleared only once it climbs back to relief.
     #[serde(default)]
     pub famine: bool,
+    /// Accumulated practical knowledge, 0-100 (GDD 5.6 <-> 5.3): the mundane wisdom
+    /// of a civilization — medicine, agriculture, engineering, governance — as
+    /// distinct from the arcane power of `magic_affinity` and the prominence of
+    /// `cultural_influence`. Grows where scholars dwell, libraries stand, magic is
+    /// mastered, and wealth affords study; `sim/lore.rs` owns it. A learned land
+    /// weathers the plague and the dearth that would break an ignorant one.
+    #[serde(default = "default_lore")]
+    pub lore: f32,
     /// Stats at the start of the current tick; `stat - prev.stat` is its trend.
     pub prev: StatSnapshot,
 }
@@ -91,6 +99,12 @@ pub struct Region {
 /// a comfortable surplus, so an old world doesn't load straight into famine.
 fn default_harvest() -> f32 {
     70.0
+}
+
+/// A region's starting store of knowledge when a save predates the lore field —
+/// a modest baseline of common wisdom.
+fn default_lore() -> f32 {
+    30.0
 }
 
 impl Region {
@@ -115,6 +129,7 @@ impl Region {
             strife: 0.0,
             harvest: default_harvest(),
             famine: false,
+            lore: default_lore(),
             prev: StatSnapshot {
                 prosperity,
                 chaos,
@@ -202,6 +217,13 @@ impl Region {
     /// the harvest that `sim/famine.rs` otherwise owns.
     pub fn add_harvest(&mut self, amount: f32) {
         self.harvest = clamp_stat(self.harvest + amount);
+    }
+
+    /// Raise (or lower) accumulated knowledge, clamped 0-100 (GDD 5.6 <-> 5.3) —
+    /// `sim/lore.rs` owns the drift; this is the shared setter it and any future
+    /// contributor use.
+    pub fn add_lore(&mut self, amount: f32) {
+        self.lore = clamp_stat(self.lore + amount);
     }
 
     /// Composite unrest pressure (GDD 5.6 omen formula), reused by champion

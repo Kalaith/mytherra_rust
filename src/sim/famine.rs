@@ -9,7 +9,7 @@
 //! decides a famine, so the seeded stream is untouched.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, Culture, FamineBalance, ResourceOutputs, ResourceType};
+use crate::data::{fill, Culture, FamineBalance, LoreBalance, ResourceOutputs, ResourceType};
 use crate::world::{Chronicle, EventKind, Region, ResourceNode, Settlement, WeatherEvent};
 
 #[allow(clippy::too_many_arguments)]
@@ -19,6 +19,7 @@ pub fn tick_famine(
     weather: &[WeatherEvent],
     resource_nodes: &[ResourceNode],
     balance: &FamineBalance,
+    lore_balance: &LoreBalance,
     resource_outputs: &ResourceOutputs,
     chronicle: &mut Chronicle,
     text: &ChronicleText,
@@ -111,10 +112,13 @@ pub fn tick_famine(
         if region.famine {
             region.chaos = (region.chaos + balance.famine_chaos).clamp(0.0, 100.0);
             region.prosperity = (region.prosperity - balance.famine_prosperity).clamp(0.0, 100.0);
+            // A learned land loses fewer to the dearth: it knows to store grain,
+            // ration, and rotate its fields (GDD 5.6 <-> 5.3).
+            let mortality = balance.famine_mortality
+                * (1.0 - super::lore::toll_relief(region, lore_balance.famine_mortality_relief));
             for settlement in settlements.iter_mut() {
                 if settlement.region_id == region.id {
-                    settlement.population =
-                        (settlement.population * (1.0 - balance.famine_mortality)).max(0.0);
+                    settlement.population = (settlement.population * (1.0 - mortality)).max(0.0);
                 }
             }
         }
@@ -149,6 +153,7 @@ mod tests {
                 &[],
                 &[],
                 b,
+                &data.balance.lore,
                 &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,
@@ -181,6 +186,7 @@ mod tests {
                 &[],
                 &[],
                 b,
+                &data.balance.lore,
                 &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,
@@ -204,6 +210,7 @@ mod tests {
                 &[],
                 &[],
                 b,
+                &data.balance.lore,
                 &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,
@@ -240,6 +247,7 @@ mod tests {
             &[],
             &[],
             b,
+            &data.balance.lore,
             &data.balance.resource.outputs,
             &mut world.chronicle,
             &data.strings.chronicle,
@@ -274,6 +282,7 @@ mod tests {
                 &[],
                 &world.resource_nodes,
                 b,
+                &data.balance.lore,
                 &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,
@@ -330,6 +339,7 @@ mod tests {
                 &[],
                 &[],
                 b,
+                &data.balance.lore,
                 &data.balance.resource.outputs,
                 &mut world.chronicle,
                 &data.strings.chronicle,

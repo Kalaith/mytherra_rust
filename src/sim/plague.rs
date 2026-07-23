@@ -6,7 +6,7 @@
 //! growth systems. Randomness (outbreak, spread) flows through the world RNG.
 
 use crate::data::strings::ChronicleText;
-use crate::data::{fill, HeroRole, PlagueBalance, RegionBalance};
+use crate::data::{fill, HeroRole, LoreBalance, PlagueBalance, RegionBalance};
 use crate::world::{Chronicle, EventKind, Hero, Plague, Region, Settlement, TradeRoute};
 use macroquad_toolkit::rng::SeededRng;
 
@@ -20,6 +20,7 @@ pub fn tick_plague(
     seq: &mut u64,
     names: &[String],
     balance: &PlagueBalance,
+    lore_balance: &LoreBalance,
     region_balance: &RegionBalance,
     rng: &mut SeededRng,
     chronicle: &mut Chronicle,
@@ -68,15 +69,25 @@ pub fn tick_plague(
             plague.severity -= balance.decay_base;
         }
         // The demographic toll falls on the region's largest settlement, heavier
-        // where famine has already weakened the people (GDD 5.3 <-> 5.3).
+        // where famine has already weakened the people (GDD 5.3 <-> 5.3) and lighter
+        // where the land's accumulated knowledge tends its sick (GDD 5.6 <-> 5.3):
+        // a learned people knows medicine, quarantine, and care, and buries fewer.
+        let lore_relief = regions
+            .iter()
+            .find(|r| r.id == plague.region_id)
+            .map(|r| super::lore::toll_relief(r, lore_balance.plague_toll_relief))
+            .unwrap_or(0.0);
         if let Some(settlement) = largest_settlement(settlements, &plague.region_id) {
             let famine_mult = if famished {
                 balance.famine_toll_mult
             } else {
                 1.0
             };
-            let loss =
-                settlement.population * balance.toll_population * plague.severity * famine_mult;
+            let loss = settlement.population
+                * balance.toll_population
+                * plague.severity
+                * famine_mult
+                * (1.0 - lore_relief);
             settlement.population = (settlement.population - loss).max(0.0);
         }
     }
@@ -268,6 +279,7 @@ mod tests {
             &mut world.plague_seq,
             &data.plague_names,
             balance,
+            &data.balance.lore,
             &data.balance.region,
             &mut world.rng,
             &mut world.chronicle,

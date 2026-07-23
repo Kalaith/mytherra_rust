@@ -53,6 +53,7 @@ pub struct Balance {
     pub monster: MonsterBalance,
     pub refugee: RefugeeBalance,
     pub famine: FamineBalance,
+    pub lore: LoreBalance,
     pub resource: ResourceBalance,
     pub culture: CultureBalance,
     pub trade: TradeBalance,

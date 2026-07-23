@@ -268,3 +268,40 @@ pub struct FamineBalance {
     /// of starvation, on top of the flight the refugee system drives.
     pub famine_mortality: f32,
 }
+
+/// Lore tuning (GDD 5.6 <-> 5.3): the accumulated practical knowledge of a
+/// civilization — the mundane wisdom, distinct from arcane power, that lets a
+/// learned land tend its sick through a plague and store its grain against a
+/// dearth. Each region's lore drifts toward a target set by its scholars, its
+/// libraries, the magic its world has mastered, and the wealth that affords study.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoreBalance {
+    /// The knowledge every settled land holds simply by being inhabited — the
+    /// baseline the target is built up from.
+    pub base: f32,
+    /// Lore-target contribution per living Scholar or Mage dwelling in the region:
+    /// the learned are the wellspring of a land's knowledge.
+    pub per_scholar: f32,
+    /// Lore-target contribution per scholarly or mystical landmark in the region,
+    /// scaled by its cultural weight (influence x stature): the great libraries and
+    /// colleges are the storehouses of a civilization's learning.
+    pub per_learned_landmark: f32,
+    /// Lore-target contribution per magic path the world has brought to Known: the
+    /// mastery of the arcane lifts the whole world's understanding.
+    pub per_known_path: f32,
+    /// Lore-target contribution per point of region prosperity above the neutral
+    /// baseline: a wealthy land can afford scholars, schools, and the leisure to
+    /// learn, where a destitute one cannot.
+    pub prosperity_coeff: f32,
+    /// How fast a region's lore drifts toward its target each tick — knowledge is
+    /// slow to gather and slow to lose.
+    pub drift_rate: f32,
+    /// Fraction of a plague's demographic toll a fully-learned region (lore 100)
+    /// averts: a land that knows medicine tends its sick, so fewer die (GDD 5.6 <->
+    /// 5.3). Scaled linearly by lore, so a half-learned land averts half as much.
+    pub plague_toll_relief: f32,
+    /// Fraction of a famine's mortality a fully-learned region averts: a land that
+    /// knows to store grain, rotate fields, and ration in dearth loses fewer to
+    /// starvation (GDD 5.6 <-> 5.3). Scaled linearly by lore.
+    pub famine_mortality_relief: f32,
+}
