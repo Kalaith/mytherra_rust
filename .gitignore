@@ -6,6 +6,9 @@ target/
 # These are standard cargo-generated files
 **/*.rs.bk
 
+# Local DB credentials for the authority server (GDD 6/8); .env.example is committed.
+.env
+
 # MSC
 dist/
 *.pdb

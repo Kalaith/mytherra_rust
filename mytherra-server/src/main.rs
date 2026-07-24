@@ -10,8 +10,14 @@
 //! filtered projection), `GET /events?since=` (the shared change delta, §7.4),
 //! and `POST /action` (authorize + apply for that guest). One shared world ticks
 //! once per interval; every connected deity's favor, champions, wagers, and
-//! Standing are its own. Authenticated accounts, nudge caps (§7.5), and DB
-//! persistence are the phases that follow.
+//! Standing are its own.
+//!
+//! The world and every deity persist to MySQL (the DB *is* the save, §6/§8): the
+//! authority is bootstrapped from the DB on startup and write-throughs after
+//! every mint, action, and tick, so a server restart resumes the same world
+//! rather than resetting it. All persistence lives in `db`; the core stays pure.
+
+mod db;
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -33,6 +39,8 @@ use serde::Deserialize;
 use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 
+use crate::db::Db;
+
 /// The header a client presents to identify its guest session (GDD 7.7).
 const PLAYER_ID_HEADER: &str = "x-player-id";
 
@@ -50,15 +58,44 @@ struct Authority {
 }
 
 impl Authority {
-    fn load() -> Self {
+    /// Resume from the DB, or seed a fresh world and persist it (GDD 6/8). The DB
+    /// is the save: on a fresh database this writes the singleton world row so the
+    /// very first tick has something to update.
+    async fn bootstrap(db: &Db) -> Self {
         let data = GameData::load().expect("Mytherra content failed to load");
-        let world = WorldState::new(&data);
-        Self {
-            data,
-            world,
-            ids: BTreeMap::new(),
-            players: Vec::new(),
-            next_guest: 0,
+        match db.load().await {
+            Some(loaded) => {
+                let mut ids = BTreeMap::new();
+                let mut players = Vec::with_capacity(loaded.players.len());
+                for (id, state) in loaded.players {
+                    ids.insert(id, players.len());
+                    players.push(state);
+                }
+                println!(
+                    "resumed persisted world: year {}, {} deities",
+                    loaded.world.year,
+                    players.len()
+                );
+                Self {
+                    data,
+                    world: loaded.world,
+                    ids,
+                    players,
+                    next_guest: loaded.next_guest,
+                }
+            }
+            None => {
+                let world = WorldState::new(&data);
+                db.save_world(&world, 0, &data.config.version).await;
+                println!("seeded a fresh world at year {}", world.year);
+                Self {
+                    data,
+                    world,
+                    ids: BTreeMap::new(),
+                    players: Vec::new(),
+                    next_guest: 0,
+                }
+            }
         }
     }
 
@@ -78,15 +115,21 @@ impl Authority {
         id
     }
 
-    /// The player index behind a request's `X-Player-Id`, or a 401 if the header
-    /// is missing or names no live session.
-    fn player_index(&self, headers: &HeaderMap) -> Result<usize, StatusCode> {
-        let id = headers
-            .get(PLAYER_ID_HEADER)
-            .and_then(|value| value.to_str().ok())
-            .ok_or(StatusCode::UNAUTHORIZED)?;
+    /// The player index behind a session id, or a 401 if it names no live
+    /// session.
+    fn index_of(&self, id: &str) -> Result<usize, StatusCode> {
         self.ids.get(id).copied().ok_or(StatusCode::UNAUTHORIZED)
     }
+}
+
+/// The session id a request presents in `X-Player-Id`, or a 401 if the header is
+/// missing (GDD 7.7).
+fn player_id_of(headers: &HeaderMap) -> Result<String, StatusCode> {
+    headers
+        .get(PLAYER_ID_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .map(|id| id.to_owned())
+        .ok_or(StatusCode::UNAUTHORIZED)
 }
 
 /// The Standing a player of the current level holds, per the data-driven
@@ -96,7 +139,17 @@ fn standing_for(data: &GameData, player: &PlayerState) -> Standing {
     data.tiers.standing(tier)
 }
 
-type Shared = Arc<Mutex<Authority>>;
+/// Shared authority state plus the persistence handle, cloned into every handler
+/// and the tick task. The `Db` is a pooled, `Arc`-backed handle; the authority is
+/// behind a `tokio::sync::Mutex` so DB write-throughs can be awaited while it is
+/// held (the mint/action/tick paths persist under the lock — correct and simple
+/// at this scale; a later phase can move per-player writes off the critical
+/// section).
+#[derive(Clone)]
+struct App {
+    authority: Arc<Mutex<Authority>>,
+    db: Db,
+}
 
 /// `GET /events?since=<cursor>` — a returning player asks what changed since
 /// they last acknowledged (GDD 7.4). Omitting `since` yields the retained tail.
@@ -108,25 +161,45 @@ struct EventsQuery {
 
 #[tokio::main]
 async fn main() {
-    let shared: Shared = Arc::new(Mutex::new(Authority::load()));
+    let db = Db::connect().await;
+    let authority = Authority::bootstrap(&db).await;
 
     // Listen address and tick cadence both come from config (GDD 7.6), not
     // source constants, so the deployment address lives in one place.
-    let listen_addr = shared.lock().await.data.config.server_listen_addr.clone();
+    let listen_addr = authority.data.config.server_listen_addr.clone();
+    let seconds = authority.data.config.seconds_per_tick.max(1.0);
 
-    // The world advances on the server's own schedule (GDD 7.1).
-    let seconds = shared.lock().await.data.config.seconds_per_tick.max(1.0);
-    let ticker = shared.clone();
+    let app = App {
+        authority: Arc::new(Mutex::new(authority)),
+        db,
+    };
+
+    // The world advances on the server's own schedule (GDD 7.1), persisting the
+    // whole snapshot each tick so a crash loses at most one interval.
+    let ticker = app.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs_f32(seconds));
         interval.tick().await; // the first tick fires immediately; skip it.
         loop {
             interval.tick().await;
-            ticker.lock().await.tick();
+            let mut authority = ticker.authority.lock().await;
+            authority.tick();
+            ticker
+                .db
+                .save_world(
+                    &authority.world,
+                    authority.next_guest,
+                    &authority.data.config.version,
+                )
+                .await;
+            ticker
+                .db
+                .save_all_players(&authority.ids, &authority.players)
+                .await;
         }
     });
 
-    let app = Router::new()
+    let router = Router::new()
         .route("/health", get(health))
         .route("/session", post(session))
         .route("/view", get(view))
@@ -136,13 +209,13 @@ async fn main() {
         // it needs permissive CORS to call the API. M2 dev default; a later phase
         // narrows this to the deployed page's origin (§7.6).
         .layer(CorsLayer::permissive())
-        .with_state(shared);
+        .with_state(app);
 
     let listener = tokio::net::TcpListener::bind(&listen_addr)
         .await
         .expect("bind listen address");
     println!("mytherra-server listening on http://{listen_addr}");
-    axum::serve(listener, app).await.expect("server error");
+    axum::serve(listener, router).await.expect("server error");
 }
 
 async fn health() -> &'static str {
@@ -151,21 +224,24 @@ async fn health() -> &'static str {
 
 /// Mint a fresh guest deity and hand back its session id (GDD 7.7). The client
 /// presents this id as `X-Player-Id` on every later request; each guest gets its
-/// own favor, champions, wagers, and Standing.
-async fn session(State(shared): State<Shared>) -> Json<SessionResponse> {
-    let mut authority = shared.lock().await;
+/// own favor, champions, wagers, and Standing. The new deity and the bumped
+/// guest counter persist immediately so the session survives a restart.
+async fn session(State(app): State<App>) -> Json<SessionResponse> {
+    let mut authority = app.authority.lock().await;
     let player_id = authority.new_guest();
+    let index = authority.ids[&player_id];
+    app.db
+        .insert_player(&player_id, &authority.players[index])
+        .await;
+    app.db.save_next_guest(authority.next_guest).await;
     Json(SessionResponse { player_id })
 }
 
 /// The requesting deity's own Standing-filtered view of the world (§7.7),
 /// keyed by its `X-Player-Id` session.
-async fn view(
-    State(shared): State<Shared>,
-    headers: HeaderMap,
-) -> Result<Json<ClientView>, StatusCode> {
-    let authority = shared.lock().await;
-    let index = authority.player_index(&headers)?;
+async fn view(State(app): State<App>, headers: HeaderMap) -> Result<Json<ClientView>, StatusCode> {
+    let authority = app.authority.lock().await;
+    let index = authority.index_of(&player_id_of(&headers)?)?;
     let player = &authority.players[index];
     let standing = standing_for(&authority.data, player);
     let (world, player) = project(&authority.world, player, &standing, &authority.data);
@@ -176,12 +252,12 @@ async fn view(
 /// (GDD 7.4) — the shared world's stirrings, including other deities' visible
 /// acts. Requires a live session so only connected deities poll it.
 async fn events(
-    State(shared): State<Shared>,
+    State(app): State<App>,
     headers: HeaderMap,
     Query(query): Query<EventsQuery>,
 ) -> Result<Json<EventsDelta>, StatusCode> {
-    let authority = shared.lock().await;
-    authority.player_index(&headers)?;
+    let authority = app.authority.lock().await;
+    authority.index_of(&player_id_of(&headers)?)?;
     let (events, cursor) = authority.world.chronicle.since(query.since);
     Ok(Json(EventsDelta {
         events: events.into_iter().cloned().collect(),
@@ -192,24 +268,36 @@ async fn events(
 /// Submit an authoritative command for the requesting deity (§7.1, §7.7). The
 /// server checks *that deity's* Standing, applies the shared core `apply` on
 /// success against its own player state, and returns the feedback; an action
-/// beyond its Standing is a 403, an unknown session a 401.
+/// beyond its Standing is a 403, an unknown session a 401. The mutated world and
+/// that deity's state write-through before the response returns.
 async fn action(
-    State(shared): State<Shared>,
+    State(app): State<App>,
     headers: HeaderMap,
     Json(command): Json<PlayerAction>,
 ) -> Result<Json<ActionReport>, StatusCode> {
-    let mut authority = shared.lock().await;
-    let index = authority.player_index(&headers)?;
+    let mut authority = app.authority.lock().await;
+    let id = player_id_of(&headers)?;
+    let index = authority.index_of(&id)?;
     let standing = standing_for(&authority.data, &authority.players[index]);
     if !authorize(&standing, &authority.world, &command) {
         return Err(StatusCode::FORBIDDEN);
     }
-    let Authority {
-        data,
-        world,
-        players,
-        ..
-    } = &mut *authority;
-    let report = apply(world, &mut players[index], data, &command);
+    let report = {
+        let Authority {
+            data,
+            world,
+            players,
+            ..
+        } = &mut *authority;
+        apply(world, &mut players[index], data, &command)
+    };
+    app.db
+        .save_world(
+            &authority.world,
+            authority.next_guest,
+            &authority.data.config.version,
+        )
+        .await;
+    app.db.save_player(&id, &authority.players[index]).await;
     Ok(Json(report))
 }
