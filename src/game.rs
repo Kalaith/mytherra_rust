@@ -344,7 +344,7 @@ impl Game {
         match action {
             UiAction::SelectScreen(screen) => self.screen = screen,
             UiAction::SelectRegion(index) => {
-                if index < self.world.regions.len() {
+                if index < self.view.regions.len() {
                     self.selected_region = index;
                     // A new region's holdings differ; close any open town detail.
                     self.selected_town = None;
