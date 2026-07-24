@@ -10,6 +10,10 @@ edition = "2021"
 [dependencies]
 mytherra-core = { path = "../mytherra-core" }
 mytherra-protocol = { path = "../mytherra-protocol" }
+# The DB *is* the save (GDD 6/8). All storage lives in `mytherra-persistence`
+# (its own crate so the pure core never links a database); the server just wires
+# the two dissociated stores into its request/tick paths.
+mytherra-persistence = { path = "../mytherra-persistence" }
 axum = "0.7"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "sync"] }
 # CORS so the browser (WASM) client, served from a different origin than the
@@ -17,12 +21,8 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time",
 tower-http = { version = "0.5", features = ["cors"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-# The DB *is* the save (GDD 6/8): the shared world and every deity's private
-# state persist to MySQL and resume on restart, so a server bounce no longer
-# resets the world. Follows the `kaiju_sim/kaiju_server` sqlx precedent in this
-# workspace. `json` gives the `Json<T>` codec that stores each serde state as a
-# JSON column; the core stays pure (no I/O) — persistence lives only here.
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "mysql", "json"] }
 # Reads DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_DATABASE from a local `.env`
-# (gitignored) so credentials never live in a committed config file.
+# (gitignored) into a `mytherra_persistence::DbConfig`, so credentials never
+# live in a committed config file. Configuration is the server's concern; the
+# storage mechanism is the persistence crate's.
 dotenvy = "0.15"

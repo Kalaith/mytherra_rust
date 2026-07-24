@@ -1174,6 +1174,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mytherra-persistence"
+version = "0.1.0"
+dependencies = [
+ "mytherra-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+]
+
+[[package]]
 name = "mytherra-protocol"
 version = "0.1.0"
 dependencies = [
@@ -1189,10 +1199,10 @@ dependencies = [
  "axum",
  "dotenvy",
  "mytherra-core",
+ "mytherra-persistence",
  "mytherra-protocol",
  "serde",
  "serde_json",
- "sqlx",
  "tokio",
  "tower-http",
 ]

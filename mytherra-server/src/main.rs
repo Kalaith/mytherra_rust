@@ -12,12 +12,14 @@
 //! once per interval; every connected deity's favor, champions, wagers, and
 //! Standing are its own.
 //!
-//! The world and every deity persist to MySQL (the DB *is* the save, §6/§8): the
-//! authority is bootstrapped from the DB on startup and write-throughs after
-//! every mint, action, and tick, so a server restart resumes the same world
-//! rather than resetting it. All persistence lives in `db`; the core stays pure.
+//! The world and every deity persist to MySQL (the DB *is* the save, §6/§8) via
+//! `mytherra-persistence`, whose two dissociated stores mirror the split here:
+//! the world is the shared simulation the deities *nudge*, the player domain is
+//! per-deity, and they never share a row. The authority is bootstrapped from the
+//! store on startup and write-throughs after every mint, action, and tick, so a
+//! restart resumes the same world rather than resetting it.
 
-mod db;
+mod config;
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -34,12 +36,11 @@ use mytherra_core::command::{apply, authorize, ActionReport, PlayerAction};
 use mytherra_core::data::GameData;
 use mytherra_core::sim::tick_shared;
 use mytherra_core::world::{PlayerState, WorldState};
+use mytherra_persistence::Store;
 use mytherra_protocol::{project, ClientView, EventsDelta, SessionResponse, Standing};
 use serde::Deserialize;
 use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
-
-use crate::db::Db;
 
 /// The header a client presents to identify its guest session (GDD 7.7).
 const PLAYER_ID_HEADER: &str = "x-player-id";
@@ -58,44 +59,40 @@ struct Authority {
 }
 
 impl Authority {
-    /// Resume from the DB, or seed a fresh world and persist it (GDD 6/8). The DB
-    /// is the save: on a fresh database this writes the singleton world row so the
-    /// very first tick has something to update.
-    async fn bootstrap(db: &Db) -> Self {
+    /// Resume from the store, or seed a fresh world and persist it (GDD 6/8). The
+    /// world and the player roster load independently — they are dissociated
+    /// domains — and the id → index map is rebuilt from the roster's order.
+    async fn bootstrap(store: &Store) -> Self {
         let data = GameData::load().expect("Mytherra content failed to load");
-        match db.load().await {
-            Some(loaded) => {
-                let mut ids = BTreeMap::new();
-                let mut players = Vec::with_capacity(loaded.players.len());
-                for (id, state) in loaded.players {
-                    ids.insert(id, players.len());
-                    players.push(state);
-                }
-                println!(
-                    "resumed persisted world: year {}, {} deities",
-                    loaded.world.year,
-                    players.len()
-                );
-                Self {
-                    data,
-                    world: loaded.world,
-                    ids,
-                    players,
-                    next_guest: loaded.next_guest,
-                }
-            }
+
+        let world = match store.world.load().await {
+            Some(world) => world,
             None => {
                 let world = WorldState::new(&data);
-                db.save_world(&world, 0, &data.config.version).await;
-                println!("seeded a fresh world at year {}", world.year);
-                Self {
-                    data,
-                    world,
-                    ids: BTreeMap::new(),
-                    players: Vec::new(),
-                    next_guest: 0,
-                }
+                store.world.save(&world).await;
+                world
             }
+        };
+
+        let mut ids = BTreeMap::new();
+        let mut players = Vec::new();
+        for (id, state) in store.players.load_all().await {
+            ids.insert(id, players.len());
+            players.push(state);
+        }
+        let next_guest = store.players.next_guest().await;
+
+        println!(
+            "resumed world at year {}, {} deities connected across restarts",
+            world.year,
+            players.len()
+        );
+        Self {
+            data,
+            world,
+            ids,
+            players,
+            next_guest,
         }
     }
 
@@ -120,6 +117,14 @@ impl Authority {
     fn index_of(&self, id: &str) -> Result<usize, StatusCode> {
         self.ids.get(id).copied().ok_or(StatusCode::UNAUTHORIZED)
     }
+
+    /// Every deity paired with its id, for a full write-through after a tick.
+    fn roster(&self) -> Vec<(String, &PlayerState)> {
+        self.ids
+            .iter()
+            .map(|(id, &index)| (id.clone(), &self.players[index]))
+            .collect()
+    }
 }
 
 /// The session id a request presents in `X-Player-Id`, or a 401 if the header is
@@ -140,15 +145,14 @@ fn standing_for(data: &GameData, player: &PlayerState) -> Standing {
 }
 
 /// Shared authority state plus the persistence handle, cloned into every handler
-/// and the tick task. The `Db` is a pooled, `Arc`-backed handle; the authority is
-/// behind a `tokio::sync::Mutex` so DB write-throughs can be awaited while it is
-/// held (the mint/action/tick paths persist under the lock — correct and simple
-/// at this scale; a later phase can move per-player writes off the critical
-/// section).
+/// and the tick task. The `Store` is pooled and `Arc`-backed; the authority is
+/// behind a `tokio::sync::Mutex` so store write-throughs can be awaited while it
+/// is held (correct and simple at this scale; a later phase can move per-player
+/// writes off the critical section).
 #[derive(Clone)]
 struct App {
     authority: Arc<Mutex<Authority>>,
-    db: Db,
+    store: Store,
 }
 
 /// `GET /events?since=<cursor>` — a returning player asks what changed since
@@ -161,8 +165,8 @@ struct EventsQuery {
 
 #[tokio::main]
 async fn main() {
-    let db = Db::connect().await;
-    let authority = Authority::bootstrap(&db).await;
+    let store = Store::connect(&config::db_config()).await;
+    let authority = Authority::bootstrap(&store).await;
 
     // Listen address and tick cadence both come from config (GDD 7.6), not
     // source constants, so the deployment address lives in one place.
@@ -171,11 +175,11 @@ async fn main() {
 
     let app = App {
         authority: Arc::new(Mutex::new(authority)),
-        db,
+        store,
     };
 
     // The world advances on the server's own schedule (GDD 7.1), persisting the
-    // whole snapshot each tick so a crash loses at most one interval.
+    // world and every deity each tick so a crash loses at most one interval.
     let ticker = app.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs_f32(seconds));
@@ -184,18 +188,8 @@ async fn main() {
             interval.tick().await;
             let mut authority = ticker.authority.lock().await;
             authority.tick();
-            ticker
-                .db
-                .save_world(
-                    &authority.world,
-                    authority.next_guest,
-                    &authority.data.config.version,
-                )
-                .await;
-            ticker
-                .db
-                .save_all_players(&authority.ids, &authority.players)
-                .await;
+            ticker.store.world.save(&authority.world).await;
+            ticker.store.players.save_all(&authority.roster()).await;
         }
     });
 
@@ -230,10 +224,11 @@ async fn session(State(app): State<App>) -> Json<SessionResponse> {
     let mut authority = app.authority.lock().await;
     let player_id = authority.new_guest();
     let index = authority.ids[&player_id];
-    app.db
-        .insert_player(&player_id, &authority.players[index])
+    app.store
+        .players
+        .save(&player_id, &authority.players[index])
         .await;
-    app.db.save_next_guest(authority.next_guest).await;
+    app.store.players.set_next_guest(authority.next_guest).await;
     Json(SessionResponse { player_id })
 }
 
@@ -291,13 +286,7 @@ async fn action(
         } = &mut *authority;
         apply(world, &mut players[index], data, &command)
     };
-    app.db
-        .save_world(
-            &authority.world,
-            authority.next_guest,
-            &authority.data.config.version,
-        )
-        .await;
-    app.db.save_player(&id, &authority.players[index]).await;
+    app.store.world.save(&authority.world).await;
+    app.store.players.save(&id, &authority.players[index]).await;
     Ok(Json(report))
 }

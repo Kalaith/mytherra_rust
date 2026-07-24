@@ -1,0 +1,15 @@
+[package]
+name = "mytherra-persistence"
+version = "0.1.0"
+edition = "2021"
+
+# The authority's storage layer (GDD 6/8 — the DB is the save). Depends on
+# `mytherra-core` for the state types but stays out of the pure core so the core
+# (and the wasm client that embeds it) never link a database. Two dissociated
+# stores: the shared world and the per-deity player domain. Follows the
+# `kaiju_sim/kaiju_server` sqlx precedent in this workspace.
+[dependencies]
+mytherra-core = { path = "../mytherra-core" }
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "mysql", "json"] }
+serde = "1.0"
+serde_json = "1.0"
