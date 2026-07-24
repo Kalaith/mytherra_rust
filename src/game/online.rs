@@ -13,7 +13,6 @@
 //! slow or unreachable server never stalls the loop.
 
 use super::Game;
-use crate::data::fill;
 use crate::net::{self, Pending};
 use crate::ui::Screen;
 use mytherra_core::command::ActionReport;
@@ -22,6 +21,28 @@ use mytherra_protocol::{ClientView, EventsDelta, SessionResponse};
 /// The most recent stirrings of the world to surface as notifications on any one
 /// poll, so a burst of events after a server tick can't flood the screen.
 const MAX_STIRRINGS_PER_POLL: usize = 4;
+
+/// How long a single request may be in flight before it's treated as failed. On
+/// wasm a refused connection never resolves (quad-net resolves only a 200), so
+/// without this the client would hang silently instead of noticing the server is
+/// gone. Generous enough not to trip on a merely slow response.
+const REQUEST_TIMEOUT: f32 = 6.0;
+
+/// Seconds to wait between reconnection attempts, so a downed server isn't
+/// hammered (native transport errors resolve immediately and would otherwise
+/// retry every frame).
+const RETRY_COOLDOWN: f32 = 2.0;
+
+/// The client's live link to the authority server, surfaced in the header badge.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum OnlineStatus {
+    /// Handshaking, or awaiting the first view — not yet connected.
+    Connecting,
+    /// The last poll succeeded; the world is live.
+    Live,
+    /// A poll failed or timed out (the server went away); retrying.
+    Reconnecting,
+}
 
 /// The client's live connection to one authority server: the in-flight requests
 /// and the poll cadence. State only — the driving logic lives on [`Game`].
@@ -51,6 +72,11 @@ pub(super) struct OnlineSession {
     /// Set once the first `/view` has arrived, so the UI can tell "connecting"
     /// from "connected to an empty world".
     connected: bool,
+    /// The live link state shown in the header (§7.4). Drives the badge and the
+    /// lost/restored notifications.
+    status: OnlineStatus,
+    /// Seconds left before the next reconnection attempt (0 = attempt now).
+    retry_cooldown: f32,
 }
 
 impl OnlineSession {
@@ -66,6 +92,8 @@ impl OnlineSession {
             cursor: 0,
             events_synced: false,
             connected: false,
+            status: OnlineStatus::Connecting,
+            retry_cooldown: 0.0,
         }
     }
 
@@ -102,11 +130,12 @@ impl Game {
         self.screen = Screen::Title;
     }
 
-    /// Poll the guest-session handshake (§7.7). Returns `true` once the session id
-    /// is in hand — so normal view/events/action polling can run — and `false`
-    /// while still waiting (or after a failure to reach the server). On success it
-    /// adopts the id and kicks the first `/view` + `/events`.
-    fn finish_session_handshake(&mut self) -> bool {
+    /// Drive the guest-session handshake (§7.7), retrying until it lands. Returns
+    /// `true` once the session id is in hand — so normal view/events/action
+    /// polling can run — and `false` while still handshaking. Unlike a one-shot
+    /// attempt, a failed or timed-out `/session` is re-issued after a cooldown, so
+    /// a client that opened before the server was up still connects once it is.
+    fn drive_handshake(&mut self, dt: f32) -> bool {
         if self.online.as_ref().is_some_and(|s| s.identified) {
             return true;
         }
@@ -115,10 +144,21 @@ impl Game {
             let Some(session) = self.online.as_mut() else {
                 return false;
             };
-            if let Some(req) = session.session_req.as_mut() {
-                if let Some(r) = req.poll() {
-                    result = Some(r);
-                    session.session_req = None;
+            match session.session_req.as_mut() {
+                // A handshake is in flight — poll it (with the wasm timeout).
+                Some(req) => {
+                    if let Some(r) = req.poll_timed(dt, REQUEST_TIMEOUT) {
+                        result = Some(r);
+                        session.session_req = None;
+                    }
+                }
+                // None in flight: wait out the cooldown, then open a new one.
+                None => {
+                    if session.retry_cooldown > 0.0 {
+                        session.retry_cooldown -= dt;
+                    } else {
+                        session.session_req = Some(session.client.create_session());
+                    }
                 }
             }
         }
@@ -132,14 +172,57 @@ impl Game {
                 }
                 true
             }
-            Some(Err(err)) => {
-                self.notifications.danger(fill(
-                    &self.data.strings.notifications.view_fetch_failed,
-                    &[("error", err)],
-                ));
+            // A failed handshake schedules a silent retry — the badge already
+            // reads "connecting", so no per-attempt notification.
+            Some(Err(_)) => {
+                if let Some(s) = self.online.as_mut() {
+                    s.retry_cooldown = RETRY_COOLDOWN;
+                }
                 false
             }
             None => false,
+        }
+    }
+
+    /// The link state the header badge reflects (Connecting / Live / Reconnecting),
+    /// or `None` when not online at all.
+    pub(super) fn online_status(&self) -> Option<OnlineStatus> {
+        self.online.as_ref().map(|s| s.status)
+    }
+
+    /// A successful poll: the link is live again. Announce the return only if we
+    /// had actually dropped to reconnecting.
+    fn mark_link_live(&mut self) {
+        let recovered = {
+            let Some(s) = self.online.as_mut() else {
+                return;
+            };
+            let recovered = s.status == OnlineStatus::Reconnecting;
+            s.status = OnlineStatus::Live;
+            recovered
+        };
+        if recovered {
+            self.notifications
+                .info(self.data.strings.notifications.reconnected.clone());
+        }
+    }
+
+    /// A poll failed or timed out: the server is unreachable. Drop to reconnecting
+    /// (announcing it once, on the fall from a live link) and keep retrying — the
+    /// session id survives a server restart (the DB is the save), so the same
+    /// player resumes when the server returns.
+    fn mark_link_lost(&mut self) {
+        let fell = {
+            let Some(s) = self.online.as_mut() else {
+                return;
+            };
+            let fell = s.status == OnlineStatus::Live;
+            s.status = OnlineStatus::Reconnecting;
+            fell
+        };
+        if fell {
+            self.notifications
+                .warning(self.data.strings.notifications.connection_lost.clone());
         }
     }
 
@@ -150,7 +233,7 @@ impl Game {
     pub(super) fn update_online(&mut self, dt: f32) {
         // Phase 0: complete the guest-session handshake before anything else.
         // Until the id arrives, every other request would be turned away (§7.7).
-        if !self.finish_session_handshake() {
+        if !self.drive_handshake(dt) {
             return;
         }
 
@@ -163,7 +246,8 @@ impl Game {
             };
             session.poll_accum += dt;
             // Start a poll cycle when nothing is in flight and either we've never
-            // connected or the cadence has elapsed.
+            // connected or the cadence has elapsed. After a timeout the failed
+            // request is cleared below, so this re-issues and drives the retry.
             let due =
                 !session.connected || session.poll_accum >= self.data.config.view_poll_seconds;
             if due && session.view_req.is_none() && session.events_req.is_none() {
@@ -172,33 +256,37 @@ impl Game {
                 session.events_req = Some(session.client.fetch_events(session.cursor));
             }
             if let Some(req) = session.view_req.as_mut() {
-                if let Some(result) = req.poll() {
+                if let Some(result) = req.poll_timed(dt, REQUEST_TIMEOUT) {
                     fetched = Some(result);
                     session.view_req = None;
                 }
             }
             if let Some(req) = session.events_req.as_mut() {
-                if let Some(result) = req.poll() {
+                if let Some(result) = req.poll_timed(dt, REQUEST_TIMEOUT) {
                     delta = Some(result);
                     session.events_req = None;
                 }
             }
-            session.action_reqs.retain_mut(|req| match req.poll() {
-                Some(result) => {
-                    reports.push(result);
-                    false
-                }
-                None => true,
-            });
+            session
+                .action_reqs
+                .retain_mut(|req| match req.poll_timed(dt, REQUEST_TIMEOUT) {
+                    Some(result) => {
+                        reports.push(result);
+                        false
+                    }
+                    None => true,
+                });
         }
 
+        // The `/view` poll is the heartbeat: its success or failure is the link
+        // state. `/events` failures ride along silently (the next view drives it).
         if let Some(result) = fetched {
             match result {
-                Ok(view) => self.adopt_view(view),
-                Err(err) => self.notifications.danger(fill(
-                    &self.data.strings.notifications.view_fetch_failed,
-                    &[("error", err)],
-                )),
+                Ok(view) => {
+                    self.mark_link_live();
+                    self.adopt_view(view);
+                }
+                Err(_) => self.mark_link_lost(),
             }
         }
 

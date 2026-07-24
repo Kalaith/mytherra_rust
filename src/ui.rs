@@ -215,6 +215,9 @@ pub struct UiContext<'a> {
     /// the world turns on the server's schedule, so the local pacing controls
     /// (tick speed, pause) and the countdown badge give way to a live indicator.
     pub online: bool,
+    /// The live-link state when online (Connecting / Live / Reconnecting), for the
+    /// header badge; `None` when not online.
+    pub online_status: Option<crate::game::OnlineStatus>,
     pub mouse: Vec2,
 }
 

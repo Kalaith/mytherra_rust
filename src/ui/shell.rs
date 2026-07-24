@@ -1,6 +1,7 @@
 //! Persistent chrome around every screen: header, nav tabs, footer.
 
 use crate::data::fill;
+use crate::game::OnlineStatus;
 use crate::ui::widgets::nav_tabs;
 use crate::ui::{Screen, UiAction, UiContext, LOGICAL_WIDTH};
 use macroquad::prelude::*;
@@ -25,8 +26,14 @@ pub fn draw_header(ctx: &UiContext<'_>) {
     let y = rect.y + 16.0;
     let mut x = rect.right() - 18.0;
     let (tick_label, tick_fill) = if ctx.online {
-        // The world turns on the server's schedule — no local countdown.
-        (ui.tick_live.clone(), TICK_FILL)
+        // The world turns on the server's schedule — no local countdown. The badge
+        // instead reflects the live link, so a dropped server is visible at a
+        // glance rather than a silently frozen world.
+        match ctx.online_status {
+            Some(OnlineStatus::Reconnecting) => (ui.tick_reconnecting.clone(), TICK_OFFLINE_FILL),
+            Some(OnlineStatus::Connecting) => (ui.tick_connecting.clone(), TICK_PENDING_FILL),
+            _ => (ui.tick_live.clone(), TICK_FILL),
+        }
     } else if ctx.paused {
         (ui.tick_paused.clone(), TICK_PAUSED_FILL)
     } else {
@@ -108,3 +115,7 @@ const FAVOR_FILL: Color = Color::new(0.20, 0.28, 0.20, 1.0);
 const LEVEL_FILL: Color = Color::new(0.22, 0.19, 0.30, 1.0);
 const TICK_FILL: Color = Color::new(0.24, 0.22, 0.16, 1.0);
 const TICK_PAUSED_FILL: Color = Color::new(0.30, 0.17, 0.15, 1.0);
+/// Amber — reaching out / handshaking.
+const TICK_PENDING_FILL: Color = Color::new(0.30, 0.26, 0.14, 1.0);
+/// Red — the server is unreachable and the client is retrying.
+const TICK_OFFLINE_FILL: Color = Color::new(0.34, 0.15, 0.15, 1.0);

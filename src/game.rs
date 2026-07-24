@@ -18,6 +18,7 @@ use macroquad_toolkit::notifications::{
 use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_frame};
 use mytherra_protocol::{project, PlayerAction, Standing, Tier, WorldView};
 use online::OnlineSession;
+pub(crate) use online::OnlineStatus;
 
 pub struct Game {
     data: GameData,
@@ -270,6 +271,7 @@ impl Game {
             tick_speed_index: self.tick_speed_index,
             paused: self.paused,
             online: self.is_online(),
+            online_status: self.online_status(),
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);

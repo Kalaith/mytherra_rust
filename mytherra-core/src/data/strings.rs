@@ -413,6 +413,10 @@ pub struct UiText {
     pub tick_paused: String,
     /// Header badge shown online, where the world turns on the server's schedule.
     pub tick_live: String,
+    /// Header badge while the client is handshaking / awaiting its first view.
+    pub tick_connecting: String,
+    /// Header badge while the server is unreachable and the client is retrying.
+    pub tick_reconnecting: String,
     pub save: String,
     pub load: String,
     pub new_world: String,
@@ -503,6 +507,10 @@ pub struct Notifications {
     /// Shown when a `GET /view` poll fails (server down/unreachable); slot
     /// `{error}`.
     pub view_fetch_failed: String,
+    /// Shown once when a live link drops and the client begins reconnecting.
+    pub connection_lost: String,
+    /// Shown once when the server becomes reachable again after a drop.
+    pub reconnected: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

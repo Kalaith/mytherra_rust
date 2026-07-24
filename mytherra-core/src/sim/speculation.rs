@@ -252,7 +252,11 @@ fn generate_event(
         }
         TargetKind::Settlement => {
             let settlement = rng.choose(settlements)?;
-            (settlement.id.clone(), settlement.name.clone(), String::new())
+            (
+                settlement.id.clone(),
+                settlement.name.clone(),
+                String::new(),
+            )
         }
         // A world-scale proposition has no entity; its label depends on what it
         // watches — the age, or the shape of the map.

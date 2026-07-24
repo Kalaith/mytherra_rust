@@ -127,6 +127,8 @@ impl SpeculationEvent {
             BetPredicate::AgeEnds => era_number > self.created_era,
             // The world holds more regions than when the wager opened.
             BetPredicate::NewRegion => regions.len() as u32 > self.created_region_count,
+            // A predicate this build doesn't understand can't be judged satisfied.
+            BetPredicate::Unknown => false,
         }
     }
 
@@ -291,6 +293,8 @@ impl SpeculationEvent {
                     clamp01(0.15 + churning as f32 / regions.len() as f32 * 0.6)
                 }
             }
+            // An unrecognised predicate has no basis to price — a coin-flip.
+            BetPredicate::Unknown => 0.5,
         }
     }
 
@@ -487,7 +491,12 @@ mod tests {
         assert!(!event.is_satisfied(&[aged_hero("wanderer", 30, "kharzul", true)], &[], &[], 1));
         // Settled in another land: the wager is met, dead or alive.
         assert!(event.is_satisfied(&[aged_hero("wanderer", 30, "aldermoor", true)], &[], &[], 1));
-        assert!(event.is_satisfied(&[aged_hero("wanderer", 55, "aldermoor", false)], &[], &[], 1));
+        assert!(event.is_satisfied(
+            &[aged_hero("wanderer", 55, "aldermoor", false)],
+            &[],
+            &[],
+            1
+        ));
 
         // Without a recorded home (any other predicate's empty origin), a stray
         // HeroChangesRegion check never spuriously fires.

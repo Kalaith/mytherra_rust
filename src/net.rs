@@ -40,6 +40,8 @@ pub struct ServerClient {
 /// while pending, `Some` once the response (or an error) has arrived.
 pub struct Pending<T> {
     request: Request,
+    /// Seconds this request has been in flight, accumulated by [`poll_timed`].
+    elapsed: f32,
     _marker: PhantomData<fn() -> T>,
 }
 
@@ -47,6 +49,7 @@ impl<T: DeserializeOwned> Pending<T> {
     fn new(request: Request) -> Self {
         Self {
             request,
+            elapsed: 0.0,
             _marker: PhantomData,
         }
     }
@@ -61,6 +64,23 @@ impl<T: DeserializeOwned> Pending<T> {
                 .map_err(|err| err.to_string())
                 .and_then(|body| serde_json::from_str(&body).map_err(|err| err.to_string()))
         })
+    }
+
+    /// Poll, treating no response within `timeout` seconds as a failure. `dt` is
+    /// the frame delta. This is the wasm safety net: quad-net's browser shim only
+    /// resolves an HTTP 200, so a refused connection (server down) otherwise never
+    /// resolves and the request would hang forever. Native transport errors still
+    /// surface promptly through the inner [`poll`].
+    pub fn poll_timed(&mut self, dt: f32, timeout: f32) -> Option<Result<T, String>> {
+        if let Some(result) = self.poll() {
+            return Some(result);
+        }
+        self.elapsed += dt;
+        if self.elapsed >= timeout {
+            Some(Err("the server did not respond in time".to_owned()))
+        } else {
+            None
+        }
     }
 }
 
@@ -172,8 +192,17 @@ mod tests {
             "a Watcher has not unlocked regions"
         );
 
-        // A Watcher may designate a champion (hero-adjacent, §5.9).
-        let hero = view.world.heroes[0].id.clone();
+        // A Watcher may designate a champion (hero-adjacent, §5.9). Pick a *living*
+        // hero — in a long-running world most of the roster has passed on, and a
+        // champion can only be raised from the quick.
+        let hero = view
+            .world
+            .heroes
+            .iter()
+            .find(|h| h.is_alive)
+            .expect("a living hero to champion")
+            .id
+            .clone();
         let report =
             block_on(client.submit_action(&PlayerAction::DesignateChampion { hero_id: hero }))
                 .expect("designate champion");
@@ -221,11 +250,15 @@ mod tests {
             .player
             .favor;
 
-        // Alice designates a champion — favor leaves *her* purse.
+        // Alice designates a champion — favor leaves *her* purse. Champions are
+        // raised only from living heroes, rare in a long-lived world.
         let hero = block_on(alice.fetch_view())
             .expect("alice view")
             .world
-            .heroes[0]
+            .heroes
+            .iter()
+            .find(|h| h.is_alive)
+            .expect("a living hero")
             .id
             .clone();
         block_on(alice.submit_action(&PlayerAction::DesignateChampion { hero_id: hero }))

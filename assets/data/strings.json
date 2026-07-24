@@ -49,6 +49,8 @@
     "tick_badge": "Tick {seconds}s",
     "tick_paused": "Paused",
     "tick_live": "· Live",
+    "tick_connecting": "· Linking…",
+    "tick_reconnecting": "· Offline — retrying",
     "save": "Save",
     "load": "Load",
     "new_world": "New World",
@@ -252,7 +254,9 @@
     "ascension": "Your standing rises — you are now the {tier}.",
     "action_locked": "That divine art lies beyond your present standing.",
     "connecting": "Reaching across the veil to the shared world…",
-    "view_fetch_failed": "The shared world falls silent: {error}"
+    "view_fetch_failed": "The shared world falls silent: {error}",
+    "connection_lost": "The shared world falls silent — the veil has closed. Reaching out again…",
+    "reconnected": "The veil parts once more — the shared world returns."
   },
   "heroes": {
     "panel": "Heroes & Champions",
