@@ -31,6 +31,11 @@ pub struct SpeculationEvent {
     /// once the world holds more regions than this.
     #[serde(default)]
     pub created_region_count: u32,
+    /// For a `HeroChangesRegion` wager, the region the target hero dwelt in when
+    /// it opened; the proposition is met once the hero lives somewhere else. Empty
+    /// for every other predicate. `serde(default)` keeps old saves loadable.
+    #[serde(default)]
+    pub origin_region_id: String,
     /// Simulated stakes other deities have placed for/against the proposition.
     pub crowd_yes: f32,
     pub crowd_no: f32,
@@ -66,6 +71,18 @@ impl SpeculationEvent {
             BetPredicate::HeroRenownAtLeast => self
                 .hero(heroes)
                 .map(|h| h.is_alive && h.renown >= self.threshold)
+                .unwrap_or(false),
+            // Reaching the age settles the wager even if the hero later dies —
+            // their age freezes at death, so a hero who fell short never clears it.
+            BetPredicate::HeroSurvivesToAge => self
+                .hero(heroes)
+                .map(|h| h.age as f32 >= self.threshold)
+                .unwrap_or(false),
+            // Met once the hero dwells somewhere other than the region they were
+            // in when the wager opened (the origin is empty for other predicates).
+            BetPredicate::HeroChangesRegion => self
+                .hero(heroes)
+                .map(|h| !self.origin_region_id.is_empty() && h.region_id != self.origin_region_id)
                 .unwrap_or(false),
             BetPredicate::RegionProsperityAtLeast => self
                 .region(regions)
@@ -153,6 +170,34 @@ impl SpeculationEvent {
                 .map(|h| {
                     if h.is_alive {
                         clamp01(h.renown / self.threshold.max(1.0))
+                    } else {
+                        0.0
+                    }
+                })
+                .unwrap_or(0.5),
+            // Already past the age is certain; otherwise how near the hero has
+            // drawn to it (a hero who died short can never clear the bar).
+            BetPredicate::HeroSurvivesToAge => self
+                .hero(heroes)
+                .map(|h| {
+                    if h.age as f32 >= self.threshold {
+                        1.0
+                    } else if !h.is_alive {
+                        0.0
+                    } else {
+                        clamp01(h.age as f32 / self.threshold.max(1.0))
+                    }
+                })
+                .unwrap_or(0.5),
+            // Already departed is certain; a living hero wanders readily (GDD 5.4
+            // migration), a dead one who never left never will.
+            BetPredicate::HeroChangesRegion => self
+                .hero(heroes)
+                .map(|h| {
+                    if !self.origin_region_id.is_empty() && h.region_id != self.origin_region_id {
+                        1.0
+                    } else if h.is_alive {
+                        0.4
                     } else {
                         0.0
                     }
@@ -304,6 +349,7 @@ mod tests {
             deadline_year: 50,
             created_era: 1,
             created_region_count: 4,
+            origin_region_id: String::new(),
             crowd_yes: 1.0,
             crowd_no: 1.0,
             resolved: None,
@@ -395,6 +441,58 @@ mod tests {
             event.likelihood(&[hero("brogan", 40.0, false)], &[], &[], 0.0),
             0.0
         );
+    }
+
+    /// A hero at a given age, region, and vitality, for the lifespan/defection
+    /// wagers.
+    fn aged_hero(id: &str, age: u32, region_id: &str, alive: bool) -> Hero {
+        Hero {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            role: crate::data::HeroRole::Warrior,
+            region_id: region_id.to_owned(),
+            level: 5,
+            age,
+            is_alive: alive,
+            renown: 0.0,
+        }
+    }
+
+    #[test]
+    fn a_long_life_is_won_by_reaching_the_age_even_in_death() {
+        let mut event = usurpation_event("elder");
+        event.predicate = BetPredicate::HeroSurvivesToAge;
+        event.target_kind = TargetKind::Hero;
+        event.threshold = 75.0;
+
+        // Short of the age: unfulfilled.
+        assert!(!event.is_satisfied(&[aged_hero("elder", 40, "kharzul", true)], &[], &[], 1));
+        // Past the age while living: won.
+        assert!(event.is_satisfied(&[aged_hero("elder", 80, "kharzul", true)], &[], &[], 1));
+        // Reaching the age settles it even if the hero has since died — age freezes
+        // at death, so the years lived still stand.
+        assert!(event.is_satisfied(&[aged_hero("elder", 80, "kharzul", false)], &[], &[], 1));
+        // But a hero who fell short never clears the bar.
+        assert!(!event.is_satisfied(&[aged_hero("elder", 60, "kharzul", false)], &[], &[], 1));
+    }
+
+    #[test]
+    fn a_defection_resolves_once_the_hero_leaves_their_home() {
+        let mut event = usurpation_event("wanderer");
+        event.predicate = BetPredicate::HeroChangesRegion;
+        event.target_kind = TargetKind::Hero;
+        event.origin_region_id = "kharzul".to_owned();
+
+        // Still home: no defection.
+        assert!(!event.is_satisfied(&[aged_hero("wanderer", 30, "kharzul", true)], &[], &[], 1));
+        // Settled in another land: the wager is met, dead or alive.
+        assert!(event.is_satisfied(&[aged_hero("wanderer", 30, "aldermoor", true)], &[], &[], 1));
+        assert!(event.is_satisfied(&[aged_hero("wanderer", 55, "aldermoor", false)], &[], &[], 1));
+
+        // Without a recorded home (any other predicate's empty origin), a stray
+        // HeroChangesRegion check never spuriously fires.
+        event.origin_region_id = String::new();
+        assert!(!event.is_satisfied(&[aged_hero("wanderer", 30, "aldermoor", true)], &[], &[], 1));
     }
 
     #[test]

@@ -64,7 +64,11 @@ impl BettingMarket {
     pub fn of(predicate: BetPredicate) -> Self {
         use BetPredicate as P;
         match predicate {
-            P::HeroDies | P::HeroLevelAtLeast | P::HeroRenownAtLeast => Self::HeroFate,
+            P::HeroDies
+            | P::HeroLevelAtLeast
+            | P::HeroRenownAtLeast
+            | P::HeroSurvivesToAge
+            | P::HeroChangesRegion => Self::HeroFate,
             P::RegionCrisis | P::RegionConquered => Self::RegionCollapse,
             P::AgeEnds | P::NewRegion => Self::WorldTurning,
             // Every remaining predicate is a region-stat or settlement threshold.

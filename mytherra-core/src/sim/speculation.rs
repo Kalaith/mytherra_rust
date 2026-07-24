@@ -239,18 +239,20 @@ fn generate_event(
     let bet_type = rng.choose(&data.bet_types)?.clone();
     let timeframe = rng.choose(&data.timeframes)?.clone();
 
-    let (target_id, target_name) = match bet_type.predicate.target_kind() {
+    // `origin_region_id` is recorded only for a hero target, so a defection wager
+    // knows the home the hero must leave; it stays empty for every other target.
+    let (target_id, target_name, origin_region_id) = match bet_type.predicate.target_kind() {
         TargetKind::Hero => {
             let hero = pick_notable_hero(heroes, &data.balance.betting, rng)?;
-            (hero.id.clone(), hero.name.clone())
+            (hero.id.clone(), hero.name.clone(), hero.region_id.clone())
         }
         TargetKind::Region => {
             let region = rng.choose(regions)?;
-            (region.id.clone(), region.name.clone())
+            (region.id.clone(), region.name.clone(), String::new())
         }
         TargetKind::Settlement => {
             let settlement = rng.choose(settlements)?;
-            (settlement.id.clone(), settlement.name.clone())
+            (settlement.id.clone(), settlement.name.clone(), String::new())
         }
         // A world-scale proposition has no entity; its label depends on what it
         // watches — the age, or the shape of the map.
@@ -261,7 +263,7 @@ fn generate_event(
                 }
                 _ => data.strings.betting.age_target.clone(),
             };
-            (String::new(), label)
+            (String::new(), label, String::new())
         }
     };
 
@@ -289,6 +291,7 @@ fn generate_event(
         deadline_year: year + timeframe.years,
         created_era: era_number,
         created_region_count: regions.len() as u32,
+        origin_region_id,
         crowd_yes: 0.0,
         crowd_no: 0.0,
         resolved: None,
@@ -424,6 +427,7 @@ mod tests {
             deadline_year: 100,
             created_era: 1,
             created_region_count: world.regions.len() as u32,
+            origin_region_id: String::new(),
             crowd_yes: 50.0,
             crowd_no: 50.0,
             resolved: None,

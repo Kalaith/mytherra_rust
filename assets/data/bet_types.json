@@ -24,6 +24,30 @@
     "description": "{target} will win renown {threshold} and pass into legend."
   },
   {
+    "id": "long_life",
+    "name": "The Long-Lived",
+    "base_odds": 2.2,
+    "predicate": "hero_survives_to_age",
+    "threshold": 75.0,
+    "description": "{target} will live to see {threshold} years."
+  },
+  {
+    "id": "venerable",
+    "name": "A Venerable Age",
+    "base_odds": 3.4,
+    "predicate": "hero_survives_to_age",
+    "threshold": 90.0,
+    "description": "{target} will endure to the venerable age of {threshold}."
+  },
+  {
+    "id": "defection",
+    "name": "Defection",
+    "base_odds": 2.3,
+    "predicate": "hero_changes_region",
+    "threshold": 0.0,
+    "description": "{target} will forsake their homeland and settle in another region."
+  },
+  {
     "id": "golden_age",
     "name": "Golden Age",
     "base_odds": 2.6,

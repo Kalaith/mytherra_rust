@@ -15,6 +15,12 @@ pub enum BetPredicate {
     /// The target hero (still living) accrues at least `threshold` renown —
     /// a legend in the making (GDD 5.4).
     HeroRenownAtLeast,
+    /// The target hero lives to at least `threshold` years of age — a wager on a
+    /// long life, met once the hero's age clears the bar (even if they then die).
+    HeroSurvivesToAge,
+    /// The target hero forsakes the region they dwelt in when the wager opened
+    /// and settles in another (GDD 5.4 hero migration) — a defection.
+    HeroChangesRegion,
     /// The target region's prosperity reaches at least `threshold`.
     RegionProsperityAtLeast,
     /// The target region's chaos reaches at least `threshold`.
@@ -62,7 +68,9 @@ impl BetPredicate {
         match self {
             BetPredicate::HeroDies
             | BetPredicate::HeroLevelAtLeast
-            | BetPredicate::HeroRenownAtLeast => TargetKind::Hero,
+            | BetPredicate::HeroRenownAtLeast
+            | BetPredicate::HeroSurvivesToAge
+            | BetPredicate::HeroChangesRegion => TargetKind::Hero,
             BetPredicate::RegionProsperityAtLeast
             | BetPredicate::RegionChaosAtLeast
             | BetPredicate::RegionDangerAtLeast
