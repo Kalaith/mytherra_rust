@@ -110,7 +110,7 @@
     "expansion_found_chance": 0.02,
     "ranger_found_chance": 0.01,
     "settler_fraction": 0.15,
-    "max_regions": 8,
+    "max_regions": 16,
     "child_prosperity": 55.0,
     "child_chaos": 20.0,
     "child_danger": 32.0,

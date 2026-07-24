@@ -96,5 +96,131 @@
     "region_id": "hearthmoor",
     "population": 3100.0,
     "prosperity": 53.0
+  },
+  {
+    "id": "coinhaven",
+    "name": "Coinhaven",
+    "region_id": "goldmarch",
+    "population": 9000.0,
+    "prosperity": 66.0
+  },
+  {
+    "id": "tallowgate",
+    "name": "Tallowgate",
+    "region_id": "goldmarch",
+    "population": 4200.0,
+    "prosperity": 58.0
+  },
+  {
+    "id": "merrowford",
+    "name": "Merrowford",
+    "region_id": "goldmarch",
+    "population": 3000.0,
+    "prosperity": 54.0
+  },
+  {
+    "id": "scorchhold",
+    "name": "Scorchhold",
+    "region_id": "emberwaste",
+    "population": 3600.0,
+    "prosperity": 40.0
+  },
+  {
+    "id": "dustmere",
+    "name": "Dustmere",
+    "region_id": "emberwaste",
+    "population": 2100.0,
+    "prosperity": 34.0
+  },
+  {
+    "id": "ashkar",
+    "name": "Ashkar",
+    "region_id": "emberwaste",
+    "population": 2800.0,
+    "prosperity": 38.0
+  },
+  {
+    "id": "palmreach",
+    "name": "Palmreach",
+    "region_id": "suncradle",
+    "population": 8800.0,
+    "prosperity": 62.0
+  },
+  {
+    "id": "verdanshore",
+    "name": "Verdanshore",
+    "region_id": "suncradle",
+    "population": 4600.0,
+    "prosperity": 58.0
+  },
+  {
+    "id": "sunmarket",
+    "name": "Sunmarket",
+    "region_id": "suncradle",
+    "population": 5200.0,
+    "prosperity": 60.0
+  },
+  {
+    "id": "icewatch",
+    "name": "Icewatch",
+    "region_id": "frostmere",
+    "population": 3000.0,
+    "prosperity": 42.0
+  },
+  {
+    "id": "rimehall",
+    "name": "Rimehall",
+    "region_id": "frostmere",
+    "population": 1900.0,
+    "prosperity": 38.0
+  },
+  {
+    "id": "frosthollow",
+    "name": "Frosthollow",
+    "region_id": "frostmere",
+    "population": 1400.0,
+    "prosperity": 36.0
+  },
+  {
+    "id": "starfall",
+    "name": "Starfall",
+    "region_id": "cindralis",
+    "population": 4200.0,
+    "prosperity": 52.0
+  },
+  {
+    "id": "sandreach",
+    "name": "Sandreach",
+    "region_id": "cindralis",
+    "population": 2600.0,
+    "prosperity": 48.0
+  },
+  {
+    "id": "glassdune",
+    "name": "Glassdune",
+    "region_id": "cindralis",
+    "population": 2000.0,
+    "prosperity": 46.0
+  },
+  {
+    "id": "wolfkeep",
+    "name": "Wolfkeep",
+    "region_id": "vandarholt",
+    "population": 3400.0,
+    "prosperity": 44.0
+  },
+  {
+    "id": "icebreakers_rest",
+    "name": "Icebreaker's Rest",
+    "region_id": "vandarholt",
+    "population": 2200.0,
+    "prosperity": 40.0
+  },
+  {
+    "id": "grimfrost",
+    "name": "Grimfrost",
+    "region_id": "vandarholt",
+    "population": 1800.0,
+    "prosperity": 38.0
   }
 ]

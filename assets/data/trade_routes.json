@@ -2,5 +2,13 @@
   { "id": "iron_road", "name": "The Iron Road", "region_a": "aldermoor", "region_b": "kharzul", "volume": 1.5 },
   { "id": "tide_route", "name": "The Tide Route", "region_a": "aldermoor", "region_b": "sylvenmar", "volume": 2.0 },
   { "id": "mountain_pass", "name": "The Mountain Pass", "region_a": "kharzul", "region_b": "sylvenmar", "volume": 1.0 },
-  { "id": "grain_road", "name": "The Grain Road", "region_a": "aldermoor", "region_b": "hearthmoor", "volume": 1.0 }
+  { "id": "grain_road", "name": "The Grain Road", "region_a": "aldermoor", "region_b": "hearthmoor", "volume": 1.0 },
+  { "id": "golden_way", "name": "The Golden Way", "region_a": "goldmarch", "region_b": "aldermoor", "volume": 1.5 },
+  { "id": "hearth_exchange", "name": "The Hearth Exchange", "region_a": "goldmarch", "region_b": "hearthmoor", "volume": 1.0 },
+  { "id": "sungold_run", "name": "The Sungold Run", "region_a": "goldmarch", "region_b": "suncradle", "volume": 1.5 },
+  { "id": "desert_track", "name": "The Desert Track", "region_a": "emberwaste", "region_b": "cindralis", "volume": 1.0 },
+  { "id": "ashen_pass", "name": "The Ashen Pass", "region_a": "emberwaste", "region_b": "kharzul", "volume": 1.0 },
+  { "id": "frozen_road", "name": "The Frozen Road", "region_a": "frostmere", "region_b": "vandarholt", "volume": 1.0 },
+  { "id": "warfrost_pass", "name": "The Warfrost Pass", "region_a": "vandarholt", "region_b": "kharzul", "volume": 1.0 },
+  { "id": "coral_current", "name": "The Coral Current", "region_a": "suncradle", "region_b": "sylvenmar", "volume": 2.0 }
 ]

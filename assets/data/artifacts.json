@@ -30,5 +30,37 @@
     "power": 2,
     "instability": 8.0,
     "region_id": "aldermoor"
+  },
+  {
+    "id": "golden_ledger",
+    "name": "The Golden Ledger",
+    "focus": "prosperity",
+    "power": 3,
+    "instability": 6.0,
+    "region_id": "goldmarch"
+  },
+  {
+    "id": "ashbrand",
+    "name": "Ashbrand",
+    "focus": "war",
+    "power": 3,
+    "instability": 30.0,
+    "region_id": "emberwaste"
+  },
+  {
+    "id": "rime_lens",
+    "name": "The Rime Lens",
+    "focus": "knowledge",
+    "power": 4,
+    "instability": 20.0,
+    "region_id": "frostmere"
+  },
+  {
+    "id": "verdant_aegis",
+    "name": "Verdant Aegis",
+    "focus": "protection",
+    "power": 2,
+    "instability": 10.0,
+    "region_id": "suncradle"
   }
 ]

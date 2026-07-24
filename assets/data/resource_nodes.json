@@ -166,5 +166,131 @@
     "region_id": "hearthmoor",
     "resource_type": "forest",
     "status": "active"
+  },
+  {
+    "id": "goldwater_fishery",
+    "name": "Goldwater Fishery",
+    "region_id": "goldmarch",
+    "resource_type": "fishery",
+    "status": "active"
+  },
+  {
+    "id": "tallow_farmlands",
+    "name": "Tallow Farmlands",
+    "region_id": "goldmarch",
+    "resource_type": "farmland",
+    "status": "flourishing"
+  },
+  {
+    "id": "merrow_quarry",
+    "name": "Merrow Quarry",
+    "region_id": "goldmarch",
+    "resource_type": "quarry",
+    "status": "active"
+  },
+  {
+    "id": "embervein_mine",
+    "name": "Embervein Mine",
+    "region_id": "emberwaste",
+    "resource_type": "mine",
+    "status": "active"
+  },
+  {
+    "id": "scorch_quarry",
+    "name": "Scorch Quarry",
+    "region_id": "emberwaste",
+    "resource_type": "quarry",
+    "status": "overworked"
+  },
+  {
+    "id": "dust_wells",
+    "name": "Dust Wells",
+    "region_id": "emberwaste",
+    "resource_type": "farmland",
+    "status": "depleted"
+  },
+  {
+    "id": "palm_groves",
+    "name": "Palm Groves",
+    "region_id": "suncradle",
+    "resource_type": "farmland",
+    "status": "flourishing"
+  },
+  {
+    "id": "coral_fishery",
+    "name": "Coral Fishery",
+    "region_id": "suncradle",
+    "resource_type": "fishery",
+    "status": "flourishing"
+  },
+  {
+    "id": "sunwood",
+    "name": "Sunwood",
+    "region_id": "suncradle",
+    "resource_type": "forest",
+    "status": "active"
+  },
+  {
+    "id": "rime_manaspring",
+    "name": "Rime Manaspring",
+    "region_id": "frostmere",
+    "resource_type": "manaspring",
+    "status": "blessed"
+  },
+  {
+    "id": "frostmere_fishery",
+    "name": "Frostmere Fishery",
+    "region_id": "frostmere",
+    "resource_type": "fishery",
+    "status": "active"
+  },
+  {
+    "id": "ice_quarry",
+    "name": "Ice Quarry",
+    "region_id": "frostmere",
+    "resource_type": "quarry",
+    "status": "active"
+  },
+  {
+    "id": "glassand_manaspring",
+    "name": "Glassand Manaspring",
+    "region_id": "cindralis",
+    "resource_type": "manaspring",
+    "status": "unstable"
+  },
+  {
+    "id": "starfall_mine",
+    "name": "Starfall Mine",
+    "region_id": "cindralis",
+    "resource_type": "mine",
+    "status": "active"
+  },
+  {
+    "id": "sandglass_quarry",
+    "name": "Sandglass Quarry",
+    "region_id": "cindralis",
+    "resource_type": "quarry",
+    "status": "active"
+  },
+  {
+    "id": "wolfiron_mine",
+    "name": "Wolfiron Mine",
+    "region_id": "vandarholt",
+    "resource_type": "mine",
+    "status": "active"
+  },
+  {
+    "id": "frostpine_forest",
+    "name": "Frostpine Forest",
+    "region_id": "vandarholt",
+    "resource_type": "forest",
+    "status": "active"
+  },
+  {
+    "id": "grimfrost_quarry",
+    "name": "Grimfrost Quarry",
+    "region_id": "vandarholt",
+    "resource_type": "quarry",
+    "status": "contested"
   }
 ]

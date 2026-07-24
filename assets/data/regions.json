@@ -50,5 +50,83 @@
     "population": 9000.0,
     "cultural_influence": 45.0,
     "divine_resonance": 44.0
+  },
+  {
+    "id": "goldmarch",
+    "name": "Goldmarch",
+    "climate": "temperate",
+    "culture": "mercantile",
+    "prosperity": 66.0,
+    "chaos": 22.0,
+    "danger": 18.0,
+    "magic_affinity": 32.0,
+    "population": 14000.0,
+    "cultural_influence": 50.0,
+    "divine_resonance": 40.0
+  },
+  {
+    "id": "emberwaste",
+    "name": "Emberwaste",
+    "climate": "arid",
+    "culture": "martial",
+    "prosperity": 38.0,
+    "chaos": 56.0,
+    "danger": 62.0,
+    "magic_affinity": 34.0,
+    "population": 6400.0,
+    "cultural_influence": 30.0,
+    "divine_resonance": 44.0
+  },
+  {
+    "id": "suncradle",
+    "name": "Suncradle",
+    "climate": "tropical",
+    "culture": "pastoral",
+    "prosperity": 60.0,
+    "chaos": 26.0,
+    "danger": 30.0,
+    "magic_affinity": 38.0,
+    "population": 16800.0,
+    "cultural_influence": 42.0,
+    "divine_resonance": 46.0
+  },
+  {
+    "id": "frostmere",
+    "name": "Frostmere",
+    "climate": "frozen",
+    "culture": "mystical",
+    "prosperity": 40.0,
+    "chaos": 30.0,
+    "danger": 40.0,
+    "magic_affinity": 66.0,
+    "population": 5200.0,
+    "cultural_influence": 48.0,
+    "divine_resonance": 62.0
+  },
+  {
+    "id": "cindralis",
+    "name": "Cindralis",
+    "climate": "arid",
+    "culture": "scholarly",
+    "prosperity": 50.0,
+    "chaos": 28.0,
+    "danger": 34.0,
+    "magic_affinity": 52.0,
+    "population": 7800.0,
+    "cultural_influence": 52.0,
+    "divine_resonance": 50.0
+  },
+  {
+    "id": "vandarholt",
+    "name": "Vandarholt",
+    "climate": "frozen",
+    "culture": "martial",
+    "prosperity": 42.0,
+    "chaos": 50.0,
+    "danger": 58.0,
+    "magic_affinity": 28.0,
+    "population": 6000.0,
+    "cultural_influence": 32.0,
+    "divine_resonance": 38.0
   }
 ]

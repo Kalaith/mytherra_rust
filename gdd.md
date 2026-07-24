@@ -884,17 +884,28 @@ persistence store (§6/§8). Reads its `DbConfig` from a local `.env`. Endpoints
 
 ## 14. Milestones
 
-> **Status (2026-07): M0, M0.5, and M1 complete; M2 substantially delivered.** Built:
+> **Status (2026-07): M0–M2 complete; M3 (content-complete) in progress.** Built:
 > the five-crate workspace with `mytherra-persistence` (DB-is-save, world/player
 > decomposition, per-entity change tracking); concurrent guest sessions with independent
 > favor; heroes/champions and betting with real seeded config tables + crowd-lean, now
 > including hero lifespan and region-defection wagers; `/events` since-cursor deltas; a
 > forward-compatible wire protocol; and client connection resilience (offline detection +
 > reconnect). A `run-server.ps1` + `RUNNING.md` stand the whole thing up on one desktop.
-> **M2's remaining piece is a real playtest** — a hosted/reachable server and in-browser
-> confirmation of the deployed fetch/reconnect flow — plus crowd-lean tuning (§13.4), which
-> is chicken-and-egg with that playtest. Everything else labeled below for M3 (relational
-> tool tables, account linking, rate-limiting/anti-grief) is still ahead.
+> **M2's concurrency criterion is verified locally**: a two-session test against the live
+> server confirmed independent per-deity favor and that one deity's stake leans the
+> shared crowd-odds a concurrent deity then faces (the one shared event's `crowd_yes` rose
+> by both stakes; the second bettor received strictly worse odds/payout for an identical
+> wager). The remaining playtest items — a hosted/reachable server, in-browser confirmation
+> of the deployed fetch/reconnect flow, and crowd-lean *tuning* (§13.4) — are operational
+> (§7.6) and balance concerns, tracked separately rather than milestone-blocking.
+> **M3 progress:** the §9 full content targets are met — 10 regions (every climate and
+> culture now represented), 32 settlements, 44 heroes (all six roles), 28 landmarks, 42
+> resource nodes (all six types), 8 starter artifacts, 12 trade routes; bet types (22) and
+> building types (6) were already over target. The frontier growth cap was rescaled to sit
+> above the authored ceiling (§5.2), and a content-integrity test guards referential
+> soundness and the §9 floors. **Still remaining:** the seven divine tools' storage schema
+> (§6), WebHatchery account linking (§7.3), and the per-region/per-tick nudge cap
+> (§7.5/§7.7).
 
 | Milestone | Proves | Target content |
 | --- | --- | --- |

@@ -222,5 +222,133 @@
     "region_id": "hearthmoor",
     "level": 4,
     "age": 52
+  },
+  {
+    "id": "garrec_thorne",
+    "name": "Garrec Thorne",
+    "role": "merchant",
+    "region_id": "goldmarch",
+    "level": 5,
+    "age": 44
+  },
+  {
+    "id": "mira_selwyn",
+    "name": "Mira Selwyn",
+    "role": "scholar",
+    "region_id": "goldmarch",
+    "level": 4,
+    "age": 38
+  },
+  {
+    "id": "khadar_sunspear",
+    "name": "Khadar Sunspear",
+    "role": "warrior",
+    "region_id": "emberwaste",
+    "level": 8,
+    "age": 39
+  },
+  {
+    "id": "vashti_emberkin",
+    "name": "Vashti Emberkin",
+    "role": "warrior",
+    "region_id": "emberwaste",
+    "level": 6,
+    "age": 31
+  },
+  {
+    "id": "roan_dunes",
+    "name": "Roan Dunes",
+    "role": "ranger",
+    "region_id": "emberwaste",
+    "level": 5,
+    "age": 27
+  },
+  {
+    "id": "liora_palmveil",
+    "name": "Liora Palmveil",
+    "role": "cleric",
+    "region_id": "suncradle",
+    "level": 6,
+    "age": 47
+  },
+  {
+    "id": "tobin_reef",
+    "name": "Tobin Reef",
+    "role": "ranger",
+    "region_id": "suncradle",
+    "level": 4,
+    "age": 29
+  },
+  {
+    "id": "esana_marketborn",
+    "name": "Esana Marketborn",
+    "role": "merchant",
+    "region_id": "suncradle",
+    "level": 5,
+    "age": 36
+  },
+  {
+    "id": "ysold_rimeweaver",
+    "name": "Ysold Rimeweaver",
+    "role": "mage",
+    "region_id": "frostmere",
+    "level": 7,
+    "age": 52
+  },
+  {
+    "id": "corvin_frost",
+    "name": "Corvin Frost",
+    "role": "mage",
+    "region_id": "frostmere",
+    "level": 5,
+    "age": 34
+  },
+  {
+    "id": "bethra_icehallow",
+    "name": "Bethra Icehallow",
+    "role": "cleric",
+    "region_id": "frostmere",
+    "level": 6,
+    "age": 41
+  },
+  {
+    "id": "aurelio_starcodex",
+    "name": "Aurelio Starcodex",
+    "role": "scholar",
+    "region_id": "cindralis",
+    "level": 6,
+    "age": 49
+  },
+  {
+    "id": "nima_glassborn",
+    "name": "Nima Glassborn",
+    "role": "mage",
+    "region_id": "cindralis",
+    "level": 4,
+    "age": 26
+  },
+  {
+    "id": "harald_wolfkeep",
+    "name": "Harald Wolfkeep",
+    "role": "warrior",
+    "region_id": "vandarholt",
+    "level": 9,
+    "age": 43
+  },
+  {
+    "id": "sigrid_frostbane",
+    "name": "Sigrid Frostbane",
+    "role": "warrior",
+    "region_id": "vandarholt",
+    "level": 6,
+    "age": 33
+  },
+  {
+    "id": "einar_hallward",
+    "name": "Einar Hallward",
+    "role": "cleric",
+    "region_id": "vandarholt",
+    "level": 5,
+    "age": 50
   }
 ]

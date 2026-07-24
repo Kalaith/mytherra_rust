@@ -164,6 +164,10 @@ mod tests {
         // weakest — never itself (GDD 5.6).
         let data = GameData::load().unwrap();
         let mut world = WorldState::new(&data);
+        // A controlled four-region scenario: trim the seeded world down so the
+        // min/max-prosperity picks are decided by the values set here, not by
+        // however many regions the content ships (GDD 9 scale is orthogonal).
+        world.regions.truncate(4);
         world.regions[0].prosperity = 99.0; // acting region: the strongest overall
         world.regions[1].prosperity = 70.0;
         world.regions[2].prosperity = 40.0;

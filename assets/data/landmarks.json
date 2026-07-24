@@ -103,5 +103,96 @@
     "region_id": "hearthmoor",
     "culture": "pastoral",
     "influence": 1.5
+  },
+  {
+    "id": "grand_bazaar",
+    "name": "The Grand Bazaar",
+    "region_id": "goldmarch",
+    "culture": "mercantile",
+    "influence": 2.0
+  },
+  {
+    "id": "the_mint",
+    "name": "The Mint",
+    "region_id": "goldmarch",
+    "culture": "mercantile",
+    "influence": 1.5
+  },
+  {
+    "id": "ember_coliseum",
+    "name": "The Ember Coliseum",
+    "region_id": "emberwaste",
+    "culture": "martial",
+    "influence": 2.0
+  },
+  {
+    "id": "sunscorch_monolith",
+    "name": "Sunscorch Monolith",
+    "region_id": "emberwaste",
+    "culture": "mystical",
+    "influence": 1.5
+  },
+  {
+    "id": "verdant_terraces",
+    "name": "The Verdant Terraces",
+    "region_id": "suncradle",
+    "culture": "pastoral",
+    "influence": 2.0
+  },
+  {
+    "id": "coral_shrine",
+    "name": "Coral Shrine",
+    "region_id": "suncradle",
+    "culture": "mystical",
+    "influence": 1.5
+  },
+  {
+    "id": "sunmarket_arcade",
+    "name": "Sunmarket Arcade",
+    "region_id": "suncradle",
+    "culture": "mercantile",
+    "influence": 1.0
+  },
+  {
+    "id": "rimeglass_observatory",
+    "name": "The Rimeglass Observatory",
+    "region_id": "frostmere",
+    "culture": "scholarly",
+    "influence": 2.0
+  },
+  {
+    "id": "frozen_sanctum",
+    "name": "The Frozen Sanctum",
+    "region_id": "frostmere",
+    "culture": "mystical",
+    "influence": 2.0
+  },
+  {
+    "id": "star_codex_hall",
+    "name": "The Star Codex Hall",
+    "region_id": "cindralis",
+    "culture": "scholarly",
+    "influence": 2.5
+  },
+  {
+    "id": "glass_spire",
+    "name": "The Glass Spire",
+    "region_id": "cindralis",
+    "culture": "mystical",
+    "influence": 1.5
+  },
+  {
+    "id": "wolf_cairns",
+    "name": "The Wolf Cairns",
+    "region_id": "vandarholt",
+    "culture": "martial",
+    "influence": 2.0
+  },
+  {
+    "id": "hall_of_frost",
+    "name": "The Hall of Frost",
+    "region_id": "vandarholt",
+    "culture": "martial",
+    "influence": 1.5
   }
 ]
