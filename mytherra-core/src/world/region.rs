@@ -91,6 +91,13 @@ pub struct Region {
     /// weathers the plague and the dearth that would break an ignorant one.
     #[serde(default = "default_lore")]
     pub lore: f32,
+    /// Total stat-magnitude of divine nudges (Bless/Corrupt/Guide) this region has
+    /// absorbed so far this tick, summed across every deity (GDD 7.5). Refilled to
+    /// zero at the top of each tick; `command::region_action` rejects a nudge that
+    /// would carry it past `RegionBalance::nudge_cap_per_tick`. Not authored state,
+    /// so it defaults for saves that predate the cap.
+    #[serde(default)]
+    pub nudge_spent: f32,
     /// Stats at the start of the current tick; `stat - prev.stat` is its trend.
     pub prev: StatSnapshot,
 }
@@ -130,6 +137,7 @@ impl Region {
             harvest: default_harvest(),
             famine: false,
             lore: default_lore(),
+            nudge_spent: 0.0,
             prev: StatSnapshot {
                 prosperity,
                 chaos,
@@ -168,6 +176,35 @@ impl Region {
     /// Final favor cost of an action against this region.
     pub fn action_cost(&self, def: &RegionActionDef, balance: &RegionBalance) -> i64 {
         ((def.cost as f32 * self.cost_multiplier(balance)).round() as i64).max(1)
+    }
+
+    /// The total stat-magnitude a nudge would impart to this region — the same
+    /// resonance-scaled deltas [`apply_action`](Self::apply_action) applies, summed
+    /// as absolute values. This is what a nudge charges against the per-tick cap
+    /// (GDD 7.5): a stronger push (or a more resonant, responsive land) costs more
+    /// of the region's budget.
+    pub fn nudge_magnitude(&self, def: &RegionActionDef, balance: &RegionBalance) -> f32 {
+        let mult = self.effect_multiplier(balance);
+        scaled(def.prosperity, mult).abs()
+            + scaled(def.chaos, mult).abs()
+            + scaled(def.danger, mult).abs()
+            + scaled(def.magic_affinity, mult).abs()
+    }
+
+    /// Whether a nudge of `magnitude` still fits under this region's per-tick cap
+    /// (GDD 7.5) — the anti-grief guard, checked before any favor is spent.
+    pub fn nudge_fits(&self, magnitude: f32, balance: &RegionBalance) -> bool {
+        self.nudge_spent + magnitude <= balance.nudge_cap_per_tick
+    }
+
+    /// Charge a landed nudge against this tick's budget (GDD 7.5).
+    pub fn record_nudge(&mut self, magnitude: f32) {
+        self.nudge_spent += magnitude;
+    }
+
+    /// Refill the per-tick nudge budget at the top of a tick (GDD 7.5).
+    pub fn refresh_nudge_budget(&mut self) {
+        self.nudge_spent = 0.0;
     }
 
     /// Apply an action's resonance-scaled stat deltas. Does not touch favor;

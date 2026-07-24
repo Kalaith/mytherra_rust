@@ -903,9 +903,13 @@ persistence store (§6/§8). Reads its `DbConfig` from a local `.env`. Endpoints
 > resource nodes (all six types), 8 starter artifacts, 12 trade routes; bet types (22) and
 > building types (6) were already over target. The frontier growth cap was rescaled to sit
 > above the authored ceiling (§5.2), and a content-integrity test guards referential
-> soundness and the §9 floors. **Still remaining:** the seven divine tools' storage schema
-> (§6), WebHatchery account linking (§7.3), and the per-region/per-tick nudge cap
-> (§7.5/§7.7).
+> soundness and the §9 floors. The **per-region/per-tick nudge cap (§7.5/§7.7)** is now
+> enforced: a Bless/Corrupt/Guide charges its resonance-scaled stat-magnitude against a
+> shared per-region budget that refills each tick, so no single deity — or coalition — can
+> out-spend a region in one tick; an overflowed nudge is rejected before any favor is spent,
+> in the same shared `command` path the server and offline client both run. **Still
+> remaining:** the seven divine tools' storage schema (§6) and WebHatchery account linking
+> (§7.3).
 
 | Milestone | Proves | Target content |
 | --- | --- | --- |

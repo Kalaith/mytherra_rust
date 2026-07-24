@@ -90,6 +90,9 @@ pub fn tick_shared(world: &mut WorldState, players: &mut [PlayerState], data: &G
     for region in &mut world.regions {
         // Baseline for this tick's trend arrows, before any system moves stats.
         region.snapshot_trend();
+        // Refill the anti-grief nudge budget: each tick a region can again absorb
+        // its cap of divine influence, summed across every deity (GDD 7.5).
+        region.refresh_nudge_budget();
         let was_crisis = region.status.is_crisis();
         region::tick_region(region, &data.balance.region);
         if region.status.is_crisis() && !was_crisis {

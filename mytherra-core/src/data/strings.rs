@@ -465,6 +465,9 @@ pub struct Notifications {
     /// Shown when an era transition ushers in a new age; slot `{era}`.
     pub era_dawns: String,
     pub not_enough_favor: String,
+    /// Shown when a region has absorbed its per-tick nudge cap (GDD 7.5); slot
+    /// `{region}`.
+    pub region_saturated: String,
     pub action_success: String,
     pub advance_tick: String,
     pub world_saved: String,

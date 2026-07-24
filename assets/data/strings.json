@@ -220,6 +220,7 @@
     "achievement_unlocked": "Achievement unlocked — {name} (+{xp} divine insight)",
     "era_dawns": "A new age dawns: {era}",
     "not_enough_favor": "Not enough Divine Favor.",
+    "region_saturated": "{region} is saturated with divine power and can bear no more nudging this year.",
     "action_success": "{action} on {region} ({cost} favor).",
     "advance_tick": "You will the world forward a year.",
     "world_saved": "World saved.",

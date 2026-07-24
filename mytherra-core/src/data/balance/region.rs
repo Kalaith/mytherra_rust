@@ -13,6 +13,12 @@ pub struct RegionBalance {
     /// keenly felt by a roused pantheon). Player-driven only; the world's own
     /// drift never touches resonance.
     pub resonance_per_action: f32,
+    /// The most total stat-magnitude one region can absorb from divine nudges
+    /// (Bless/Corrupt/Guide) in a single tick, summed across *every* deity acting
+    /// on it (GDD 7.5). Once a tick's pushes reach this, further nudges that tick
+    /// are rejected — the anti-grief guard that stops the richest god simply
+    /// out-spending the world, while still letting a few large pushes land.
+    pub nudge_cap_per_tick: f32,
     pub status: StatusThresholds,
     pub drift: DriftParams,
 }
