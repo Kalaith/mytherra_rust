@@ -535,13 +535,14 @@ locally-simulated, offline binary. Every other port in `RustGames` uses
 `macroquad-toolkit::persistence` for a local save file; this game's "save" is the live
 server's database, shared by every player.*
 
-> **Status update (supersedes the earlier "keep PHP" recommendation, §7.2).** Since this
-> section was first written, the entire simulation has been **ported to Rust** as a clean,
-> deterministic, `serde`-serializable core (`sim::tick_world`, `WorldState`/`PlayerState`,
-> no rendering coupling). The right architecture is therefore a **four-crate Rust
-> workspace** — `mytherra-core` (sim) / `mytherra-protocol` (shared wire types) /
-> `mytherra-server` (axum authority) / `mytherra-client` (macroquad renderer) — described
-> in §7.2 and §12. The remaining work is extraction and interface design, not a rewrite.
+> **Status update (supersedes the earlier "keep PHP" recommendation, §7.2).** This
+> architecture is now **built** (through M2). The simulation was ported to Rust as a clean,
+> deterministic, `serde`-serializable core, and the workspace was realized as a **five-crate
+> Rust workspace** — `mytherra-core` (sim) / `mytherra-protocol` (shared wire types) /
+> `mytherra-persistence` (MySQL storage) / `mytherra-server` (axum authority) / `mytherra`
+> (the macroquad client, the root package) — described in §7.2 and §12. A dedicated
+> persistence crate was added beyond the original four so the pure core never links a
+> database (§6/§8). The remaining PHP/MySQL "keep the backend" plan is fully superseded.
 
 ### 7.1 Server authority model
 
@@ -576,19 +577,23 @@ the clean, headless authority this architecture needs:
 So the "stretch/alternative" Rust path (`axum` + `tokio` + `sqlx`, following the
 `kaiju_sim/kaiju_server` precedent already in this workspace) is now the **recommended**
 path, and the work is *extraction + interface design*, not reimplementation from scratch.
-The target is a **four-crate Cargo workspace** (one repo — this is still one game):
+The realized layout is a **five-crate Cargo workspace** (one repo — this is still one game):
 
 - **`mytherra-core`** (lib) — `world/`, `sim/`, `data/`, serialization; the authority's
-  brain. No macroquad. This is ~95% of today's `src/` (everything except `ui/`, `game.rs`,
-  `main.rs`).
+  brain. No macroquad, no I/O. Compiles to wasm (the client embeds it for the capture
+  fixture).
 - **`mytherra-protocol`** (lib) — the shared wire types both ends compile against so they
   can never drift: the per-player `WorldView`/`PlayerView` projections, the `PlayerAction`
   command enum (the mutating subset of today's `UiAction`), the §5.9 capability/tier
   definitions, error types, and the since-cursor event-delta types (§7.4).
-- **`mytherra-server`** (bin) — `axum`/`tokio`/`sqlx`; owns the world + one `PlayerState`
+- **`mytherra-persistence`** (lib) — all MySQL storage (`sqlx`, migrations), depending on
+  core but sitting *outside* it so the pure core (and the wasm client) never link a
+  database. Two dissociated stores — the shared world and the per-deity player domain
+  (§6/§8) — that share a pool but never a row.
+- **`mytherra-server`** (bin) — `axum`/`tokio`; owns the world + one `PlayerState`
   per account, runs the tick loop (§7.1), authorizes actions and projects per-player views
-  (§7.7), and persists to the DB (the DB *is* the save, §6/§8).
-- **`mytherra-client`** (bin) — today's `ui/` + loop, rendering a received `WorldView` and
+  (§7.7), and write-throughs to the persistence store (the DB *is* the save, §6/§8).
+- **`mytherra`** (bin, the root package) — today's `ui/` + loop, rendering a received `WorldView` and
   emitting `PlayerAction`s; no local `tick_world`. It is **online-only**: real play requires
   a running `mytherra-server` to connect to — there is no playable local-world/offline mode.
   It still embeds `mytherra-core`, but only so the headless **screenshot capture fixture**
@@ -683,9 +688,22 @@ authority (§7.1, §5.8).
   which they never fully own.
 - **Save/persistence model:** there is no local save file for world state — the server's
   database *is* the save, continuously. The Rust client persists only an auth token and a
-  small local UI-preference cache via `macroquad_toolkit::persistence`, not game state —
-  a fundamentally different use of that toolkit module than every other port in this
-  catalog.
+  small local UI-preference cache, not game state — a fundamentally different use than
+  every other port in this catalog.
+
+> **Status update — persistence is built (`mytherra-persistence`, MySQL `mytherra_rust`).**
+> The store bootstraps the world on startup and write-throughs after every guest mint,
+> action, and tick, so a server restart resumes the same world (guest sessions included —
+> the guest-id counter persists). Two dissociated domains mirror §6's shared/per-player
+> split: the **world** is decomposed by entity (each `WorldState` collection — `regions`,
+> `heroes`, `settlements`, … — is its own table, one row per entity, with the scalars, era,
+> chronicle, and RNG in a single `world_core` row), and the **player** domain is relational
+> (economy columns on `players`, `player_champions`/`player_bets` child tables, and a
+> `player_registry` holding the guest-id counter). Writes are tracked per entity, so an
+> unchanged row is not rewritten. This is the pragmatic realization of §6's relational
+> target: entity-per-row with a JSON document per entity, rather than a full column-per-field
+> schema. Credentials come from `mytherra-server/.env`; the DB is created and migrated on
+> first run.
 
 ---
 
@@ -751,7 +769,7 @@ step for surfacing other players' actions rather than treating the world as a so
 | Dev overlay | `debug` | Yes | Standard |
 | Deterministic randomness | `rng` | No (server-side only) | The client never rolls outcomes (§5.8, §7.1) — this is the one port where `rng` belongs entirely on the server side of the architecture, not the client |
 | Save/load | `persistence` | Yes, but narrow | Only for local auth token + UI prefs (§8) — not game state, unlike every other port |
-| Networking (HTTP client, cross-platform native+WASM) | *(none — project gap)* | Yes, project-local | No toolkit module exists for this. Needs a spike (native `reqwest` vs. WASM `quad-net`/`ehttp`/`web-sys` fetch) before M1 — flag as a candidate future toolkit addition once this game proves the pattern out (§7.4). |
+| Networking (HTTP client, cross-platform native+WASM) | *(none — project gap)* | Yes, project-local (`src/net.rs`) | **Resolved** with `quad-net 0.1.2`: one poll-based (`Pending<T>`) API for both native (background thread) and wasm (macroquad's own `sapp-jsutils` JS interop, so it coexists with the WebGL build). Requests carry a timeout, and the client tracks link state (Connecting/Live/Reconnecting) so a dropped server is visible and reconnected (§7.4). A candidate future toolkit addition now the pattern is proven. |
 | Sprite/raster/FlatGrid/pathing | — | No | No spatial world (§8) |
 
 This game's toolkit footprint is the leanest on rendering of any port so far, but the
@@ -762,50 +780,57 @@ one genuinely new engineering investment this project asks of the catalog.
 
 ## 12. Architecture Skeleton
 
-A **four-crate Cargo workspace** (§7.2): `mytherra-core` (sim) → `mytherra-protocol`
-(shared wire types) → `mytherra-server` (axum authority) + `mytherra-client` (renderer).
+A **five-crate Cargo workspace** (§7.2): `mytherra-core` (sim) → `mytherra-protocol`
+(shared wire types) → `mytherra-persistence` (MySQL storage) → `mytherra-server` (axum
+authority) + `mytherra` (the root package: the macroquad client/renderer). The crates are
+flat directories at the repo root (`mytherra-core/`, `mytherra-protocol/`, …), not nested
+under a `crates/` folder; the client is the root package's `src/`.
 
-**`mytherra-client`** (`crates/client/src/` — the macroquad binary):
+**`mytherra`** (the root package — the macroquad client binary). Realized `src/` layout:
 
 ```
 src/
 ├── main.rs
-├── game.rs              # Game struct, update()/draw() loop
-├── state.rs              # GameState enum + re-exports
-├── state/
-│   ├── login.rs
-│   └── gameplay.rs        # screen enum matching §10's tab list
-├── net.rs                 # HTTP client abstraction (native reqwest / WASM fetch, §7.4)
-├── net/
-│   ├── client.rs          # request/response types mirroring the server API
-│   └── polling.rs         # since-cursor event polling, delta application (§7.4)
-├── view.rs                # cached, read-only world-state DTOs rendered by ui/*
+├── game.rs               # Game struct, update()/draw() loop, GameState
+├── game/
+│   ├── online.rs         # the online session: /session handshake, /view + /events polling,
+│   │                     #   link state (Connecting/Live/Reconnecting) + reconnect (§7.4)
+│   ├── command.rs        # the apply_action split: UiAction → PlayerAction, submit()
+│   ├── capture.rs        # headless screenshot fixture (embeds core; not a play mode)
+│   └── achievements.rs
+├── net.rs                # cross-platform HTTP over quad-net; Pending<T> + poll_timed (§7.4)
 ├── ui.rs
-├── ui/
-│   ├── dashboard.rs
-│   ├── events.rs
-│   ├── regions.rs
-│   ├── heroes.rs
-│   ├── divine_tools.rs
-│   ├── betting.rs
-│   └── eras.rs
-└── local_prefs.rs         # auth token + UI settings only (§8), via toolkit persistence
+└── ui/                   # dashboard, regions, heroes, divine_tools, betting, eras,
+                          #   chronicle, settings, title, shell (header/nav), widgets
 ```
 
-**`mytherra-core`** (`crates/core/` — lib): today's `src/{world,sim,data}` and
-serialization, verbatim. Exposes `tick_world`, `WorldState`, `PlayerState`, `GameData`. No
-macroquad, no networking. The server depends on it, as does the client's headless capture
-fixture (the client's only remaining local-world use — not a play mode).
+The client renders from a received (or, for capture, locally-projected) `WorldView`; there
+is no `view.rs` DTO layer or `local_prefs.rs` in the realized tree, and no `Menu`/save-slot
+concept (there is no local world save, §8). Auth-token/UI-pref persistence is a later slice.
 
-**`mytherra-protocol`** (`crates/protocol/` — lib): `WorldView`/`PlayerView` (the
-per-player projections of §7.7), `PlayerAction` (the mutating subset of `UiAction`),
-`Standing`/tier definitions (§5.9), error and since-cursor delta types. No I/O — pure
-types depended on by both server and client.
+**`mytherra-core`** (`mytherra-core/` — lib): `world/`, `sim/`, `data/` and serialization.
+Exposes `tick_world`/`tick_shared`, `WorldState`, `PlayerState`, `GameData`, the `command`
+(apply/authorize) and `capability` (Standing/tier) modules. No macroquad, no I/O; compiles
+to wasm. The server and persistence crates depend on it, as does the client's capture fixture.
 
-**`mytherra-server`** (`crates/server/` — bin): `axum`/`tokio`/`sqlx`. Holds the
-authoritative `WorldState` + one `PlayerState` per account, runs the tick loop (§7.1),
-authorizes/projects per player (§7.7), persists to the DB (§6/§8). Endpoints:
-`GET /view` (filtered), `POST /action`, `GET /events?since=` (§7.4).
+**`mytherra-protocol`** (`mytherra-protocol/` — lib): `WorldView`/`PlayerView` (the
+per-player projections of §7.7) and `project()`, `SessionResponse`, `ClientView`/`EventsDelta`
+wire types. Re-exports core's `PlayerAction`/`Standing`. No I/O — pure types depended on by
+both server and client.
+
+**`mytherra-persistence`** (`mytherra-persistence/` — lib): all MySQL storage via `sqlx`
+plus its own `migrations/`. `Store::connect(&DbConfig)` builds two dissociated stores — a
+`WorldStore` (the shared world, decomposed into per-entity tables with per-row change
+tracking) and a `PlayerStore` (the relational per-deity domain: economy columns, champion/bet
+child tables, the guest-id registry). Depends on core but sits outside it, so core never
+links a database (§6/§8). Configuration is the caller's concern — it takes a `DbConfig`, not
+env-var names.
+
+**`mytherra-server`** (`mytherra-server/` — bin): `axum`/`tokio`. Holds the
+authoritative `WorldState` + one `PlayerState` per connected guest, runs the tick loop (§7.1),
+authorizes/projects per player (§7.7), and bootstraps-from / write-throughs to the
+persistence store (§6/§8). Reads its `DbConfig` from a local `.env`. Endpoints:
+`POST /session`, `GET /view` (filtered), `POST /action`, `GET /events?since=` (§7.4), `GET /health`.
 
 - **Client `GameState` variants:** `Login`, `Gameplay` (internal screen enum per §10) — no
   `Menu`-owned save-slot concept the way single-player ports have one, since there's no
@@ -859,6 +884,18 @@ authorizes/projects per player (§7.7), persists to the DB (§6/§8). Endpoints:
 
 ## 14. Milestones
 
+> **Status (2026-07): M0, M0.5, and M1 complete; M2 substantially delivered.** Built:
+> the five-crate workspace with `mytherra-persistence` (DB-is-save, world/player
+> decomposition, per-entity change tracking); concurrent guest sessions with independent
+> favor; heroes/champions and betting with real seeded config tables + crowd-lean, now
+> including hero lifespan and region-defection wagers; `/events` since-cursor deltas; a
+> forward-compatible wire protocol; and client connection resilience (offline detection +
+> reconnect). A `run-server.ps1` + `RUNNING.md` stand the whole thing up on one desktop.
+> **M2's remaining piece is a real playtest** — a hosted/reachable server and in-browser
+> confirmation of the deployed fetch/reconnect flow — plus crowd-lean tuning (§13.4), which
+> is chicken-and-egg with that playtest. Everything else labeled below for M3 (relational
+> tool tables, account linking, rate-limiting/anti-grief) is still ahead.
+
 | Milestone | Proves | Target content |
 | --- | --- | --- |
 | M0 — Crate extraction | `mytherra-core` split out as a headless lib (determinism/save tests green inside it); `mytherra-protocol` defines `WorldView`/`PlayerView`/`PlayerAction`; the client renders from a locally-built `WorldView` and the `apply_action` split (§12) is done. Pure refactor — the game still runs exactly as today | existing content |
@@ -868,8 +905,9 @@ authorizes/projects per player (§7.7), persists to the DB (§6/§8). Endpoints:
 | M3 — Content-complete | All seven divine tools on real relational tables, era system, expanded world content, account linking, rate-limiting/anti-grief in place | Full targets from §9 |
 
 Because this game requires a live server, "verify at the shared preview root" (this
-catalog's usual `.\publish.ps1` validation path) covers the **client** build only — the
-backend's own validation (PHP tests, migration correctness, tick-health checks) is a
-separate, parallel track that must stay green alongside the client's
-`cargo clippy --all-targets --all-features -- -D warnings` / `cargo test` /
-`.\publish.ps1` loop.
+catalog's usual `.\publish.ps1` validation path) covers the **client** build only. The
+server is Rust (`mytherra-server` + `mytherra-persistence`), so its validation is the same
+workspace loop — `cargo clippy --workspace --all-targets --all-features -- -D warnings`,
+`cargo test` (determinism/logic in `mytherra-core`; live client↔server round-trips under
+`cargo test -p mytherra -- --ignored net` against a running server) — plus a
+`run-server.ps1` smoke run confirming the DB migrates and the world resumes.
