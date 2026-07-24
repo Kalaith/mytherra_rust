@@ -10,10 +10,10 @@
 use mytherra_core::capability::{BettingMarket, Standing, VisibilityScope as V};
 use mytherra_core::data::GameData;
 use mytherra_core::world::{
-    Artifact, Building, DelayedConsequence, EraRecord, EraState, Hero, Landmark, MagicPath,
-    Monster, Myth, MythCandidate, Pact, PantheonDeity, Plague, PlayerState, Region, RegionAgendas,
-    ResourceNode, Settlement, SpeculationEvent, TradeRoute, Vassalage, War, WeatherEvent,
-    WorldEvent, WorldState, WorldSummary,
+    Artifact, Building, DelayedConsequence, EraRecord, EraState, EventKind, Hero, Landmark,
+    MagicPath, Monster, Myth, MythCandidate, Pact, PantheonDeity, Plague, PlayerState, Region,
+    RegionAgendas, ResourceNode, Settlement, SpeculationEvent, TradeRoute, Vassalage, War,
+    WeatherEvent, WorldEvent, WorldState, WorldSummary,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -281,6 +281,48 @@ pub fn project(
     (view, player_view)
 }
 
+/// The visibility scope that reveals a chronicle event of the given kind, or
+/// `None` for kinds that are always visible. Region/hero events are gated behind
+/// the scope that reveals those entities; a player's visible divine acts
+/// (Pillar 4) and system bookkeeping carry no secret and stay universal.
+fn event_scope(kind: EventKind) -> Option<V> {
+    match kind {
+        EventKind::Region => Some(V::Regions),
+        EventKind::Hero => Some(V::Heroes),
+        EventKind::Divine | EventKind::System => None,
+    }
+}
+
+/// Filter a chronicle delta (`GET /events`) to what a player's [`Standing`] may
+/// see (§7.7), mirroring the volume + kind gating [`project`] applies to the
+/// embedded chronicle. Without this, any session could poll `/events?since=0`
+/// and reconstruct history its tier has not unlocked.
+///
+/// Two rules, both conservative:
+/// - **Kind:** drop events whose revealing scope the player lacks; a kind with
+///   no clean scope stays visible rather than inventing a new scope.
+/// - **Volume:** without `FullChronicle`, cap the result at the newest
+///   [`RECENT_EVENTS`] — the same depth `/view` already grants, so no new leak.
+///
+/// The caller advances the client's cursor by the *unfiltered* `since` cursor,
+/// so skipped events are never re-served.
+pub fn project_events<'a>(
+    events: impl IntoIterator<Item = &'a WorldEvent>,
+    standing: &Standing,
+) -> Vec<WorldEvent> {
+    if standing.can_see(V::FullChronicle) {
+        return events.into_iter().cloned().collect();
+    }
+    let visible: Vec<WorldEvent> = events
+        .into_iter()
+        .filter(|event| event_scope(event.kind).is_none_or(|scope| standing.can_see(scope)))
+        .cloned()
+        .collect();
+    // Volume cap: keep only the newest RECENT_EVENTS (they arrive oldest-first).
+    let start = visible.len().saturating_sub(RECENT_EVENTS);
+    visible[start..].to_vec()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -331,6 +373,47 @@ mod tests {
         // The player's own favor ceiling comes through pre-computed.
         assert_eq!(pv.player.favor, player.favor);
         assert!(pv.max_favor > 0);
+    }
+
+    #[test]
+    fn events_delta_is_gated_by_standing() {
+        let data = GameData::load().unwrap();
+        let watcher = data.tiers.standing(Tier::Watcher);
+        let elder = data.tiers.standing(Tier::Elder);
+
+        // A chronicle mixing every kind, well past the volume cap.
+        let mut chronicle = mytherra_core::world::Chronicle::default();
+        for i in 0..40u32 {
+            chronicle.push(i, EventKind::Region, format!("region {i}"));
+            chronicle.push(i, EventKind::Hero, format!("hero {i}"));
+            chronicle.push(i, EventKind::Divine, format!("divine {i}"));
+            chronicle.push(i, EventKind::System, format!("system {i}"));
+        }
+        let (events, cursor) = chronicle.since(0);
+        let full_count = events.len();
+
+        // Elder (FullChronicle) receives everything, uncapped.
+        let elder_events = project_events(events.iter().copied(), &elder);
+        assert_eq!(elder_events.len(), full_count);
+
+        // A Watcher sees heroes but not regions: no Region events survive, hero
+        // events do, and the whole delta is capped at RECENT_EVENTS.
+        let watcher_events = project_events(events.iter().copied(), &watcher);
+        assert!(
+            watcher_events.len() <= RECENT_EVENTS,
+            "the volume cap bounds a low-tier delta"
+        );
+        assert!(
+            watcher_events.iter().all(|e| e.kind != EventKind::Region),
+            "region history stays hidden from a Watcher"
+        );
+        assert!(
+            watcher_events.iter().any(|e| e.kind == EventKind::Hero),
+            "a Watcher still sees the hero events its tier reveals"
+        );
+        // The cursor the caller returns is the unfiltered one — skipped events
+        // are not re-served next poll.
+        assert_eq!(cursor, chronicle.cursor());
     }
 
     #[test]

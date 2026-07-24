@@ -37,7 +37,9 @@ use mytherra_core::data::GameData;
 use mytherra_core::sim::tick_shared;
 use mytherra_core::world::{PlayerState, WorldState};
 use mytherra_persistence::Store;
-use mytherra_protocol::{project, ClientView, EventsDelta, SessionResponse, Standing};
+use mytherra_protocol::{
+    project, project_events, ClientView, EventsDelta, SessionResponse, Standing,
+};
 use serde::Deserialize;
 use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
@@ -252,10 +254,13 @@ async fn events(
     Query(query): Query<EventsQuery>,
 ) -> Result<Json<EventsDelta>, StatusCode> {
     let authority = app.authority.lock().await;
-    authority.index_of(&player_id_of(&headers)?)?;
+    let index = authority.index_of(&player_id_of(&headers)?)?;
+    let standing = standing_for(&authority.data, &authority.players[index]);
+    // Filter the delta by the requesting deity's Standing (§7.7), but return the
+    // unfiltered cursor so skipped events are never re-served on the next poll.
     let (events, cursor) = authority.world.chronicle.since(query.since);
     Ok(Json(EventsDelta {
-        events: events.into_iter().cloned().collect(),
+        events: project_events(events, &standing),
         cursor,
     }))
 }
