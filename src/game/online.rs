@@ -339,6 +339,8 @@ impl Game {
             session.connected = true;
         }
         self.view = view.world;
+        self.max_favor = view.player.max_favor;
+        self.favor_income = view.player.favor_recovery;
         self.player = view.player.player;
         self.standing = view.player.standing;
     }

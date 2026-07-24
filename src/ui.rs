@@ -177,6 +177,12 @@ pub struct UiContext<'a> {
     /// The local deity's Standing — gates which screens/verbs the view reveals
     /// (GDD 5.9).
     pub standing: &'a Standing,
+    /// The deity's favor ceiling and total per-tick income (passive recovery plus
+    /// the full-world faith tithe), pre-computed by `project` (§7.7) — the client
+    /// renders these rather than recomputing income from a view that may hide the
+    /// tithing regions.
+    pub max_favor: i64,
+    pub favor_income: i64,
     pub screen: Screen,
     pub selected_region: usize,
     /// The settlement id whose detail is open in the Regions town browser, if any

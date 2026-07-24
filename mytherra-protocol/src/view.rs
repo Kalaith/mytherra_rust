@@ -54,6 +54,9 @@ pub struct PlayerView {
     pub standing: Standing,
     /// The favor ceiling and per-tick recovery at the player's current standing,
     /// pre-computed so the client needn't carry balance tables to display them.
+    /// `favor_recovery` is the *total* per-tick income — passive recovery plus
+    /// the faith tithe from the full world — so the client renders the real
+    /// figure without reconstructing the tithe from a view that may hide regions.
     pub max_favor: i64,
     pub favor_recovery: i64,
 }
@@ -271,9 +274,15 @@ pub fn project(
         chronicle,
     };
 
+    // Income is passive recovery plus the faith tithe from the *full* world
+    // (§5.1 <-> 5.4) — the same tithe the sim applies each tick. Computed here,
+    // where the unfiltered world is in hand, so a client whose view hides regions
+    // still shows the true income.
+    let favor_recovery = player.favor_recovery(&data.config, &data.balance.player)
+        + mytherra_core::sim::faith_tithe(&world.regions, &data.balance.player);
     let player_view = PlayerView {
         max_favor: player.max_favor(&data.config, &data.balance.player),
-        favor_recovery: player.favor_recovery(&data.config, &data.balance.player),
+        favor_recovery,
         player: player.clone(),
         standing: standing.clone(),
     };
@@ -373,6 +382,27 @@ mod tests {
         // The player's own favor ceiling comes through pre-computed.
         assert_eq!(pv.player.favor, player.favor);
         assert!(pv.max_favor > 0);
+    }
+
+    #[test]
+    fn favor_recovery_includes_the_full_world_tithe_even_when_regions_are_hidden() {
+        let (data, mut world, player) = fixtures();
+        // Guarantee a non-zero tithe by consecrating a region well above the
+        // tithing baseline — so the tithe is a real term the test can detect.
+        world.regions[0].divine_resonance = data.balance.player.favor_tithe_baseline + 50.0;
+        let expected = player.favor_recovery(&data.config, &data.balance.player)
+            + mytherra_core::sim::faith_tithe(&world.regions, &data.balance.player);
+        assert!(
+            expected > player.favor_recovery(&data.config, &data.balance.player),
+            "the consecrated region must add a real tithe"
+        );
+
+        // A Watcher's view hides every region, yet its income figure still folds
+        // in the full-world tithe — it does not depend on what the view reveals.
+        let watcher = data.tiers.standing(Tier::Watcher);
+        let (view, pv) = project(&world, &player, &watcher, &data);
+        assert!(view.regions.is_empty(), "a Watcher sees no regions");
+        assert_eq!(pv.favor_recovery, expected);
     }
 
     #[test]

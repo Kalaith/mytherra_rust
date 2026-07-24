@@ -73,6 +73,12 @@ pub struct Game {
     /// way the UI renders from the same shape.
     view: WorldView,
     view_dirty: bool,
+    /// The deity's favor ceiling and total per-tick income (passive recovery plus
+    /// the full-world faith tithe), taken from the server's `PlayerView` online
+    /// and from the same `project` locally under capture (§7.7). The UI renders
+    /// these rather than recomputing income from a possibly region-hiding view.
+    max_favor: i64,
+    favor_income: i64,
 }
 
 /// Rasterize every glyph the UI can draw, at every size it uses, once at
@@ -124,7 +130,7 @@ impl Game {
 
         let tier = Tier::for_level(player.level, &data.balance.player.tier_unlock_levels);
         let standing = data.tiers.standing(tier);
-        let (view, _) = project(&world, &player, &standing, &data);
+        let (view, player_view) = project(&world, &player, &standing, &data);
 
         let mut game = Self {
             data,
@@ -156,6 +162,8 @@ impl Game {
             standing,
             view,
             view_dirty: false,
+            max_favor: player_view.max_favor,
+            favor_income: player_view.favor_recovery,
         };
         game.sync_achievements();
         game
@@ -196,8 +204,10 @@ impl Game {
     /// projecting the local world — the capture fixture's path. Online, the view
     /// is adopted wholesale from the server instead (see `online`).
     fn refresh_view(&mut self) {
-        let (view, _) = project(&self.world, &self.player, &self.standing, &self.data);
+        let (view, player_view) = project(&self.world, &self.player, &self.standing, &self.data);
         self.view = view;
+        self.max_favor = player_view.max_favor;
+        self.favor_income = player_view.favor_recovery;
     }
 
     /// Recompute Standing from the player's level, announcing an ascension when
@@ -252,6 +262,8 @@ impl Game {
             world: &self.view,
             player: &self.player,
             standing: &self.standing,
+            max_favor: self.max_favor,
+            favor_income: self.favor_income,
             screen: self.screen,
             selected_region: self.selected_region,
             selected_town: self.selected_town.as_deref(),

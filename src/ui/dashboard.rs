@@ -138,27 +138,21 @@ fn draw_world_panel(ctx: &UiContext<'_>, rect: Rect) {
         TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
     );
     y += 14.0;
-    let max_favor = ctx
-        .player
-        .max_favor(&ctx.data.config, &ctx.data.balance.player);
-    // Per-tick favor income: the standing's base recovery plus the tithe the
-    // world's faithful lands pour back (GDD 5.1 <-> 5.4), so the player can read
-    // consecration and cleric-tended faith as a source of divine power.
-    let income = ctx
-        .player
-        .favor_recovery(&ctx.data.config, &ctx.data.balance.player)
-        + crate::sim::faith_tithe(&ctx.world.regions, &ctx.data.balance.player);
+    // Favor ceiling and per-tick income come pre-computed from the projection
+    // (§7.7): income is the standing's base recovery plus the tithe the world's
+    // faithful lands pour back (GDD 5.1 <-> 5.4), summed over the *full* world by
+    // the server — so it reads true even when the view hides the tithing regions.
     meter(
         Rect::new(content.x, y, content.w, 22.0),
         ctx.player.favor as f32,
-        max_favor as f32,
+        ctx.max_favor as f32,
         dark::POSITIVE,
         Some(&fill(
             &strings.ui.favor_meter,
             &[
                 ("favor", ctx.player.favor.to_string()),
-                ("max", max_favor.to_string()),
-                ("income", income.to_string()),
+                ("max", ctx.max_favor.to_string()),
+                ("income", ctx.favor_income.to_string()),
             ],
         )),
     );
