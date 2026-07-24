@@ -11,8 +11,17 @@
 //! The decomposition is registry-driven and JSON-per-entity (not fully
 //! columnar): each entity keeps its own shape as a `data` document, so adding a
 //! new collection is one [`WORLD_COLLECTIONS`] line plus one table — no bespoke
-//! per-entity column mapping. A collection whose contents did not change this
-//! tick is not rewritten (the payoff of splitting the world out of one blob).
+//! per-entity column mapping.
+//!
+//! Writes are tracked **per entity, not per collection**: the store caches a
+//! hash of each row (`table` → per-`ord` hashes) and, on save, upserts only the
+//! rows whose content changed and deletes the tail a shrunk collection left
+//! behind. An unchanged entity — a hero who did nothing this tick, a static
+//! magic path — is never rewritten, even when its neighbours in the same
+//! collection were. (Rows are keyed by position, so an insert/removal in the
+//! *middle* of a collection shifts the entities after it and rewrites them; the
+//! large collections that dominate the data — regions, heroes, settlements,
+//! buildings — are append-or-mark-dead, so their order is stable.)
 
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -20,7 +29,7 @@ use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};
 
 use mytherra_core::world::WorldState;
-use serde_json::{json, Value};
+use serde_json::Value;
 use sqlx::mysql::MySqlPool;
 use sqlx::types::Json;
 use sqlx::Row;
@@ -59,15 +68,22 @@ const WORLD_COLLECTIONS: &[(&str, &str)] = &[
     ("world_speculations", "speculations"),
 ];
 
+/// The per-`ord` write plan for one collection: which rows to upsert (their new
+/// document) and which trailing rows to delete because the collection shrank.
+struct CollectionPlan {
+    table: &'static str,
+    upserts: Vec<(u32, Value)>,
+    deletes: Vec<u32>,
+}
+
 /// Storage for the shared world. Cloneable — the pool is `Arc`-backed and the
-/// change-tracking cache is shared, so every clone skips the same unchanged
-/// collections.
+/// per-entity hash cache is shared, so every clone tracks the same rows.
 #[derive(Clone)]
 pub struct WorldStore {
     pool: MySqlPool,
-    /// Hash of the last-written `data` array per collection table, so a
-    /// collection untouched since the previous save is not rewritten.
-    written: Arc<Mutex<HashMap<&'static str, u64>>>,
+    /// The hash of each last-written row, per table, indexed by `ord`. A row
+    /// whose hash is unchanged since the previous save is not rewritten.
+    written: Arc<Mutex<HashMap<&'static str, Vec<u64>>>>,
 }
 
 impl WorldStore {
@@ -90,12 +106,14 @@ impl WorldStore {
         let mut value = core.0;
 
         for (table, field) in WORLD_COLLECTIONS {
-            let array = self.load_collection(table).await;
+            let items = self.load_collection(table).await;
+            // Prime the per-entity cache with what is on disk, so the first save
+            // after a load rewrites only genuinely-changed rows.
             self.written
                 .lock()
                 .expect("written cache")
-                .insert(table, hash_array(&array));
-            value[field] = array;
+                .insert(table, items.iter().map(hash_value).collect());
+            value[field] = Value::Array(items);
         }
 
         let world: WorldState = serde_json::from_value(value)
@@ -103,65 +121,79 @@ impl WorldStore {
         Some(world)
     }
 
-    async fn load_collection(&self, table: &str) -> Value {
+    async fn load_collection(&self, table: &str) -> Vec<Value> {
         let rows = sqlx::query(&format!("SELECT data FROM {table} ORDER BY ord"))
             .fetch_all(&self.pool)
             .await
             .expect("query world collection");
-        Value::Array(
-            rows.into_iter()
-                .map(|r| {
-                    let data: Json<Value> = r.try_get("data").expect("read world entity");
-                    data.0
-                })
-                .collect(),
-        )
+        rows.into_iter()
+            .map(|r| {
+                let data: Json<Value> = r.try_get("data").expect("read world entity");
+                data.0
+            })
+            .collect()
     }
 
-    /// Persist the world: each changed collection's rows plus the `world_core`
-    /// document, in one transaction. Collections whose contents are unchanged
-    /// since the last save are skipped.
+    /// Persist the world: only the entity rows that changed since the last save,
+    /// plus the `world_core` document, in one transaction.
     pub async fn save(&self, world: &WorldState) {
         let mut value = serde_json::to_value(world).expect("serialize world");
 
-        // Split the collections out of the document and decide which changed —
-        // done up front (no DB, no await) so the lock is never held across I/O.
-        let mut plan: Vec<(&'static str, Value, bool)> =
-            Vec::with_capacity(WORLD_COLLECTIONS.len());
+        // Diff each collection against the cache and build the row-level write
+        // plan up front — no DB, no await — so the lock is never held across I/O.
+        let mut plans: Vec<CollectionPlan> = Vec::new();
         {
             let mut written = self.written.lock().expect("written cache");
             for (table, field) in WORLD_COLLECTIONS {
-                let array = value
-                    .get_mut(field)
-                    .map(Value::take)
-                    .unwrap_or_else(|| json!([]));
-                let hash = hash_array(&array);
-                let changed = written.get(table) != Some(&hash);
-                if changed {
-                    written.insert(table, hash);
+                let items = match value.get_mut(field).map(Value::take) {
+                    Some(Value::Array(items)) => items,
+                    _ => Vec::new(),
+                };
+                let new_hashes: Vec<u64> = items.iter().map(hash_value).collect();
+                let old_hashes = written.get(table).cloned().unwrap_or_default();
+                if new_hashes == old_hashes {
+                    continue; // whole collection untouched
                 }
-                plan.push((table, array, changed));
+
+                let upserts: Vec<(u32, Value)> = items
+                    .into_iter()
+                    .enumerate()
+                    .filter(|(ord, _)| old_hashes.get(*ord) != new_hashes.get(*ord))
+                    .map(|(ord, item)| (ord as u32, item))
+                    .collect();
+                let deletes: Vec<u32> = (new_hashes.len()..old_hashes.len())
+                    .map(|ord| ord as u32)
+                    .collect();
+
+                written.insert(table, new_hashes);
+                plans.push(CollectionPlan {
+                    table,
+                    upserts,
+                    deletes,
+                });
             }
         }
 
         let mut tx = self.pool.begin().await.expect("begin world transaction");
-        for (table, array, changed) in &plan {
-            if !changed {
-                continue;
+        for plan in &plans {
+            for ord in &plan.deletes {
+                sqlx::query(&format!("DELETE FROM {} WHERE ord = ?", plan.table))
+                    .bind(*ord)
+                    .execute(&mut *tx)
+                    .await
+                    .expect("delete world entity");
             }
-            sqlx::query(&format!("DELETE FROM {table}"))
+            for (ord, data) in &plan.upserts {
+                sqlx::query(&format!(
+                    "INSERT INTO {} (ord, data) VALUES (?, ?)
+                     ON DUPLICATE KEY UPDATE data = VALUES(data)",
+                    plan.table
+                ))
+                .bind(*ord)
+                .bind(Json(data))
                 .execute(&mut *tx)
                 .await
-                .expect("clear world collection");
-            if let Value::Array(items) = array {
-                for (ord, item) in items.iter().enumerate() {
-                    sqlx::query(&format!("INSERT INTO {table} (ord, data) VALUES (?, ?)"))
-                        .bind(ord as u32)
-                        .bind(Json(item))
-                        .execute(&mut *tx)
-                        .await
-                        .expect("insert world entity");
-                }
+                .expect("upsert world entity");
             }
         }
 
@@ -180,11 +212,11 @@ impl WorldStore {
     }
 }
 
-/// A stable hash of a collection's JSON array, used only to detect whether it
-/// changed since the last save. `serde_json` sorts object keys by default, so
-/// the serialization — and thus the hash — is deterministic for equal state.
-fn hash_array(array: &Value) -> u64 {
-    let text = serde_json::to_string(array).expect("serialize collection for hashing");
+/// A stable hash of one entity's JSON document, used only to detect whether that
+/// row changed since the last save. `serde_json` sorts object keys by default,
+/// so the serialization — and thus the hash — is deterministic for equal state.
+fn hash_value(value: &Value) -> u64 {
+    let text = serde_json::to_string(value).expect("serialize entity for hashing");
     let mut hasher = DefaultHasher::new();
     text.hash(&mut hasher);
     hasher.finish()
