@@ -78,7 +78,13 @@ impl Authority {
 
         let mut ids = BTreeMap::new();
         let mut players = Vec::new();
-        for (id, state) in store.players.load_all().await {
+        for (id, mut state) in store.players.load_all().await {
+            // Reconcile each saved deity's unlock state with the current
+            // definitions — they may have changed between server versions, and a
+            // deity minted before this fix carries an empty list (GDD 7.1).
+            state
+                .achievements
+                .sync_definitions(data.achievements.clone());
             ids.insert(id, players.len());
             players.push(state);
         }
@@ -110,7 +116,13 @@ impl Authority {
         let id = format!("guest-{}", self.next_guest);
         self.next_guest += 1;
         self.ids.insert(id.clone(), self.players.len());
-        self.players.push(PlayerState::new(&self.data.config));
+        let mut player = PlayerState::new(&self.data.config);
+        // Populate the achievement definitions so the deity can unlock them
+        // server-side (GDD 7.1) and its PlayerView renders a real list.
+        player
+            .achievements
+            .sync_definitions(self.data.achievements.clone());
+        self.players.push(player);
         id
     }
 

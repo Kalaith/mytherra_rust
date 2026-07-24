@@ -1,6 +1,7 @@
 //! World tick orchestration. The server would own this in the multiplayer
 //! design (GDD 7.1); in this local build the client runs it on a timer.
 
+pub mod achievements;
 mod artifact;
 mod champion;
 mod civilization;
@@ -604,6 +605,12 @@ pub fn tick_shared(world: &mut WorldState, players: &mut [PlayerState], data: &G
     let tithe = faith_tithe(&world.regions, &data.balance.player);
     for player in players.iter_mut() {
         player.recover(tithe, &data.config, &data.balance.player);
+        // Evaluate each deity's achievements server-side (GDD 7.1): a fresh
+        // unlock grants standing experience, so progression works online — the
+        // client only ever renders the resulting PlayerView. The client sees the
+        // unlock via its polled view; a chronicle line would need a fitting
+        // EventKind and authored copy, so it is left to the notification path.
+        achievements::check(world, player, data);
     }
 
     // The chronicle records notable events, not the passing of each year — the

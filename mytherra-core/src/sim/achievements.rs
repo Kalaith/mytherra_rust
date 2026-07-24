@@ -1,7 +1,13 @@
 //! Achievement unlocking: state-based goals tied to the world and the player's
-//! standing, evaluated each update. Definitions live in `achievements.json`;
-//! the unlock condition for each id lives here (arbitrary predicates can't be
+//! standing, evaluated each tick. Definitions live in `achievements.json`; the
+//! unlock condition for each id lives here (arbitrary predicates can't be
 //! authored in JSON), and unlock state persists in the player's save.
+//!
+//! This is core, not client, so the authority server evaluates the very same
+//! predicates online — a client-side unlock would be clobbered by the server's
+//! player copy on the next poll, so the unlock (and its experience grant) must
+//! happen server-side (GDD 7.1, 7.7). The capture fixture drives it through the
+//! same [`check`].
 
 use crate::data::GameData;
 use crate::world::{bet_record, MagicState, PlayerState, WorldState};
@@ -50,7 +56,10 @@ fn earned(id: &str, world: &WorldState, player: &PlayerState, data: &GameData) -
 
 /// Unlock every achievement whose condition is now met, returning the display
 /// names of those freshly earned (for notification). Idempotent: an achievement
-/// already unlocked is never reported again.
+/// already unlocked is never reported again. Each fresh unlock also awards the
+/// deity `achievement_experience`, so milestones feed standing progression
+/// rather than being vanity — the grant lives here so client and server can't
+/// drift.
 pub fn check(world: &WorldState, player: &mut PlayerState, data: &GameData) -> Vec<String> {
     let freshly: Vec<(String, String)> = player
         .achievements

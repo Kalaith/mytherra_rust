@@ -1,7 +1,6 @@
 //! High-level game loop: owns the world, the player, and screen navigation,
 //! runs the tick timer, and interprets UI intents.
 
-mod achievements;
 mod capture;
 mod command;
 mod online;
@@ -230,9 +229,11 @@ impl Game {
             .sync_definitions(self.data.achievements.clone());
     }
 
-    /// Unlock any newly-earned achievements and toast them.
+    /// Unlock any newly-earned achievements and toast them. A thin wrapper over
+    /// the shared core check (the same one the server runs online, GDD 7.1); the
+    /// capture fixture drives it locally, online the server owns the unlock.
     fn check_achievements(&mut self) {
-        let unlocked = achievements::check(&self.world, &mut self.player, &self.data);
+        let unlocked = crate::sim::achievements::check(&self.world, &mut self.player, &self.data);
         let xp = self.data.balance.player.achievement_experience;
         for name in unlocked {
             self.notifications.success(fill(
