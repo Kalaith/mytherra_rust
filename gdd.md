@@ -494,22 +494,41 @@ gating is presentation only.
 
 ## 6. Data Model
 
-Two categories of state, kept explicitly distinct per Pillar 3:
+Two categories of state, kept explicitly distinct per Pillar 3.
 
-**Shared/global tables** (one row set for the whole persistent world):
-`regions`, `settlements`, `resource_nodes`, `buildings`, `landmarks`, `heroes`,
-`game_events`, `game_state` (singleton tick/year counter), and — new relational tables
-replacing the original's `game_configs` JSON-blob pattern — `artifacts`,
-`weather_state`, `omens`, `magic_paths`, `myths`, `civilization_agendas`,
-`pantheon_deities`, `pantheon_relations`, `era_history`.
+**Shared/global world** (one row set for the whole persistent world). The world is
+decomposed **by entity**: every `WorldState` collection is its own table, **one row per
+entity** — `regions`, `settlements`, `resource_nodes`, `buildings`, `landmarks`, `heroes`,
+the divine-tool systems (`artifacts`, `weather`, `magic_paths`, `myths` + myth candidates,
+`civilization`, `pantheon`), `era_history`, the speculation board, and the rest — with the
+non-collection state (year, the `*_seq` counters, era, chronicle, and the RNG) in a single
+small `world_core` row. Each entity row is a JSON document rather than a column-per-field
+schema, and writes are tracked per entity, so an unchanged row is never rewritten. This is
+the realized relational target (§8, §12).
 
-**Per-player tables** (one row set per account):
-`players` (favor balance, level/experience), `player_bets` (formerly `divine_bets`,
-already correctly player-scoped), `player_champions` (a player's cultivated roster),
-`player_achievements`, `player_standing` (the unlocked `VisibilityScope`/`ActionVerb`/
-`BettingMarket` flag sets that drive §5.9's per-player projection and authorization), and
-— if the guild/pantheon-faction idea (§0, §13) is pursued — `player_guilds`/
-`guild_members`.
+This is what replaces the original's `game_configs(category, key, value)` **JSON-blob-per-
+system** pattern, and it answers the reason that pattern was unsafe (§0). The worry was that
+two deities acting on the Pantheon or Magic system in the same instant would race on a
+read-modify-write of one shared JSON column. Entity-per-row already removes the *shared*
+column — each deity, artifact, and magic path is its own row — and the authority server
+serializes **all** world mutation through one lock and its own tick (§7.1), so there is
+never a second concurrent writer to race at all. Column-per-field tables would add no
+concurrency, integrity, or query benefit here — the server holds the whole world in memory
+and is its sole writer — at the cost of brittle per-field mapping that every struct change
+would have to chase, so the design deliberately stops at entity-per-row. Two systems are
+simpler than a naive schema would guess: **Pantheon relations are inline** (a deity carries
+its own `ally_id`/`rival_id`, so there is no separate relations table), and **Omens are
+never stored** — they are read-only forecasts computed on demand from live world state (§0,
+§5.6), so no omen row or table exists.
+
+**Per-player domain** (one row set per deity), relational and dissociated from the world — a
+deity nudges the world, it is never *in* it. `players` holds the economy as real columns
+(favor, level, experience, favor-spent, nudges), the account binding (`account_id`, §7.3),
+and the achievements document; `player_champions` and `player_bets` (formerly `divine_bets`,
+already correctly player-scoped) are its child tables; and `player_registry` holds the
+guest-id counter. Standing is **derived** from the player's level on demand (§5.9), not
+stored. (A guild/pantheon-faction grouping, if pursued per §0/§13, would add its own
+`player_guilds`/`guild_members` here.)
 
 ```json
 // bet_types.json — seed data the original never actually shipped (§0)
@@ -521,10 +540,10 @@ already correctly player-scoped), `player_champions` (a player's cultivated rost
 { "id": "likely", "odds_modifier": 0.7, "stake_multiplier": 1.5 }
 ```
 
-The server owns a real database (MySQL, matching the existing backend, or SQLite/
-Postgres if the backend is eventually rewritten in Rust, §7) — this is **not** a
-`macroquad-toolkit::persistence` local-save situation; there is no local save file for
-world state at all, only a cached view and an auth token (§7, §12).
+The server owns a real database — MySQL (`mytherra_rust`), reached through `sqlx` in the
+`mytherra-persistence` crate (§12) — this is **not** a `macroquad-toolkit::persistence`
+local-save situation; there is no local save file for world state at all, only a cached
+view and an auth token (§7, §12).
 
 ---
 
@@ -884,7 +903,7 @@ persistence store (§6/§8). Reads its `DbConfig` from a local `.env`. Endpoints
 
 ## 14. Milestones
 
-> **Status (2026-07): M0–M2 complete; M3 (content-complete) in progress.** Built:
+> **Status (2026-07): M0–M3 complete (content-complete); refinement/ops items tracked below.** Built:
 > the five-crate workspace with `mytherra-persistence` (DB-is-save, world/player
 > decomposition, per-entity change tracking); concurrent guest sessions with independent
 > favor; heroes/champions and betting with real seeded config tables + crowd-lean, now
@@ -918,8 +937,16 @@ persistence store (§6/§8). Reads its `DbConfig` from a local `.env`. Endpoints
 > (via the clipboard — sidestepping a text field, which the toolkit lacks), links, and
 > persists it for future launches; an ignored client↔server net test verifies the whole
 > link-then-resume path. Follow-ups: in-client sign-out and full deity-merge on the
-> already-owned-account conflict (today it resumes the existing deity). **Still remaining
-> for M3:** the seven divine tools' storage schema (§6).
+> already-owned-account conflict (today it resumes the existing deity). The **seven divine
+> tools' storage schema (§6)** is resolved: each system already lives on its own per-entity
+> relational table — one row per entity, concurrency-safe under the single-writer authority,
+> so the `game_configs` blob race §0 feared cannot occur — so §6 was reconciled to describe
+> that realized design (as §8 already did) rather than rebuilt into brittle column-per-field
+> tables that would add no concurrency, integrity, or query benefit; a persistence test
+> guards that every collection maps to a real world field. **With that, M3's scoped work is
+> delivered.** Open items are refinements and ops tracked elsewhere, none milestone-blocking:
+> the hosted/reachable server + in-browser playtest and crowd-lean *tuning* (§13.4), and the
+> account follow-ups above.
 
 | Milestone | Proves | Target content |
 | --- | --- | --- |
