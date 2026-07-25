@@ -7,6 +7,7 @@
 //! `tab_bar_styled_at`; these wrappers only supply Mytherra's tone/text/tab
 //! styling so the look stays consistent.
 
+use crate::ui::theme;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -32,7 +33,7 @@ pub fn nav_tabs(rect: Rect, labels: &[&str], active: usize, mouse: Vec2) -> Opti
         labels,
         active,
         TabOrientation::Horizontal,
-        &TabStyle::default(),
+        &theme::tab_style(),
         mouse,
     )
 }
@@ -40,11 +41,12 @@ pub fn nav_tabs(rect: Rect, labels: &[&str], active: usize, mouse: Vec2) -> Opti
 /// A titled content panel: the shared header/divider/border chrome every screen
 /// draws its section into. Keeps one definition instead of a copy per screen.
 pub fn draw_titled(rect: Rect, title: &str) {
-    let style = SurfaceStyle::new(Color::new(0.07, 0.075, 0.095, 0.96))
-        .with_border(1.0, Color::new(0.38, 0.45, 0.58, 0.5))
-        .with_header(42.0, Color::new(0.1, 0.115, 0.145, 1.0))
-        .with_header_divider(1.0, Color::new(0.38, 0.45, 0.58, 0.4));
-    draw_surface_with_title(rect, Some(title), &style, TextStyle::new(20.0, dark::TEXT));
+    draw_surface_with_title(
+        rect,
+        Some(title),
+        &theme::panel_style(),
+        TextStyle::new(20.0, dark::TEXT),
+    );
 }
 
 /// A rising/falling marker for a stat's per-tick change, with a deadzone so

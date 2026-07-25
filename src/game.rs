@@ -15,7 +15,7 @@ use macroquad_toolkit::events::EventBus;
 use macroquad_toolkit::notifications::{
     NotificationAnchor, NotificationManager, NotificationRenderConfig,
 };
-use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_frame};
+use macroquad_toolkit::prelude::{begin_virtual_ui_frame, end_virtual_ui_frame};
 use mytherra_protocol::{project, PlayerAction, Standing, Tier, WorldView};
 use online::OnlineSession;
 pub(crate) use online::OnlineStatus;
@@ -255,7 +255,7 @@ impl Game {
     }
 
     pub fn draw(&mut self) {
-        clear_background(dark::BACKGROUND);
+        clear_background(ui::theme::BG);
 
         let virtual_ui = begin_virtual_ui_frame(ui::LOGICAL_WIDTH, ui::LOGICAL_HEIGHT);
         let ctx = UiContext {

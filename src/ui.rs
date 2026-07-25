@@ -13,6 +13,7 @@ mod heroes;
 mod regions;
 mod settings;
 mod shell;
+pub(crate) mod theme;
 mod title;
 mod widgets;
 
@@ -248,7 +249,7 @@ pub fn draw_game_ui(ctx: &UiContext<'_>) -> Vec<UiAction> {
 
     match ctx.screen {
         Screen::Title => {}
-        Screen::Dashboard => dashboard::draw(ctx),
+        Screen::Dashboard => dashboard::draw(ctx, &mut actions),
         Screen::Chronicle => chronicle::draw(ctx, &mut actions),
         Screen::Regions => regions::draw(ctx, &mut actions),
         Screen::Heroes => heroes::draw(ctx, &mut actions),

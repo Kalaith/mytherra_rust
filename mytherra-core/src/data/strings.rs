@@ -185,6 +185,10 @@ pub struct Panels {
     pub regions: String,
     pub standing: String,
     pub divine_actions: String,
+    /// Dashboard card titles (GDD 10 dashboard, mockup card grid).
+    pub world_status: String,
+    pub recent_events: String,
+    pub heroes_of_note: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -431,6 +435,25 @@ pub struct UiText {
     /// Dashboard portent lines surfacing the reactive pantheon.
     pub heavens_roused: String,
     pub heavens_calm: String,
+    /// Header tagline under the world name (mockup chrome).
+    pub header_tagline: String,
+    /// Header resource-chip labels (the dim word above each value).
+    pub chip_year: String,
+    pub chip_favour: String,
+    pub chip_level: String,
+    pub chip_tick: String,
+    /// Dashboard quick-action buttons that jump to where each verb lives.
+    pub action_boon: String,
+    pub action_hinder: String,
+    pub action_inspire: String,
+    pub action_observe: String,
+    /// Dashboard footer links: to the full hero roster and the event log.
+    pub view_all_heroes: String,
+    pub view_chronicle: String,
+    /// Heroes-of-note strip card meta line; slots `{level}`, `{role}`.
+    pub hero_note_meta: String,
+    /// Shown in the heroes strip when none are in the deity's sight yet.
+    pub heroes_none: String,
     pub settlements_line: String,
     pub resources_line: String,
     pub landmarks_line: String,
