@@ -21,12 +21,25 @@ use std::collections::BTreeSet;
 /// How many recent chronicle events a player without `FullChronicle` receives.
 const RECENT_EVENTS: usize = 32;
 
-/// The server's reply to `POST /session`: the freshly-minted guest id the client
-/// then presents (as `X-Player-Id`) on every later request (GDD 7.7). Each
-/// connected deity has its own id, its own favor, and its own Standing.
+/// The server's reply to `POST /session` (and `POST /link`): the deity id the
+/// client then presents (as `X-Player-Id`) on every later request (GDD 7.7).
+/// Each connected deity has its own id, its own favor, and its own Standing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionResponse {
     pub player_id: String,
+    /// Whether this deity is bound to a WebHatchery account (GDD 7.3) — `true`
+    /// after a successful link or an account resume, `false` for a pure guest.
+    /// Defaults so an older client (or a pre-linking server) still deserializes.
+    #[serde(default)]
+    pub linked: bool,
+}
+
+/// The client's entry-point config (`GET /login-info`): where to send a player to
+/// sign in to WebHatchery so a guest deity can be linked for cross-device
+/// continuity (GDD 7.3). The server reads the URL from its environment.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginInfo {
+    pub login_url: String,
 }
 
 /// The full per-player payload a client polls (`GET /view`): its Standing-

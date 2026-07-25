@@ -56,10 +56,12 @@ impl PlayerStore {
     }
 
     /// Every deity in creation order (`seq`), so the tick advances them
-    /// identically to before a restart (determinism, GDD 5.8).
-    pub async fn load_all(&self) -> Vec<(String, PlayerState)> {
+    /// identically to before a restart (determinism, GDD 5.8). Each is paired
+    /// with the WebHatchery account it is linked to, if any (GDD 7.3) — `None`
+    /// for a pure guest — so the authority can rebuild its account → deity map.
+    pub async fn load_all(&self) -> Vec<(String, Option<String>, PlayerState)> {
         let rows = sqlx::query(
-            "SELECT player_id, favor, level, experience, favor_spent, nudges, achievements
+            "SELECT player_id, account_id, favor, level, experience, favor_spent, nudges, achievements
              FROM players ORDER BY seq",
         )
         .fetch_all(&self.pool)
@@ -69,6 +71,7 @@ impl PlayerStore {
         let mut out = Vec::with_capacity(rows.len());
         for row in rows {
             let id: String = row.try_get("player_id").expect("read player_id");
+            let account_id: Option<String> = row.try_get("account_id").expect("read account_id");
             let achievements: Json<Value> = row.try_get("achievements").expect("read achievements");
             let champions = self.load_children("player_champions", &id).await;
             let bets = self.load_children("player_bets", &id).await;
@@ -85,9 +88,22 @@ impl PlayerStore {
             });
             let state: PlayerState = serde_json::from_value(value)
                 .expect("deserialize player — the player schema changed; reset the DB");
-            out.push((id, state));
+            out.push((id, account_id, state));
         }
         out
+    }
+
+    /// Bind a deity to a WebHatchery account (GDD 7.3). The account column is
+    /// deliberately not touched by the per-tick economy write-through, so this is
+    /// the one path that sets it; the UNIQUE key rejects a second deity for the
+    /// same account.
+    pub async fn set_account(&self, player_id: &str, account_id: &str) {
+        sqlx::query("UPDATE players SET account_id = ? WHERE player_id = ?")
+            .bind(account_id)
+            .bind(player_id)
+            .execute(&self.pool)
+            .await
+            .expect("bind player to account");
     }
 
     async fn load_children(&self, table: &str, player_id: &str) -> Value {

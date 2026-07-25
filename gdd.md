@@ -907,9 +907,13 @@ persistence store (§6/§8). Reads its `DbConfig` from a local `.env`. Endpoints
 > enforced: a Bless/Corrupt/Guide charges its resonance-scaled stat-magnitude against a
 > shared per-region budget that refills each tick, so no single deity — or coalition — can
 > out-spend a region in one tick; an overflowed nudge is rejected before any favor is spent,
-> in the same shared `command` path the server and offline client both run. **Still
-> remaining:** the seven divine tools' storage schema (§6) and WebHatchery account linking
-> (§7.3).
+> in the same shared `command` path the server and offline client both run. The **server
+> side of WebHatchery account linking (§7.3)** is built and verified: HS256 account-token
+> validation against the shared `JWT_SECRET`, a nullable `account_id` on `players`,
+> `POST /link` (claim-else-resume), and account-based resume via `/session` — a headless
+> test confirms a guest deity, once linked, resumes across a "second device" and a server
+> restart, while garbage/guest/wrong-secret tokens are refused. **Still remaining:** the
+> client login/link UX for it, and the seven divine tools' storage schema (§6).
 
 | Milestone | Proves | Target content |
 | --- | --- | --- |

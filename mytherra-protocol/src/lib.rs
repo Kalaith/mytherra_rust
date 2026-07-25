@@ -21,5 +21,6 @@ pub mod view;
 pub use mytherra_core::capability::{ActionVerb, BettingMarket, Standing, Tier, VisibilityScope};
 pub use mytherra_core::command::PlayerAction;
 pub use view::{
-    project, project_events, ClientView, EventsDelta, PlayerView, SessionResponse, WorldView,
+    project, project_events, ClientView, EventsDelta, LoginInfo, PlayerView, SessionResponse,
+    WorldView,
 };
