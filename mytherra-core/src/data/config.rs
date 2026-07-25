@@ -28,8 +28,15 @@ pub struct GameConfig {
     pub world_seed: u64,
     /// Base URL of the authority server the client connects to (GDD 7.4). The
     /// client is online-only — there is no local-world play — so this must point
-    /// at a running `mytherra-server`.
+    /// at a running `mytherra-server`. Used directly by a local/dev build.
     pub server_url: String,
+    /// Public gateway base URL a *published* build targets instead of
+    /// [`server_url`], so a home-run server is reachable through one https origin
+    /// without exposing its address (the `local_gateway` reverse proxy). Empty
+    /// disables it — the client then always uses [`server_url`]. Which one a given
+    /// build picks is decided at connect time (see `game/online.rs`).
+    #[serde(default)]
+    pub gateway_url: String,
     /// Address the authority server binds its listener to (GDD 7.6). Kept in
     /// config so the deployment address lives in one place, not a source const.
     pub server_listen_addr: String,

@@ -122,12 +122,36 @@ impl Game {
         self.online.is_some()
     }
 
+    /// The authority-server base URL this build connects to. A *published* build
+    /// — the WebGL client, or a release native binary handed to another player —
+    /// targets the public gateway (`config.gateway_url`) so a home-run server is
+    /// reachable through one https origin with its address hidden. A *debug*
+    /// native build (local `cargo run`) talks straight to `config.server_url` for
+    /// offline iteration. On native, `MYTHERRA_SERVER_URL` overrides either — e.g.
+    /// to point a debug build at the gateway, or a release build back at
+    /// localhost. wasm is always a published build and can read no env, so it
+    /// takes the gateway whenever one is configured.
+    fn resolve_server_url(&self) -> String {
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Ok(override_url) = std::env::var("MYTHERRA_SERVER_URL") {
+            let trimmed = override_url.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_owned();
+            }
+        }
+        let published = cfg!(target_arch = "wasm32") || !cfg!(debug_assertions);
+        let gateway = self.data.config.gateway_url.trim();
+        if published && !gateway.is_empty() {
+            return gateway.to_owned();
+        }
+        self.data.config.server_url.clone()
+    }
+
     /// Open a connection to the authority server and enter the world (§7.1). The
     /// guest-session handshake is kicked immediately; once its id arrives the
     /// first `/view` follows and the screens populate.
     pub(super) fn go_online(&mut self) {
-        let mut session =
-            OnlineSession::new(net::ServerClient::new(self.data.config.server_url.clone()));
+        let mut session = OnlineSession::new(net::ServerClient::new(self.resolve_server_url()));
         // If this player has linked a WebHatchery account before, present its
         // saved token so the handshake resumes that account's deity rather than
         // minting a fresh guest (GDD 7.3); otherwise it's a plain guest session.
