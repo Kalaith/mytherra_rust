@@ -30,26 +30,35 @@ pub fn tick_saints(
     // Souls raised this tick, so the caller may commemorate each in a saint's myth
     // (GDD 5.1 <-> 5.6) — the faith counterpart to a slain beast's Valor tale.
     let mut canonized: Vec<NewSaint> = Vec::new();
-    // Raise the newly-worthy dead to sainthood. A dead Cleric of high renown is
-    // venerated for their holiness; a hero of any other calling must have reached
-    // the legend bar besides — so sainthood is the reward of the holy or the truly
-    // great. A soul is never sainted twice, nor one whose homeland has vanished
-    // with no faithful left to remember them.
-    for hero in heroes.iter() {
-        if hero.is_alive || hero.renown < balance.renown_threshold {
-            continue;
-        }
-        let holy_or_legend = hero.role == HeroRole::Cleric || hero.renown >= legend_bar;
-        if !holy_or_legend || saints.iter().any(|s| s.hero_id == hero.id) {
-            continue;
-        }
-        let Some(region_name) = regions
+
+    // The dead worthy of sainthood: a dead Cleric past the renown floor (venerated
+    // for holiness), or any dead hero who reached the legend bar besides (for sheer
+    // greatness) — not sainted already, and with a homeland still standing to keep
+    // their memory. Gathered rather than raised in place so a death-wave doesn't
+    // canonize a whole cohort in one year: the worthiest go first (most renown, id
+    // as the deterministic tie-break), and only up to the year's cadence, the rest
+    // left eligible for the years that follow.
+    let mut worthy: Vec<&Hero> = heroes
+        .iter()
+        .filter(|hero| {
+            !hero.is_alive
+                && hero.renown >= balance.renown_threshold
+                && (hero.role == HeroRole::Cleric || hero.renown >= legend_bar)
+                && !saints.iter().any(|s| s.hero_id == hero.id)
+                && regions.iter().any(|r| r.id == hero.region_id)
+        })
+        .collect();
+    worthy.sort_by(|a, b| b.renown.total_cmp(&a.renown).then_with(|| a.id.cmp(&b.id)));
+
+    for hero in worthy
+        .into_iter()
+        .take(balance.canonizations_per_tick as usize)
+    {
+        let region_name = regions
             .iter()
             .find(|r| r.id == hero.region_id)
             .map(|r| r.name.clone())
-        else {
-            continue;
-        };
+            .expect("a worthy soul's homeland was confirmed to still stand");
         *seq += 1;
         let name = fill(&text.saint_name, &[("hero", hero.name.clone())]);
         saints.push(Saint {
@@ -171,8 +180,20 @@ mod tests {
             },
         ];
 
+        // Canonization is throttled to the year's cadence (1/tick): the worthiest
+        // eligible soul is raised first — here the legend, at renown 190, ahead of
+        // the cleric at 105 — and the rest follow in later years.
         run(&mut world, &data, legend_bar);
+        let after_one: Vec<&str> = world.saints.iter().map(|s| s.hero_id.as_str()).collect();
+        assert_eq!(
+            after_one,
+            vec!["legend"],
+            "the most renowned dead is sainted first, one per year"
+        );
 
+        // The next year raises the cleric; the merely-renowned warrior and the
+        // living are never raised.
+        run(&mut world, &data, legend_bar);
         let sainted: Vec<&str> = world.saints.iter().map(|s| s.hero_id.as_str()).collect();
         assert!(sainted.contains(&"cleric"), "a holy dead Cleric is sainted");
         assert!(

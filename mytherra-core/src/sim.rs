@@ -755,6 +755,12 @@ pub fn tick_shared(world: &mut WorldState, players: &mut [PlayerState], data: &G
             data,
         );
     }
+
+    // Every subsystem above records into the chronicle in a fixed order, so a busy
+    // year's events would otherwise land as blocks of one kind. Weave this tick's
+    // events together by kind, once, so the year reads as the mixture it was (GDD
+    // 10 — the chronicle as a legible feed).
+    world.chronicle.interleave_latest_tick();
 }
 
 /// Living heroes who have reached `bar` renown this tick but hadn't before, so

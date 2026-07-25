@@ -245,4 +245,10 @@ pub struct SaintBalance {
     /// veneration (GDD 5.1): the remembered example of a holy soul hallows the land
     /// that keeps it, the more so the fresher and fiercer the devotion.
     pub resonance_per_veneration: f32,
+    /// The most souls canonized in a single year (GDD 5.1). A death-wave — an era's
+    /// end, or an old generation passing together — would otherwise raise a whole
+    /// cohort to sainthood in one year; a stately cadence canonizes the worthiest
+    /// first and trickles the rest out over the years that follow, so the chronicle
+    /// reads as a slow procession of the venerated dead, not a sudden flood.
+    pub canonizations_per_tick: u32,
 }

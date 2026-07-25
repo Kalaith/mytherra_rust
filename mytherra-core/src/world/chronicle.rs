@@ -2,6 +2,7 @@
 //! Dashboard and (later) the dedicated Event Log screen (GDD 10).
 
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 
 /// Category of a chronicle entry, used for color-coding and filtering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -84,6 +85,51 @@ impl Chronicle {
         self.events.is_empty()
     }
 
+    /// Weave the most recent tick's events together by kind, so a busy year reads
+    /// as a mixture rather than blocks of one kind — all saints, then all refugee
+    /// flights, then all deaths — which is only an artifact of the fixed order the
+    /// tick's subsystems run in, not the order things "happened". Within each kind
+    /// the order is preserved (a death still precedes the sainthood it enables);
+    /// only the kinds are round-robined together. Deterministic (no RNG), so a
+    /// reload and the determinism tests are unaffected.
+    ///
+    /// Every event of one tick shares that tick's `year` (the year advances once
+    /// per tick), so the trailing run of same-year events is exactly this tick's —
+    /// reordering it never disturbs any earlier year. Call once at the end of a
+    /// tick, after every subsystem has recorded its events.
+    pub fn interleave_latest_tick(&mut self) {
+        let Some(latest) = self.events.last().map(|e| e.year) else {
+            return;
+        };
+        let start = self
+            .events
+            .iter()
+            .rposition(|e| e.year != latest)
+            .map_or(0, |i| i + 1);
+        if self.events.len() - start < 2 {
+            return;
+        }
+
+        // Bucket the tick's events by kind, preserving within-kind order.
+        let mut buckets: Vec<VecDeque<WorldEvent>> =
+            EventKind::ALL.iter().map(|_| VecDeque::new()).collect();
+        for event in self.events.split_off(start) {
+            let kind = EventKind::ALL.iter().position(|k| *k == event.kind);
+            buckets[kind.expect("every EventKind is in ALL")].push_back(event);
+        }
+
+        // Draw round-robin across kinds until every bucket is drained.
+        let mut remaining: usize = buckets.iter().map(VecDeque::len).sum();
+        while remaining > 0 {
+            for bucket in &mut buckets {
+                if let Some(event) = bucket.pop_front() {
+                    self.events.push(event);
+                    remaining -= 1;
+                }
+            }
+        }
+    }
+
     /// The current since-cursor: pass it back to [`since`](Self::since) to get
     /// only the events pushed after this moment.
     pub fn cursor(&self) -> u64 {
@@ -123,6 +169,35 @@ mod tests {
         chronicle.push(2, EventKind::System, "second");
         let recent: Vec<&str> = chronicle.recent(2).map(|e| e.message.as_str()).collect();
         assert_eq!(recent, vec!["second", "first"]);
+    }
+
+    #[test]
+    fn interleave_weaves_a_tick_by_kind_and_leaves_earlier_years_be() {
+        let mut chronicle = Chronicle::default();
+        // An earlier year, which must be left untouched.
+        chronicle.push(1, EventKind::System, "old");
+        // A busy year recorded as blocks (three Hero, then two Region), the way the
+        // fixed subsystem order would produce it.
+        chronicle.push(2, EventKind::Hero, "h1");
+        chronicle.push(2, EventKind::Hero, "h2");
+        chronicle.push(2, EventKind::Hero, "h3");
+        chronicle.push(2, EventKind::Region, "r1");
+        chronicle.push(2, EventKind::Region, "r2");
+
+        chronicle.interleave_latest_tick();
+
+        // Kinds are round-robined (ALL order is Divine, Region, Hero, System, so
+        // Region draws before Hero each round) and within-kind order is preserved;
+        // the surplus Hero trails once Region is spent.
+        let year_two: Vec<&str> = chronicle.events[1..]
+            .iter()
+            .map(|e| e.message.as_str())
+            .collect();
+        assert_eq!(year_two, vec!["r1", "h1", "r2", "h2", "h3"]);
+        assert_eq!(
+            chronicle.events[0].message, "old",
+            "an earlier year is undisturbed"
+        );
     }
 
     #[test]

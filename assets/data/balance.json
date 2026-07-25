@@ -224,7 +224,8 @@
     "start_veneration": 100.0,
     "veneration_decay": 0.25,
     "forgotten_floor": 5.0,
-    "resonance_per_veneration": 0.0008
+    "resonance_per_veneration": 0.0008,
+    "canonizations_per_tick": 1
   },
   "champion": {
     "max_roster": 3,
