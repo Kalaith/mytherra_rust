@@ -20,3 +20,9 @@ serde_json = "1.0"
 # it coexists with macroquad's WebGL build; on native it uses ureq in a thread.
 # Both platforms share one poll-based (non-blocking) API — see `src/net.rs`.
 quad-net = "0.1.2"
+
+[dev-dependencies]
+# Forges a WebHatchery account token (HS256) in the ignored live-server net test
+# for account linking (GDD 7.3) — signed with the same JWT_SECRET the server
+# verifies against. Test-only; the client never mints tokens itself.
+jsonwebtoken = "9"

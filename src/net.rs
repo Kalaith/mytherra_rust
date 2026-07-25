@@ -30,10 +30,16 @@ const PLAYER_ID_HEADER: &str = "X-Player-Id";
 /// A handle to one authority server, addressed by base URL (e.g.
 /// `http://127.0.0.1:8791`). Carries the guest session id once
 /// [`create_session`](ServerClient::create_session) has returned one, and
-/// presents it on every subsequent request.
+/// presents it on every subsequent request. If a WebHatchery account token has
+/// been set (GDD 7.3), it also rides on the session/link requests so the server
+/// resumes — or binds — this player's account deity.
 pub struct ServerClient {
     base_url: String,
     player_id: Option<String>,
+    /// A verified WebHatchery account token, once the player has signed in
+    /// (GDD 7.3). Presented on `/session` (to resume the account's deity) and
+    /// `/link` (to claim the current deity for the account).
+    token: Option<String>,
 }
 
 /// A request in flight. Poll it each frame with [`poll`](Pending::poll): `None`
@@ -89,6 +95,7 @@ impl ServerClient {
         Self {
             base_url: base_url.into(),
             player_id: None,
+            token: None,
         }
     }
 
@@ -96,6 +103,13 @@ impl ServerClient {
     /// carries it (GDD 7.7).
     pub fn set_player_id(&mut self, player_id: String) {
         self.player_id = Some(player_id);
+    }
+
+    /// Carry a WebHatchery account token on the next `/session` and `/link`
+    /// (GDD 7.3), or clear it with `None`. Set from a persisted token on startup
+    /// so the client resumes its account deity rather than a fresh guest.
+    pub fn set_token(&mut self, token: Option<String>) {
+        self.token = token;
     }
 
     /// A `GET` request builder for `path`, carrying the session header if we have
@@ -112,13 +126,38 @@ impl ServerClient {
         }
     }
 
-    /// `POST /session` — ask the server for a fresh guest session (§7.7). Feed the
-    /// returned id to [`set_player_id`](ServerClient::set_player_id).
+    /// Attach the `Authorization: Bearer` account token if one has been set
+    /// (GDD 7.3); otherwise leave the request as a plain guest request.
+    fn with_auth(&self, builder: RequestBuilder) -> RequestBuilder {
+        match &self.token {
+            Some(token) => builder.header("Authorization", &format!("Bearer {token}")),
+            None => builder,
+        }
+    }
+
+    /// `POST /session` — begin a session (§7.7). With no token this mints a fresh
+    /// guest; with an account token set it resumes that account's deity across
+    /// devices (GDD 7.3). Feed the returned id to
+    /// [`set_player_id`](ServerClient::set_player_id).
     pub fn create_session(&self) -> Pending<SessionResponse> {
         Pending::new(
-            RequestBuilder::new(&format!("{}/session", self.base_url))
-                .method(Method::Post)
-                .send(),
+            self.with_auth(
+                RequestBuilder::new(&format!("{}/session", self.base_url)).method(Method::Post),
+            )
+            .send(),
+        )
+    }
+
+    /// `POST /link` — bind the deity the client is currently playing to the
+    /// WebHatchery account its token authenticates (GDD 7.3). The reply names the
+    /// deity to carry forward (usually the same one, now the account's; or, if the
+    /// account already owned one, that deity to resume).
+    pub fn link(&self) -> Pending<SessionResponse> {
+        Pending::new(
+            self.with_auth(self.with_session(
+                RequestBuilder::new(&format!("{}/link", self.base_url)).method(Method::Post),
+            ))
+            .send(),
         )
     }
 
@@ -217,6 +256,58 @@ mod tests {
 
         let delta = block_on(client.fetch_events(0)).expect("fetch events");
         assert!(delta.cursor >= 1, "the awakening event advances the cursor");
+    }
+
+    /// Account linking end-to-end from the *client's* side (GDD 7.3): a guest
+    /// links its deity to a WebHatchery account, and a fresh client presenting the
+    /// same token resumes the very same deity. Needs a live server whose
+    /// `JWT_SECRET` matches `SECRET` below. Run:
+    /// `cargo test -p mytherra -- --ignored account_link`.
+    #[test]
+    #[ignore = "needs a live mytherra-server on 127.0.0.1:8791 with the dev JWT_SECRET"]
+    fn account_link_then_resume_across_clients() {
+        use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+        // Must match the server's dev `mytherra-server/.env` JWT_SECRET.
+        const SECRET: &str = "mytherra-dev-shared-secret-local-only";
+        #[derive(serde::Serialize)]
+        struct Claims {
+            sub: String,
+            is_guest: bool,
+            exp: usize,
+        }
+        let token = encode(
+            &Header::new(Algorithm::HS256),
+            &Claims {
+                sub: "wh-net-test".to_owned(),
+                is_guest: false,
+                exp: 4_102_444_800, // 2100
+            },
+            &EncodingKey::from_secret(SECRET.as_bytes()),
+        )
+        .expect("forge account token");
+
+        let base = "http://127.0.0.1:8791";
+
+        // A guest links the deity it is playing to the account.
+        let mut guest = ServerClient::new(base);
+        let gid = block_on(guest.create_session())
+            .expect("guest session")
+            .player_id;
+        guest.set_player_id(gid);
+        guest.set_token(Some(token.clone()));
+        let linked = block_on(guest.link()).expect("link");
+        assert!(linked.linked, "the deity is now account-bound");
+
+        // A fresh client presenting the same token resumes the SAME deity — the
+        // heart of cross-device continuity.
+        let mut returning = ServerClient::new(base);
+        returning.set_token(Some(token));
+        let resumed = block_on(returning.create_session()).expect("resume");
+        assert!(resumed.linked, "the resumed deity is account-bound");
+        assert_eq!(
+            resumed.player_id, linked.player_id,
+            "the same god is resumed across clients"
+        );
     }
 
     /// Two guests get independent state: each has its own favor, so one deity's

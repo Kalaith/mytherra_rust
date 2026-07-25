@@ -912,8 +912,14 @@ persistence store (§6/§8). Reads its `DbConfig` from a local `.env`. Endpoints
 > validation against the shared `JWT_SECRET`, a nullable `account_id` on `players`,
 > `POST /link` (claim-else-resume), and account-based resume via `/session` — a headless
 > test confirms a guest deity, once linked, resumes across a "second device" and a server
-> restart, while garbage/guest/wrong-secret tokens are refused. **Still remaining:** the
-> client login/link UX for it, and the seven divine tools' storage schema (§6).
+> restart, while garbage/guest/wrong-secret tokens are refused. The **client** side is now
+> built too: it presents a saved token on connect to resume its account deity, and a
+> Settings "Link" affordance reads the account token the player copied after signing in
+> (via the clipboard — sidestepping a text field, which the toolkit lacks), links, and
+> persists it for future launches; an ignored client↔server net test verifies the whole
+> link-then-resume path. Follow-ups: in-client sign-out and full deity-merge on the
+> already-owned-account conflict (today it resumes the existing deity). **Still remaining
+> for M3:** the seven divine tools' storage schema (§6).
 
 | Milestone | Proves | Target content |
 | --- | --- | --- |

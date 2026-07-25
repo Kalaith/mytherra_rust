@@ -213,7 +213,12 @@
     "info_version": "Version:  {version}",
     "info_seed": "Seed:  {seed}",
     "info_year": "Year:  {year}  ·  {regions} regions watched",
-    "achievements_title": "Achievements ({done}/{total})"
+    "achievements_title": "Achievements ({done}/{total})",
+    "account_title": "Account",
+    "account_guest": "Guest — this deity lives only on this device until you link an account.",
+    "account_linked": "Linked — this deity is saved to your WebHatchery account and follows you across devices.",
+    "account_hint": "Sign in at webhatchery.au, copy your token, then link.",
+    "account_link": "Link (paste token)"
   },
   "notifications": {
     "awaken": "Mytherra awakens: {regions} regions under watch.",
@@ -257,7 +262,10 @@
     "connecting": "Reaching across the veil to the shared world…",
     "view_fetch_failed": "The shared world falls silent: {error}",
     "connection_lost": "The shared world falls silent — the veil has closed. Reaching out again…",
-    "reconnected": "The veil parts once more — the shared world returns."
+    "reconnected": "The veil parts once more — the shared world returns.",
+    "link_no_token": "Copy your WebHatchery sign-in token first, then link.",
+    "link_success": "Your deity is bound to your account — it will follow you across devices.",
+    "link_failed": "That token was not accepted. Sign in again and copy a fresh one."
   },
   "heroes": {
     "panel": "Heroes & Champions",

@@ -1195,6 +1195,7 @@ dependencies = [
 name = "mytherra"
 version = "0.1.0"
 dependencies = [
+ "jsonwebtoken",
  "macroquad",
  "macroquad-toolkit",
  "mytherra-core",

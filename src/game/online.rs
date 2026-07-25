@@ -12,7 +12,7 @@
 //! Every request is a non-blocking [`net::Pending`] polled once per frame, so a
 //! slow or unreachable server never stalls the loop.
 
-use super::Game;
+use super::{auth, Game};
 use crate::net::{self, Pending};
 use crate::ui::Screen;
 use mytherra_core::command::ActionReport;
@@ -54,12 +54,20 @@ pub(super) struct OnlineSession {
     /// Set once the guest session id is in hand — the client is then identified
     /// and may fetch its view, poll events, and submit actions.
     identified: bool,
+    /// Whether this deity is bound to a WebHatchery account (GDD 7.3) — set from
+    /// the session/link reply, surfaced in Settings so the player knows a guest
+    /// deity is unsaved and an account one follows them across devices.
+    linked: bool,
     /// A `GET /view` in flight, if any. At most one is outstanding at a time.
     view_req: Option<Pending<ClientView>>,
     /// A `GET /events?since=` in flight, if any (GDD 7.4).
     events_req: Option<Pending<EventsDelta>>,
     /// `POST /action`s awaiting their reports — several may overlap.
     action_reqs: Vec<Pending<ActionReport>>,
+    /// A `POST /link` in flight while binding this deity to an account (GDD 7.3),
+    /// and the token to persist once it lands.
+    link_req: Option<Pending<SessionResponse>>,
+    pending_token: Option<String>,
     /// Real seconds since the last poll cycle was started.
     poll_accum: f32,
     /// The chronicle since-cursor: the sequence up to which we've already seen
@@ -85,9 +93,12 @@ impl OnlineSession {
             client,
             session_req: None,
             identified: false,
+            linked: false,
             view_req: None,
             events_req: None,
             action_reqs: Vec::new(),
+            link_req: None,
+            pending_token: None,
             poll_accum: 0.0,
             cursor: 0,
             events_synced: false,
@@ -117,11 +128,49 @@ impl Game {
     pub(super) fn go_online(&mut self) {
         let mut session =
             OnlineSession::new(net::ServerClient::new(self.data.config.server_url.clone()));
+        // If this player has linked a WebHatchery account before, present its
+        // saved token so the handshake resumes that account's deity rather than
+        // minting a fresh guest (GDD 7.3); otherwise it's a plain guest session.
+        if let Some(token) = auth::load_token(&self.data.config.game_name) {
+            session.client.set_token(Some(token));
+        }
         session.session_req = Some(session.client.create_session());
         self.online = Some(session);
         self.screen = Screen::Dashboard;
         self.notifications
             .info(self.data.strings.notifications.connecting.clone());
+    }
+
+    /// Whether the connected deity is bound to a WebHatchery account (GDD 7.3),
+    /// for the Settings account panel. `false` when offline or a pure guest.
+    pub(super) fn is_linked(&self) -> bool {
+        self.online.as_ref().is_some_and(|s| s.linked)
+    }
+
+    /// Bind the connected deity to a WebHatchery account (GDD 7.3): read the
+    /// account token the player copied after signing in, present it, and fire
+    /// `POST /link`. The reply is adopted in [`update_online`] — it names the
+    /// deity to carry forward and, on success, the token is persisted so future
+    /// launches resume it. No-ops without an established session or a token on the
+    /// clipboard (the one place a text field would otherwise be needed — pasting
+    /// the token sidesteps it, GDD 7.3 / §12).
+    pub(super) fn link_account(&mut self) {
+        if !self.online.as_ref().is_some_and(|s| s.identified) {
+            return;
+        }
+        let token = macroquad::miniquad::window::clipboard_get()
+            .map(|t| t.trim().to_owned())
+            .filter(|t| !t.is_empty());
+        let Some(token) = token else {
+            self.notifications
+                .warning(self.data.strings.notifications.link_no_token.clone());
+            return;
+        };
+        if let Some(s) = self.online.as_mut() {
+            s.client.set_token(Some(token.clone()));
+            s.pending_token = Some(token);
+            s.link_req = Some(s.client.link());
+        }
     }
 
     /// Drop the connection and return to the title menu.
@@ -165,6 +214,7 @@ impl Game {
         match result {
             Some(Ok(session_resp)) => {
                 if let Some(s) = self.online.as_mut() {
+                    s.linked = session_resp.linked;
                     s.client.set_player_id(session_resp.player_id);
                     s.identified = true;
                     s.view_req = Some(s.client.fetch_view());
@@ -240,10 +290,17 @@ impl Game {
         let mut fetched: Option<Result<ClientView, String>> = None;
         let mut delta: Option<Result<EventsDelta, String>> = None;
         let mut reports: Vec<Result<ActionReport, String>> = Vec::new();
+        let mut link_result: Option<Result<SessionResponse, String>> = None;
         {
             let Some(session) = self.online.as_mut() else {
                 return;
             };
+            if let Some(req) = session.link_req.as_mut() {
+                if let Some(result) = req.poll_timed(dt, REQUEST_TIMEOUT) {
+                    link_result = Some(result);
+                    session.link_req = None;
+                }
+            }
             session.poll_accum += dt;
             // Start a poll cycle when nothing is in flight and either we've never
             // connected or the cadence has elapsed. After a timeout the failed
@@ -292,6 +349,36 @@ impl Game {
 
         if let Some(Ok(delta)) = delta {
             self.absorb_events(delta);
+        }
+
+        // A `/link` reply: adopt the deity it names (the same one now bound to the
+        // account, or the account's existing deity to resume) and persist the
+        // token so it resumes on every future launch (GDD 7.3).
+        if let Some(result) = link_result {
+            match result {
+                Ok(resp) => {
+                    let game_name = self.data.config.game_name.clone();
+                    let token = self.online.as_mut().and_then(|s| {
+                        s.client.set_player_id(resp.player_id);
+                        s.linked = resp.linked;
+                        s.pending_token.take()
+                    });
+                    if let Some(token) = token {
+                        auth::save_token(&game_name, &token);
+                    }
+                    self.notifications
+                        .info(self.data.strings.notifications.link_success.clone());
+                    self.request_view_now();
+                }
+                Err(_) => {
+                    if let Some(s) = self.online.as_mut() {
+                        s.pending_token = None;
+                        s.client.set_token(None);
+                    }
+                    self.notifications
+                        .warning(self.data.strings.notifications.link_failed.clone());
+                }
+            }
         }
 
         let mut acted = false;

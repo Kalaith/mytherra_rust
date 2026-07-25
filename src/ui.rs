@@ -136,6 +136,9 @@ pub enum UiAction {
     SetTickSpeed(usize),
     /// Toggle automatic world ticking on/off (Settings, GDD 10).
     TogglePause,
+    /// Link the connected deity to a WebHatchery account, reading the token the
+    /// player copied after signing in (Settings, GDD 7.3).
+    LinkAccount,
     /// Select a divine-tool sub-tab by index.
     SelectDivineTab(usize),
     /// Cycle the focus of the next artifact to be forged.
@@ -224,6 +227,9 @@ pub struct UiContext<'a> {
     /// The live-link state when online (Connecting / Live / Reconnecting), for the
     /// header badge; `None` when not online.
     pub online_status: Option<crate::game::OnlineStatus>,
+    /// Whether the connected deity is bound to a WebHatchery account (GDD 7.3),
+    /// for the Settings account panel — `false` for a pure guest.
+    pub linked: bool,
     pub mouse: Vec2,
 }
 

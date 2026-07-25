@@ -156,6 +156,13 @@ pub struct SettingsText {
     pub info_year: String,
     /// Achievements column header; slots `{done}` / `{total}`.
     pub achievements_title: String,
+    /// Account panel (GDD 7.3): the section header, the guest/linked status
+    /// lines, and the sign-in hint.
+    pub account_title: String,
+    pub account_guest: String,
+    pub account_linked: String,
+    pub account_hint: String,
+    pub account_link: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -514,6 +521,11 @@ pub struct Notifications {
     pub connection_lost: String,
     /// Shown once when the server becomes reachable again after a drop.
     pub reconnected: String,
+    /// Account linking (GDD 7.3): no token on the clipboard, a successful link,
+    /// and a failed one.
+    pub link_no_token: String,
+    pub link_success: String,
+    pub link_failed: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

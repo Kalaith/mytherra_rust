@@ -1,6 +1,7 @@
 //! High-level game loop: owns the world, the player, and screen navigation,
 //! runs the tick timer, and interprets UI intents.
 
+mod auth;
 mod capture;
 mod command;
 mod online;
@@ -285,6 +286,7 @@ impl Game {
             paused: self.paused,
             online: self.is_online(),
             online_status: self.online_status(),
+            linked: self.is_linked(),
             mouse: virtual_ui.mouse_position(),
         };
         let actions = ui::draw_game_ui(&ctx);
@@ -412,6 +414,7 @@ impl Game {
                 }
             }
             UiAction::TogglePause => self.paused = !self.paused,
+            UiAction::LinkAccount => self.link_account(),
             UiAction::SelectDivineTab(index) => self.divine_tab = index,
             UiAction::CycleArtifactFocus => self.create_focus = self.create_focus.next(),
             UiAction::CreateArtifact => self.submit(PlayerAction::CreateArtifact {

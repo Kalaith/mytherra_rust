@@ -109,6 +109,47 @@ pub fn draw(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
         y += 64.0;
     }
 
+    // --- Account (GDD 7.3) --------------------------------------------------
+    // Whether this deity is a device-local guest or bound to a WebHatchery
+    // account that follows the player across devices. The in-client sign-in flow
+    // is a later slice; a guest is told where to link.
+    if ctx.online {
+        draw_ui_text_ex(
+            &strings.account_title,
+            content.x,
+            y,
+            TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+        );
+        y += 24.0;
+        let (line, color) = if ctx.linked {
+            (&strings.account_linked, dark::POSITIVE)
+        } else {
+            (&strings.account_guest, dark::TEXT_DIM)
+        };
+        draw_ui_text_ex(line, content.x, y, TextStyle::new(15.0, color).params());
+        y += 22.0;
+        if !ctx.linked {
+            draw_ui_text_ex(
+                &strings.account_hint,
+                content.x,
+                y,
+                TextStyle::new(14.0, dark::TEXT_DIM).params(),
+            );
+            y += 28.0;
+            if button(
+                Rect::new(content.x, y, 220.0, 36.0),
+                &strings.account_link,
+                true,
+                ButtonTone::Primary,
+                ctx.mouse,
+            ) {
+                actions.push(UiAction::LinkAccount);
+            }
+            y += 46.0;
+        }
+        y += 12.0;
+    }
+
     // --- Read-only world info -----------------------------------------------
     draw_ui_text_ex(
         &strings.world_title,
