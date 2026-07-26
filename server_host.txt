@@ -1,0 +1,25 @@
+Done. Built and verified end-to-end.
+
+What I built
+
+A reverse gateway — the better architecture you pointed to. Everyone hits one public https URL on webhatchery.au; only the gateway talks to your PC. That kills the browser mixed-content block, hides your home IP, and centralizes auth — and it's reusable for any home service, not just Mytherra.
+
+apps/local_gateway/ — a small PHP reverse proxy (no DB, no framework):
+- POST /register (admin-token) — your box advertises its address; send {"port":8791} and it uses your public IP automatically.
+- GET /services (admin) — list services + freshness.
+- ANY /p/<service>/<path> — proxies through to the registered home box via curl.
+- Split policy (config/services.json, deployed) vs. on, written at runtime, both blocked from directHTTP). The register token can move an address but never widen access.
+
+Client wiring (mytherra repo, committed fc91ccc): game_config.json gained gateway_url; a published build (WebGL / release native)
+targets the gateway, debug cargo run stays on localhoverrides on native. Plus register-server.ps1 toheartbeat your box's address, and the RUNNING.md flow.
+
+Verified: health, 401/502 gating, register (explicit + public-IP-from-port), GET/POST proxying with path/query/headers/body intact, 403
+on the policy/store files, and the full chain throug upstream — including that the store is writableunder Apache.
+
+What's yours to do (not code)
+
+1. Set GATEWAY_ADMIN_TOKEN in apps/local_gateway/backend/.env.production (left blank so no secret is committed).
+2. Publish to production: apps/local_gateway/publishherra client). I deliberately only published thegateway to local preview — production is outward-facing, so that's your call.
+3. Port-forward 8791 to your desktop (ideally firewary.au) and set server_listen_addr to 0.0.0.0:8791.
+4. Each session: run-server.ps1, then register-server.ps1.                                                                             
+Two honest caveats: this is a curl request/response proxy (no websockets — fine for Mytherra's polling), and api/data/ must be writable on the production host (it is on XAMPP; may need a cher skip port-forwarding for the browser path,register-server.ps1 -Target https://<id>.trycloudflare.com registers a tunnel instead.
