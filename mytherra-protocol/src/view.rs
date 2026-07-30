@@ -7,12 +7,12 @@
 //! genuinely small. A player's own [`PlayerView`] is never masked; it's private
 //! to them.
 
-use mytherra_core::capability::{BettingMarket, Standing, VisibilityScope as V};
+use mytherra_core::capability::{BettingMarket, Standing, Tier, VisibilityScope as V};
 use mytherra_core::data::GameData;
 use mytherra_core::world::{
-    Artifact, Building, DelayedConsequence, EraRecord, EraState, EventKind, Hero, Landmark,
-    MagicPath, Monster, Myth, MythCandidate, Pact, PantheonDeity, Plague, PlayerState, Region,
-    RegionAgendas, ResourceNode, Settlement, SpeculationEvent, TradeRoute, Vassalage, War,
+    Artifact, Building, DelayedConsequence, EraRecord, EraState, EventKind, Hero, House, Landmark,
+    MagicPath, Monster, Myth, MythCandidate, Order, Pact, PantheonDeity, Plague, PlayerState,
+    Region, RegionAgendas, ResourceNode, Settlement, SpeculationEvent, TradeRoute, Vassalage, War,
     WeatherEvent, WorldEvent, WorldState, WorldSummary,
 };
 use serde::{Deserialize, Serialize};
@@ -90,6 +90,12 @@ pub struct WorldView {
     pub era: EraState,
 
     pub heroes: Vec<Hero>,
+    /// The noble houses and great Orders the world's legends have raised (GDD
+    /// 5.4). Both are hero-derived — a house is a bloodline of heroes, an Order
+    /// the living fellowship of a role — so both are revealed with `Heroes`
+    /// rather than carrying a scope of their own.
+    pub houses: Vec<House>,
+    pub orders: Vec<Order>,
     pub regions: Vec<Region>,
     pub settlements: Vec<Settlement>,
     pub resource_nodes: Vec<ResourceNode>,
@@ -144,19 +150,40 @@ impl WorldView {
     }
 }
 
-/// Project the shared world and a player onto what that player's [`Standing`]
-/// reveals (§7.7). The server calls this per player, per poll.
-pub fn project(
-    world: &WorldState,
-    player: &PlayerState,
-    standing: &Standing,
-    data: &GameData,
-) -> (WorldView, PlayerView) {
+/// The Standing a read-only spectator holds: every visibility scope, and
+/// deliberately no verbs and no betting markets. It is the Standing behind the
+/// server's spectator endpoints — a client that reads the whole world without
+/// owning a deity (GDD 7.7 ↔ the exchange's world source). Because the verb and
+/// market sets are empty, a spectator projection can authorize no action and
+/// surfaces no wagers: `speculations` filters to empty even though `Observatory`
+/// is revealed, since `can_bet` is false for every market.
+pub fn spectator_standing() -> Standing {
+    Standing {
+        // It sees what an Elder sees, so it reports an Elder's rank; the empty
+        // verb set is what actually makes it powerless.
+        tier: Tier::Elder.rank(),
+        scopes: V::ALL.into_iter().collect(),
+        verbs: BTreeSet::new(),
+        markets: BTreeSet::new(),
+    }
+}
+
+/// Project the shared world onto what a [`Standing`] reveals (§7.7), with no
+/// player attached. Split out of [`project`] so a spectator — which has no
+/// deity, no favor, and no `PlayerState` — can be served the same filtered world
+/// through the same one code path.
+pub fn project_world(world: &WorldState, standing: &Standing) -> WorldView {
     // Each collection is revealed only if its scope is unlocked, else sent empty.
     let heroes = if standing.can_see(V::Heroes) {
         world.heroes.clone()
     } else {
         Vec::new()
+    };
+    // Houses and Orders are hero-derived, so they ride with the hero roster.
+    let (houses, orders) = if standing.can_see(V::Heroes) {
+        (world.houses.clone(), world.orders.clone())
+    } else {
+        Default::default()
     };
     let regions = if standing.can_see(V::Regions) {
         world.regions.clone()
@@ -254,13 +281,15 @@ pub fn project(
         world.chronicle.recent(RECENT_EVENTS).cloned().collect()
     };
 
-    let view = WorldView {
+    WorldView {
         year: world.year,
         tick_count: world.tick_count,
         revealed: standing.scopes.clone(),
         summary: world.summary(),
         era: world.era.clone(),
         heroes,
+        houses,
+        orders,
         regions,
         settlements,
         resource_nodes,
@@ -285,7 +314,18 @@ pub fn project(
         speculations,
         era_history,
         chronicle,
-    };
+    }
+}
+
+/// Project the shared world and a player onto what that player's [`Standing`]
+/// reveals (§7.7). The server calls this per player, per poll.
+pub fn project(
+    world: &WorldState,
+    player: &PlayerState,
+    standing: &Standing,
+    data: &GameData,
+) -> (WorldView, PlayerView) {
+    let view = project_world(world, standing);
 
     // Income is passive recovery plus the faith tithe from the *full* world
     // (§5.1 <-> 5.4) — the same tithe the sim applies each tick. Computed here,
@@ -457,6 +497,68 @@ mod tests {
         // The cursor the caller returns is the unfiltered one — skipped events
         // are not re-served next poll.
         assert_eq!(cursor, chronicle.cursor());
+    }
+
+    #[test]
+    fn houses_and_orders_ride_with_the_hero_roster() {
+        let (data, mut world, player) = fixtures();
+        // Houses and Orders arise dynamically, so a fresh world seeds none —
+        // plant one of each to prove the projection carries them.
+        world.houses.push(mytherra_core::world::House {
+            id: "house-test".to_owned(),
+            name: "The House of Test".to_owned(),
+            seat_region_id: world.regions[0].id.clone(),
+            founder_name: "Test Founder".to_owned(),
+            member_ids: vec![world.heroes[0].id.clone()],
+            prestige: 42.0,
+        });
+        world.orders.push(mytherra_core::world::Order {
+            id: "order-test".to_owned(),
+            name: "the Test Circle".to_owned(),
+            role: world.heroes[0].role,
+            prestige: 17.0,
+            founded_year: world.year,
+        });
+
+        // A Watcher sees heroes, so it sees the bloodlines and fellowships too —
+        // this is what makes house scrip and order charters tradeable.
+        let watcher = data.tiers.standing(Tier::Watcher);
+        let (view, _) = project(&world, &player, &watcher, &data);
+        assert_eq!(view.houses.len(), 1);
+        assert_eq!(view.orders.len(), 1);
+        assert_eq!(view.houses[0].prestige, 42.0);
+
+        // A Standing without Heroes gets neither, rather than a partial roster.
+        let blind = Standing::default();
+        let blind_view = project_world(&world, &blind);
+        assert!(blind_view.houses.is_empty() && blind_view.orders.is_empty());
+    }
+
+    #[test]
+    fn a_spectator_sees_the_whole_world_and_can_do_nothing() {
+        let (_, world, _) = fixtures();
+        let standing = spectator_standing();
+
+        // Every scope is revealed, so no collection is withheld.
+        for scope in V::ALL {
+            assert!(standing.can_see(scope), "a spectator is denied {scope:?}");
+        }
+        let view = project_world(&world, &standing);
+        assert!(!view.regions.is_empty(), "a spectator sees regions");
+        assert!(!view.heroes.is_empty());
+        assert!(!view.settlements.is_empty());
+        assert!(!view.resource_nodes.is_empty());
+        assert!(!view.trade_routes.is_empty());
+        assert_eq!(view.revealed.len(), V::ALL.len());
+
+        // But it holds no verb and no market, so it can authorize nothing and is
+        // offered no wagers even though `Observatory` is revealed.
+        assert!(standing.verbs.is_empty(), "a spectator holds no verb");
+        assert!(standing.markets.is_empty());
+        assert!(
+            view.speculations.is_empty(),
+            "no market unlocked means no wager is offered"
+        );
     }
 
     #[test]

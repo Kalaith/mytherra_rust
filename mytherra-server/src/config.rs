@@ -56,6 +56,20 @@ pub fn auth_config() -> AuthConfig {
     }
 }
 
+/// The shared secret a read-only spectator presents on `/spectate*`. Fails fast
+/// when unset, like every other secret here — a server with no token configured
+/// would otherwise have to choose between serving the unfiltered world to anyone
+/// and silently disabling the endpoints, and neither is a good default.
+pub fn spectator_token() -> String {
+    load_env();
+    let token = require("SPECTATOR_TOKEN");
+    assert!(
+        !token.trim().is_empty(),
+        "SPECTATOR_TOKEN must not be blank — an empty secret would authorize everyone"
+    );
+    token
+}
+
 fn require(key: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| panic!("{key} must be set (see mytherra-server/.env)"))
 }

@@ -40,7 +40,8 @@ use mytherra_core::sim::tick_shared;
 use mytherra_core::world::{PlayerState, WorldState};
 use mytherra_persistence::Store;
 use mytherra_protocol::{
-    project, project_events, ClientView, EventsDelta, LoginInfo, SessionResponse, Standing,
+    project, project_events, project_world, spectator_standing, ClientView, EventsDelta, LoginInfo,
+    SessionResponse, Standing, WorldView,
 };
 use serde::Deserialize;
 use tokio::sync::Mutex;
@@ -48,6 +49,9 @@ use tower_http::cors::CorsLayer;
 
 /// The header a client presents to identify its guest session (GDD 7.7).
 const PLAYER_ID_HEADER: &str = "x-player-id";
+
+/// The header a read-only spectator presents on `/spectate*`.
+const SPECTATOR_TOKEN_HEADER: &str = "x-spectator-token";
 
 /// The one shared world plus every connected deity's private state. Players live
 /// in a `Vec` (so the tick gets a contiguous `&mut` slice) with an id → index
@@ -258,6 +262,8 @@ struct App {
     /// Shared WebHatchery auth config (secret + login URL) for account linking
     /// (GDD 7.3). `Arc` so cloning `App` into every handler stays cheap.
     auth: Arc<AuthConfig>,
+    /// The secret guarding the read-only spectator endpoints.
+    spectator_token: Arc<String>,
 }
 
 impl App {
@@ -270,6 +276,21 @@ impl App {
             auth::AuthError::Guest => StatusCode::BAD_REQUEST,
             auth::AuthError::Invalid => StatusCode::UNAUTHORIZED,
         })
+    }
+
+    /// Admit a read-only spectator, or 401. The token is a shared secret rather
+    /// than an account: a spectator is not a deity, holds no session, and is
+    /// never persisted, so there is nothing to authenticate it *as*.
+    fn verify_spectator(&self, headers: &HeaderMap) -> Result<(), StatusCode> {
+        let presented = headers
+            .get(SPECTATOR_TOKEN_HEADER)
+            .and_then(|value| value.to_str().ok())
+            .ok_or(StatusCode::UNAUTHORIZED)?;
+        if presented == self.spectator_token.as_str() {
+            Ok(())
+        } else {
+            Err(StatusCode::UNAUTHORIZED)
+        }
     }
 }
 
@@ -295,6 +316,7 @@ async fn main() {
         authority: Arc::new(Mutex::new(authority)),
         store,
         auth: Arc::new(config::auth_config()),
+        spectator_token: Arc::new(config::spectator_token()),
     };
 
     // The world advances on the server's own schedule (GDD 7.1), persisting the
@@ -320,6 +342,11 @@ async fn main() {
         .route("/view", get(view))
         .route("/events", get(events))
         .route("/action", post(action))
+        // Read-only spectator pair. Deliberately separate routes rather than a
+        // flag on /view: they take no session, mint nothing, persist nothing,
+        // and there is no path from either handler to a mutation.
+        .route("/spectate", get(spectate))
+        .route("/spectate/events", get(spectate_events))
         // The browser client is served from a different origin than this port, so
         // it needs permissive CORS to call the API. M2 dev default; a later phase
         // narrows this to the deployed page's origin (§7.6).
@@ -448,6 +475,39 @@ async fn events(
     let (events, cursor) = authority.world.chronicle.since(query.since);
     Ok(Json(EventsDelta {
         events: project_events(events, &standing),
+        cursor,
+    }))
+}
+
+/// `GET /spectate` — the whole world, read-only, to a client that owns no deity.
+///
+/// This is the exchange's world source: Tradeborn Realms prices a projection of
+/// this world and must never change it, so it is served a Standing that reveals
+/// every scope and grants no verb and no betting market at all. A spectator has
+/// no `PlayerState`, so it receives a bare [`WorldView`] rather than a
+/// `ClientView` — there is no deity to report on, and none is created.
+async fn spectate(
+    State(app): State<App>,
+    headers: HeaderMap,
+) -> Result<Json<WorldView>, StatusCode> {
+    app.verify_spectator(&headers)?;
+    let authority = app.authority.lock().await;
+    Ok(Json(project_world(&authority.world, &spectator_standing())))
+}
+
+/// `GET /spectate/events?since=<cursor>` — the chronicle delta for a spectator.
+/// Unfiltered, because a spectator's Standing carries `FullChronicle`; the
+/// cursor advances exactly as it does for a deity.
+async fn spectate_events(
+    State(app): State<App>,
+    headers: HeaderMap,
+    Query(query): Query<EventsQuery>,
+) -> Result<Json<EventsDelta>, StatusCode> {
+    app.verify_spectator(&headers)?;
+    let authority = app.authority.lock().await;
+    let (events, cursor) = authority.world.chronicle.since(query.since);
+    Ok(Json(EventsDelta {
+        events: project_events(events, &spectator_standing()),
         cursor,
     }))
 }

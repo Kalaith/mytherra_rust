@@ -29,6 +29,23 @@ pub enum VisibilityScope {
     FullChronicle,
 }
 
+impl VisibilityScope {
+    /// Every visibility scope. Lets a caller express "reveals the whole world"
+    /// without naming each scope — used by the read-only spectator Standing,
+    /// which grants all of these and no verbs or markets at all.
+    pub const ALL: [VisibilityScope; 9] = [
+        VisibilityScope::Heroes,
+        VisibilityScope::Observatory,
+        VisibilityScope::Regions,
+        VisibilityScope::Settlements,
+        VisibilityScope::Resources,
+        VisibilityScope::DivineTools,
+        VisibilityScope::Pantheon,
+        VisibilityScope::Eras,
+        VisibilityScope::FullChronicle,
+    ];
+}
+
 /// A divine verb a player's Standing can unlock. Gates the matching
 /// `PlayerAction` families (GDD 7.7).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -165,6 +182,28 @@ mod tests {
         assert_eq!(Tier::for_level(6, &unlock), Tier::Shaper);
         assert_eq!(Tier::for_level(7, &unlock), Tier::Elder);
         assert_eq!(Tier::for_level(99, &unlock), Tier::Elder);
+    }
+
+    #[test]
+    fn all_scopes_lists_every_variant() {
+        // The match is the real guard: adding a `VisibilityScope` variant fails
+        // to compile here until it is also added to `ALL`, so a spectator can
+        // never silently miss a scope that was introduced later.
+        for scope in VisibilityScope::ALL {
+            match scope {
+                VisibilityScope::Heroes
+                | VisibilityScope::Observatory
+                | VisibilityScope::Regions
+                | VisibilityScope::Settlements
+                | VisibilityScope::Resources
+                | VisibilityScope::DivineTools
+                | VisibilityScope::Pantheon
+                | VisibilityScope::Eras
+                | VisibilityScope::FullChronicle => {}
+            }
+        }
+        let unique: BTreeSet<_> = VisibilityScope::ALL.into_iter().collect();
+        assert_eq!(unique.len(), VisibilityScope::ALL.len());
     }
 
     #[test]
