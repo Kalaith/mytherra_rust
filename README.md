@@ -69,5 +69,6 @@ cargo test -p mytherra -- --ignored net
 
 - `gdd.md` — design document (pillars, systems, multiplayer architecture, milestones).
 - `RUNNING.md` — local hosting / how to play.
+- `TODO.md` — open engineering work not yet scheduled against a GDD milestone.
 - `AGENTS.md`, `CODE_STANDARDS.md`, `GAME_DEVELOPMENT_GUIDE.md`, `MACROQUAD_TOOLKIT.md`
   — shared RustGames standards (synced from `rust_management/docs`; do not hand-edit).
