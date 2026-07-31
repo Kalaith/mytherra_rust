@@ -64,30 +64,67 @@ The client already knows to use the gateway: `game_config.json` carries
 targets it automatically, while a local `cargo run` (debug) still talks straight
 to `server_url`. Override on native anytime with `MYTHERRA_SERVER_URL`.
 
-One-time setup:
+This repo is set up for the **port-forward** path (the alternative, a tunnel, is
+noted at the end).
 
-1. **Deploy the gateway.** Set a strong `GATEWAY_ADMIN_TOKEN` in
-   `apps/local_gateway/backend/.env.production`, then publish it to production.
-2. **Port-forward** `8791` on your router to this desktop (ideally firewalled to
-   accept only webhatchery.au), and bind the server wide: set
-   `server_listen_addr` to `0.0.0.0:8791` in `game_config.json`.
-3. **Publish the mytherra client** to production (`.\publish.ps1 -Production`).
+### One-time setup
 
-Each session:
-
-1. Start the server: `.\run-server.ps1`.
-2. Advertise it to the gateway on a heartbeat:
+1. **Gateway admin token — done.** A strong `GATEWAY_ADMIN_TOKEN` is set in
+   `apps/local_gateway/backend/.env.production`. Keep that file out of git (it
+   holds a secret). The same value is what `register-server.ps1` must present.
+2. **Server bind — done.** `server_listen_addr` in `game_config.json` is
+   `0.0.0.0:8791`, so the port-forwarded server accepts external connections.
+3. **Publish the gateway** so production serves it with the token:
    ```powershell
-   $env:GATEWAY_ADMIN_TOKEN = '<the token>'
-   .\register-server.ps1            # registers http://<your public IP>:8791
+   cd apps\local_gateway
+   .\publish.ps1 -Production
    ```
-   Leave it running; it re-registers every 60 s so the gateway record never goes
-   stale. Then open the published client — it connects through the gateway.
+4. **Publish the mytherra client** to production:
+   ```powershell
+   .\publish.ps1 -Production
+   ```
+5. **Port-forward** TCP `8791` on your router to this desktop's LAN IP — ideally
+   firewall that inbound rule to accept only webhatchery.au's server IP. The
+   gateway derives your public IP from the register request, so you never hand it
+   out by hand.
+
+### Each session
+
+Two terminals from the repo root:
+
+```powershell
+.\run-server.ps1
+```
+
+```powershell
+$env:GATEWAY_ADMIN_TOKEN = '<the token from apps/local_gateway/backend/.env.production>'
+.\register-server.ps1
+```
+
+Leave `register-server.ps1` running — it re-registers every 60 s so the gateway
+record never goes stale (the gateway drops a service to 502 once its registration
+ages past `GATEWAY_TTL`). Then open the published client — it connects through the
+gateway.
+
+### Verify
+
+```powershell
+# gateway is live
+curl https://webhatchery.au/local_gateway/api/health          # -> {"ok":true,...}
+
+# with the server + register running, mytherra is registered and fresh
+curl -H "X-Gateway-Token: $env:GATEWAY_ADMIN_TOKEN" https://webhatchery.au/local_gateway/api/services
+#   -> mytherra: { "registered": true, "stale": false, ... }
+```
+
+Then open the published client and click *Enter the World*.
 
 > **Browser over a tunnel instead of port-forwarding.** If you'd rather not open a
 > port, run an https tunnel (e.g. `cloudflared tunnel --url http://localhost:8791`)
 > and register its URL: `.\register-server.ps1 -Target https://<id>.trycloudflare.com`.
-> That also gives the browser client the https origin it needs.
+> That also gives the browser client the https origin it needs. (With a tunnel you
+> can leave `server_listen_addr` at `127.0.0.1:8791`, since cloudflared reaches the
+> server locally.)
 
 ## Notes
 
