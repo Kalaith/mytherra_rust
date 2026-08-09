@@ -9,9 +9,7 @@
 
 use crate::data::{fill, HeroRole};
 use crate::ui::theme;
-use crate::ui::widgets::{
-    bad_stat_color, button, draw_titled, good_stat_color, trend_marker,
-};
+use crate::ui::widgets::{bad_stat_color, button, draw_titled, good_stat_color, trend_marker};
 use crate::ui::{content_rect, Screen, UiAction, UiContext};
 use crate::world::{EventKind, Hero};
 use macroquad::prelude::*;
@@ -478,7 +476,15 @@ fn draw_hero_card(ctx: &UiContext<'_>, hero: &Hero, rect: Rect) {
         .copied()
         .find(|t| *t > hero.renown)
         .unwrap_or_else(|| hero.renown.max(1.0));
-    progress_bar(rect.x + 8.0, rect.bottom() - 8.0, rect.w - 16.0, 4.0, hero.renown, next, accent);
+    progress_bar(
+        rect.x + 8.0,
+        rect.bottom() - 8.0,
+        rect.w - 16.0,
+        4.0,
+        hero.renown,
+        next,
+        accent,
+    );
 }
 
 /// The living heroes with the most renown, most-storied first (GDD 5.4).
