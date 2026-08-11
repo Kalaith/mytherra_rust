@@ -62,36 +62,59 @@ use macroquad_toolkit::data_loader::{
     load_embedded_json, load_embedded_json_labeled, DataRegistry,
 };
 
-const GAME_CONFIG_JSON: &str = include_str!("../../assets/data/game_config.json");
-const REGIONS_JSON: &str = include_str!("../../assets/data/regions.json");
-const REGION_ACTIONS_JSON: &str = include_str!("../../assets/data/region_actions.json");
-const HEROES_JSON: &str = include_str!("../../assets/data/heroes.json");
-const HERO_NAMES_JSON: &str = include_str!("../../assets/data/hero_names.json");
-const SETTLEMENTS_JSON: &str = include_str!("../../assets/data/settlements.json");
-const SETTLEMENT_NAMES_JSON: &str = include_str!("../../assets/data/settlement_names.json");
-const RESOURCE_NODES_JSON: &str = include_str!("../../assets/data/resource_nodes.json");
-const LANDMARKS_JSON: &str = include_str!("../../assets/data/landmarks.json");
-const LANDMARK_NAMES_JSON: &str = include_str!("../../assets/data/landmark_names.json");
-const PLAGUE_NAMES_JSON: &str = include_str!("../../assets/data/plague_names.json");
-const TRADE_ROUTES_JSON: &str = include_str!("../../assets/data/trade_routes.json");
-const BUILDING_TYPES_JSON: &str = include_str!("../../assets/data/building_types.json");
-const BUILDINGS_JSON: &str = include_str!("../../assets/data/buildings.json");
-const ARTIFACTS_JSON: &str = include_str!("../../assets/data/artifacts.json");
-const WEATHER_PATTERNS_JSON: &str = include_str!("../../assets/data/weather_patterns.json");
-const WEATHER_INTENSITIES_JSON: &str = include_str!("../../assets/data/weather_intensities.json");
-const MAGIC_PATHS_JSON: &str = include_str!("../../assets/data/magic_paths.json");
-const MONSTER_TYPES_JSON: &str = include_str!("../../assets/data/monster_types.json");
-const MYTH_THEMES_JSON: &str = include_str!("../../assets/data/myth_themes.json");
-const AGENDAS_JSON: &str = include_str!("../../assets/data/agendas.json");
-const PANTHEON_JSON: &str = include_str!("../../assets/data/pantheon.json");
-const ERA_NAMES_JSON: &str = include_str!("../../assets/data/era_names.json");
-const BET_TYPES_JSON: &str = include_str!("../../assets/data/bet_types.json");
-const CONFIDENCE_JSON: &str = include_str!("../../assets/data/confidence_levels.json");
-const TIMEFRAMES_JSON: &str = include_str!("../../assets/data/timeframe_modifiers.json");
-const BALANCE_JSON: &str = include_str!("../../assets/data/balance.json");
-const STRINGS_JSON: &str = include_str!("../../assets/data/strings.json");
-const ACHIEVEMENTS_JSON: &str = include_str!("../../assets/data/achievements.json");
-const TIERS_JSON: &str = include_str!("../../assets/data/tiers.json");
+const GAME_CONFIG_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/game_config.json");
+const REGIONS_JSON: &str = macroquad_toolkit::include_json_str!("../../assets/data/regions.json");
+const REGION_ACTIONS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/region_actions.json");
+const HEROES_JSON: &str = macroquad_toolkit::include_json_str!("../../assets/data/heroes.json");
+const HERO_NAMES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/hero_names.json");
+const SETTLEMENTS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/settlements.json");
+const SETTLEMENT_NAMES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/settlement_names.json");
+const RESOURCE_NODES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/resource_nodes.json");
+const LANDMARKS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/landmarks.json");
+const LANDMARK_NAMES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/landmark_names.json");
+const PLAGUE_NAMES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/plague_names.json");
+const TRADE_ROUTES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/trade_routes.json");
+const BUILDING_TYPES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/building_types.json");
+const BUILDINGS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/buildings.json");
+const ARTIFACTS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/artifacts.json");
+const WEATHER_PATTERNS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/weather_patterns.json");
+const WEATHER_INTENSITIES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/weather_intensities.json");
+const MAGIC_PATHS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/magic_paths.json");
+const MONSTER_TYPES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/monster_types.json");
+const MYTH_THEMES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/myth_themes.json");
+const AGENDAS_JSON: &str = macroquad_toolkit::include_json_str!("../../assets/data/agendas.json");
+const PANTHEON_JSON: &str = macroquad_toolkit::include_json_str!("../../assets/data/pantheon.json");
+const ERA_NAMES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/era_names.json");
+const BET_TYPES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/bet_types.json");
+const CONFIDENCE_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/confidence_levels.json");
+const TIMEFRAMES_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/timeframe_modifiers.json");
+const BALANCE_JSON: &str = macroquad_toolkit::include_json_str!("../../assets/data/balance.json");
+const STRINGS_JSON: &str = macroquad_toolkit::include_json_str!("../../assets/data/strings.json");
+const ACHIEVEMENTS_JSON: &str =
+    macroquad_toolkit::include_json_str!("../../assets/data/achievements.json");
+const TIERS_JSON: &str = macroquad_toolkit::include_json_str!("../../assets/data/tiers.json");
 
 /// All static content the game needs, resolved once at boot.
 #[derive(Debug, Clone)]
@@ -227,87 +250,4 @@ impl GameData {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn embedded_data_loads() {
-        let data = GameData::load().unwrap();
-        assert_eq!(data.config.game_name, "mytherra");
-        assert!(data.regions.len() >= 3);
-        assert!(data.region_actions.contains("bless"));
-        assert!(data.region_actions.contains("corrupt"));
-        assert!(data.region_actions.contains("guide"));
-    }
-
-    #[test]
-    fn region_actions_have_positive_cost() {
-        let data = GameData::load().unwrap();
-        for (_, action) in data.region_actions.iter() {
-            assert!(action.cost > 0, "{} has non-positive cost", action.id);
-        }
-    }
-
-    #[test]
-    fn content_meets_section_9_full_targets() {
-        // The §9 Content Inventory full-target floors, as a guard: a future edit
-        // that drops the world back below content-complete scale fails here
-        // rather than silently shipping a demo-sized world (GDD 9, M3).
-        let data = GameData::load().unwrap();
-        let floors = [
-            ("regions", data.regions.len(), 8),
-            ("settlements", data.settlements.len(), 20),
-            ("heroes", data.heroes.len(), 30),
-            ("landmarks", data.landmarks.len(), 20),
-            ("resource_nodes", data.resource_nodes.len(), 40),
-            ("artifacts", data.artifacts.len(), 6),
-            ("bet_types", data.bet_types.len(), 18),
-        ];
-        for (name, have, want) in floors {
-            assert!(have >= want, "{name}: {have} < §9 full target {want}");
-        }
-    }
-
-    #[test]
-    fn every_seeded_region_reference_resolves() {
-        // Genesis seeds entities with `from_seed` and never checks that a
-        // `region_id` names a real region — a typo would become an inert orphan
-        // (sim lookups return None, no panic). Assert every reference resolves so
-        // that failure mode can't reach a running world.
-        let data = GameData::load().unwrap();
-        let regions: std::collections::HashSet<&str> =
-            data.regions.iter().map(|r| r.id.as_str()).collect();
-
-        let mut refs: Vec<(&str, &str, &str)> = Vec::new();
-        for s in &data.settlements {
-            refs.push(("settlement", &s.id, &s.region_id));
-        }
-        for h in &data.heroes {
-            refs.push(("hero", &h.id, &h.region_id));
-        }
-        for l in &data.landmarks {
-            refs.push(("landmark", &l.id, &l.region_id));
-        }
-        for n in &data.resource_nodes {
-            refs.push(("resource node", &n.id, &n.region_id));
-        }
-        for a in &data.artifacts {
-            refs.push(("artifact", &a.id, &a.region_id));
-        }
-        for (kind, id, region_id) in refs {
-            assert!(
-                regions.contains(region_id),
-                "{kind} '{id}' references unknown region '{region_id}'"
-            );
-        }
-        for t in &data.trade_routes {
-            for (end, region_id) in [("region_a", &t.region_a), ("region_b", &t.region_b)] {
-                assert!(
-                    regions.contains(region_id.as_str()),
-                    "trade route '{}' {end} references unknown region '{region_id}'",
-                    t.id
-                );
-            }
-        }
-    }
-}
+mod tests;

@@ -56,16 +56,4 @@ pub fn weather_cost(base_cost: i64, intensity_cost_mult: f32, region_cost_mult: 
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn stronger_intensity_costs_more() {
-        assert!(weather_cost(14, 3.0, 1.0) > weather_cost(14, 1.0, 1.0));
-    }
-
-    #[test]
-    fn high_resonance_region_is_cheaper() {
-        assert!(weather_cost(14, 1.0, 0.7) < weather_cost(14, 1.0, 1.3));
-    }
-}
+mod tests;
