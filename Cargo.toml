@@ -12,14 +12,9 @@ members = ["mytherra-core", "mytherra-protocol", "mytherra-persistence", "myther
 mytherra-core = { path = "mytherra-core" }
 mytherra-protocol = { path = "mytherra-protocol" }
 macroquad = "0.4"
-macroquad-toolkit = { path = "../macroquad-toolkit" }
+macroquad-toolkit = { path = "../macroquad-toolkit", features = ["net"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-# Cross-platform HTTP for the authority server (GDD 7.4). quad-net rides
-# macroquad's own JS interop (sapp-jsutils) on wasm rather than wasm-bindgen, so
-# it coexists with macroquad's WebGL build; on native it uses ureq in a thread.
-# Both platforms share one poll-based (non-blocking) API — see `src/net.rs`.
-quad-net = "0.1.2"
 
 [dev-dependencies]
 # Forges a WebHatchery account token (HS256) in the ignored live-server net test

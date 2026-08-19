@@ -1,4 +1,5 @@
 use super::*;
+use serde::de::DeserializeOwned;
 use std::time::{Duration, Instant};
 
 /// Poll a request to completion (native tests only — quad-net resolves it on
